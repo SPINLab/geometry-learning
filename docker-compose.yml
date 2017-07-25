@@ -1,0 +1,8 @@
+version: "3"
+
+services:
+  topology-ml:
+    build: .
+    volumes:
+      - .:/data
+    command: /data/prep/get-data.sh
