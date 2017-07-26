@@ -1,12 +1,4 @@
-from shapely import geometry, wkt
-from shapely import speedups
 from osgeo import gdal, osr, ogr
-
-# Check for speedups
-# from util.layerToWGS import layerToWGS
-
-if speedups.available:
-    speedups.enable()
 
 # Enable GDAL/OGR exceptions
 gdal.UseExceptions()
