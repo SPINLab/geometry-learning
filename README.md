@@ -2,6 +2,8 @@
 A machine learning project for learning geospatial topology
 
 # Installation
+If you value your time, go for the dockerized version.
+
 ## Docker
 
 Due to the cross-platform dependency issues installing python geospatial packages, the setup has been [Dockerized](https://www.docker.com/) to ensure cross-platform interoperability. This is the easiest way to use. 

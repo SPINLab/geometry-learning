@@ -1,8 +1,15 @@
 version: "3"
 
 services:
-  topology-ml:
+  postgis:
+    image: mdillon/postgis
+    ports:
+      - '5432:5432'
+
+  data-prep:
     build: .
     volumes:
       - .:/data
     command: /data/prep/get-data.sh
+    depends_on:
+      - postgis
