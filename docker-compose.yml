@@ -9,7 +9,8 @@ services:
   data-prep:
     build: .
     volumes:
-      - .:/data
+      - ./files:/data/files
+      - ./prep:/data/prep
     command: /data/prep/get-data.sh
     depends_on:
       - postgis
