@@ -2,6 +2,7 @@ import numpy as np
 import pandas
 from keras import Input
 from keras.backend import floatx
+from keras.callbacks import TensorBoard, RemoteMonitor
 from keras.engine import Model
 from keras.layers import LSTM, RepeatVector
 from topoml_util.util import Tokenize
@@ -19,7 +20,7 @@ def main():
     target_set = []
 
     max_len = 500
-    batch_size = 100
+    batch_size = 1000
 
     # Restrict input to be of less or equal length as the maximum length.
     for index, record in enumerate(raw_training_set):
@@ -45,9 +46,16 @@ def main():
     encoded = LSTM(latent_dim, name='Encoding_LSTM')(inputs)
     decoded = LSTM(len(tokenizer.word_index) + 1, return_sequences=True, name='Decoding_LSTM')(inputs)
     sequence_autoencoder = Model(inputs=inputs, outputs=decoded)
-    encoder = Model(inputs=inputs, outputs=encoded)
     sequence_autoencoder.compile(loss='binary_crossentropy', optimizer='rmsprop')
-    sequence_autoencoder.fit(x=input_one_hot, y=target_one_hot, epochs=20, batch_size=batch_size)
+
+    encoder = Model(inputs=inputs, outputs=encoded)
+
+    tb_callback = TensorBoard(log_dir='./tensorboard_log', histogram_freq=1, write_graph=True, write_images=True)
+    sequence_autoencoder.fit(x=input_one_hot,
+                             y=target_one_hot,
+                             epochs=10,
+                             batch_size=batch_size,
+                             callbacks=[tb_callback])
     print('Done!')
 
 

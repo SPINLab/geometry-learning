@@ -102,3 +102,4 @@ ENV/
 /.idea/
 /files/
 /model/tensorboard/
+/model/tensorboard_log/
