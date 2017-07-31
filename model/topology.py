@@ -18,7 +18,7 @@ def main():
     training_set = []
     target_set = []
 
-    max_len = 1000
+    max_len = 500
     batch_size = 100
 
     # Restrict input to be of less or equal length as the maximum length.
@@ -26,6 +26,11 @@ def main():
         if len(record) <= max_len:
             training_set.append(record)
             target_set.append(raw_target_set[index])
+
+    # Truncate the array to the batch size
+    truncated_length = len(training_set) - len(training_set) % batch_size
+    training_set = training_set[0:truncated_length]
+    target_set = target_set[0:truncated_length]
 
     print(len(target_set), 'max length filtered data points in training set')
 
@@ -42,7 +47,7 @@ def main():
     sequence_autoencoder = Model(inputs=inputs, outputs=decoded)
     encoder = Model(inputs=inputs, outputs=encoded)
     sequence_autoencoder.compile(loss='binary_crossentropy', optimizer='rmsprop')
-    sequence_autoencoder.fit(x=input_one_hot, y=target_one_hot, epochs=60, batch_size=batch_size)
+    sequence_autoencoder.fit(x=input_one_hot, y=target_one_hot, epochs=20, batch_size=batch_size)
     print('Done!')
 
 
