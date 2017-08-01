@@ -21,3 +21,5 @@ sudo add-apt-repository \
 sudo apt-get update
 sudo apt-get -y install docker-ce
 sudo pip install docker-compose
+sudo usermod -aG docker ${USER}
+echo "Please log out and in again to make use of the added user permissions on executing Docker commands"

@@ -23,3 +23,11 @@ If you need to run or debug locally, you need the following dependencies:
 |Shapely|`apt-get install -y libgeos-dev && pip install shapely`| |download and `pip install` [one of these wheels](http://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely)|
 |GDAL|`apt-get install -y libproj-dev && git clone https://github.com/OSGeo/gdal.git && cd gdal/gdal && ./configure --with-python && make >/dev/null 2>&1 && make install && ldconfig`| |download and `pip install` [one of these wheels](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)|
 
+## Running the auto-encoder
+In the `model` directory, issue
+`python3 main.py`
+
+You can now monitor progress using tensorboard:
+`tensorboard --log_dir ./tensorboard`
+or
+`python3 -m tensorflow.tensorboard --logdir ./tensorboard`

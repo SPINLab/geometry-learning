@@ -9,6 +9,7 @@ from topoml_util.util import Tokenize
 
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 
+
 def main():
     print('Reading data...')
     training_data = pandas.read_csv(TOPOLOGY_TRAINING_CSV)
