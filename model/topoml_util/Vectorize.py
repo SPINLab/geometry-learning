@@ -1,5 +1,6 @@
 from shapely import wkt, geometry
 
+
 class Vectorize:
     @staticmethod
     def vectorize(wkt_geom):
