@@ -1,10 +1,8 @@
-import numpy as np
 import pandas
 from keras import Input
-from keras.backend import floatx
-from keras.callbacks import TensorBoard, RemoteMonitor
+from keras.callbacks import TensorBoard
 from keras.engine import Model
-from keras.layers import LSTM, RepeatVector
+from keras.layers import LSTM
 from topoml_util.util import Tokenize
 
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
@@ -13,7 +11,11 @@ TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 def main():
     print('Reading data...')
     training_data = pandas.read_csv(TOPOLOGY_TRAINING_CSV)
-    raw_training_set = training_data['brt_wkt'] + ' ' + training_data['osm_wkt']
+    raw_training_set = {
+        'brt_wkt': [brt_wkt for brt_wkt in training_data['brt_wkt']],
+        'osm_wkt': [osm_wkt for osm_wkt in training_data['osm_wkt']]
+    }
+
     raw_target_set = training_data['intersection_wkt']
     print(len(raw_training_set), 'data points in training set')
 
