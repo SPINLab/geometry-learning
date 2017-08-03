@@ -81,15 +81,20 @@ class Tokenize(Tokenizer):
 
     def decypher(self, sequences):
         """
-        Decyphers a encoded 3D array of one-hot vectors back to a 2D array of characters
+        Decyphers a encoded 3D array of one-hot vectors back to a 2D array of sentences
         :param sequences:
         :return:
         """
         inv_cipher = {v: k for k, v in self.word_index.items()}
         decyphered = []
         for sequence in sequences:
-            deciphered_sequence = ''.join([inv_cipher[c] for c in sequence])
-            decyphered.append(deciphered_sequence)
+            decyphered_sequence = []
+            for num in sequence:
+                if num in inv_cipher:
+                    decyphered_sequence.append(inv_cipher[num])
+                else:
+                    decyphered_sequence.append(' ')
+            decyphered.append(''.join([char for char in decyphered_sequence]))
         return decyphered
 
     def one_hot(self, input_sequences, maxlen):

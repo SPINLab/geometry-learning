@@ -14,4 +14,4 @@ class CustomCallback(Callback):
         for prediction in predictions:
             sampled = [Tokenize.max_sample(token) for token in prediction]
             sequence.append(sampled)
-        print('Prediction: %s' % self.decypher(sequence))
+        print('\nPrediction: %s' % self.decypher(sequence))
