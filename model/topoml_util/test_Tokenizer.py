@@ -1,14 +1,22 @@
 import unittest
 import pandas
-from util import Tokenize
+from Tokenizer import Tokenize
 
-TOPOLOGY_TRAINING_CSV = '../../files/example.csv'
+TOPOLOGY_TRAINING_CSV = 'test_files/example.csv'
 training_data = pandas.read_csv(TOPOLOGY_TRAINING_CSV)
 raw_training_set = training_data['brt_wkt'] + ' ' + training_data['osm_wkt']
 raw_target_set = training_data['intersection_wkt']
 
 
 class TestUtil(unittest.TestCase):
+    def test_batch_truncate(self):
+        batch_size = 3
+        max_len = 1000
+        validation_split = 0.1
+        training_set, target_set = Tokenize.batch_truncate(batch_size, max_len, validation_split, raw_training_set,
+                                                           raw_target_set)
+        self.assertEqual(len(training_set), 33)
+
     def test_tokenize(self):
         test_strings = ['A test string']
         tokenizer = Tokenize(test_strings)
@@ -26,7 +34,7 @@ class TestUtil(unittest.TestCase):
         tokenized = tokenizer.char_level_tokenize(test_strings['brt_wkt'])
         self.assertEqual((tokenizer.word_index, tokenized[0][0:15]),
                          (word_index,
-                          [19, 14, 17, 18, 20, 14, 21, 15, 15, 2, 4]))
+                          [19, 14, 17, 18, 20, 14, 21, 15, 15, 2, 4, 6, 3, 3, 6]))
 
     def test_one_hot(self):
         test_strings = training_data['brt_wkt'] + training_data['osm_wkt']
@@ -43,5 +51,5 @@ class TestUtil(unittest.TestCase):
         test_strings = ['A test string']
         tokenizer = Tokenize(test_strings)
         tokenized = tokenizer.char_level_tokenize(test_strings)
-        detokenized = tokenizer.detokenize(tokenized)
+        detokenized = tokenizer.decypher(tokenized)
         self.assertEqual(detokenized, test_strings)
