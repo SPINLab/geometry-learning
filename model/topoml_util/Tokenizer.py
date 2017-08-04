@@ -99,7 +99,7 @@ class Tokenize(Tokenizer):
 
     def one_hot(self, input_sequences, maxlen):
         # The third dimension of the matrix is equal to the length of the word index plus one:
-        # There is no 0 index in the word index.
+        # There is no '0' index in the word index.
         X = np.zeros((len(input_sequences), maxlen, len(self.word_index) + 1), dtype=np.bool)
         for i, sentence in enumerate(input_sequences):
             for t, char in enumerate(sentence):
