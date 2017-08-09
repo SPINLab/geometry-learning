@@ -1,9 +1,14 @@
 import pandas
+import tensorflow as tf
 from keras import Input
+from keras.activations import tanh
 from keras.engine import Model
-from keras.layers import LSTM
+from keras.layers import LSTM, Dense
 from topoml_util.CustomCallback import CustomCallback
 from topoml_util.Tokenizer import Tokenize
+
+# To suppress tensorflow info level messages:
+# export TF_CPP_MIN_LOG_LEVEL=2
 
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 MAX_SEQUENCE_LEN = 220
@@ -30,9 +35,11 @@ def main():
     # Adapted from example https://blog.keras.io/building-autoencoders-in-keras.html
     word_index_size = len(tokenizer.word_index) + 1
     inputs = Input(shape=(MAX_SEQUENCE_LEN, word_index_size))
-    # encoded = LSTM(latent_dim, name='Encoding_LSTM')(inputs)
-    decoded = LSTM(word_index_size, return_sequences=True, name='Decoding_LSTM')(inputs)
-    encoder = Model(inputs=inputs, outputs=decoded)
+    encoded = LSTM(word_index_size, name='Encoding_LSTM', return_sequences=True)(inputs)
+    encoded = LSTM(word_index_size, name='Hidden_LSTM', return_sequences=True)(encoded)
+    encoded = LSTM(word_index_size, name='Hidden_LSTM2', return_sequences=True)(encoded)
+    # decoded = LSTM(word_index_size, return_sequences=True, name='Decoding_LSTM')(inputs)
+    encoder = Model(inputs=inputs, outputs=encoded)
 
     encoder.summary()
     encoder.compile(loss='binary_crossentropy', optimizer='rmsprop')

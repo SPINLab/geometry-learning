@@ -11,6 +11,6 @@ services:
     volumes:
       - ./files:/data/files
       - ./prep:/data/prep
-    command: /data/prep/get-data.sh
+    command: bash /data/prep/get-data.sh
     depends_on:
       - postgis

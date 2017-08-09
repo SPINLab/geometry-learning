@@ -19,9 +19,7 @@ class Tokenize(Tokenizer):
         """
         Method for truncating the training and target set to fit the maximum
             sequence length, batch and validation set size
-        :param batch_size: size of the epoch batch size
         :param max_len: maximum length of characters per sequence/sentence
-        :param validation_split: ratio of the training/validation split
         :param untruncated_training_set: untruncated list of input sequences
         :param untruncated_target_set: untruncated list of target output sequences
         :return: training_set, target_set: a tuple of truncated training and target sets
@@ -85,6 +83,8 @@ class Tokenize(Tokenizer):
         :param sequences:
         :return:
         """
+        # sampled = [Tokenize.max_sample(token) for token in prediction]
+        # sequence.append(sampled)
         inv_cipher = {v: k for k, v in self.word_index.items()}
         decyphered = []
         for sequence in sequences:
@@ -100,9 +100,9 @@ class Tokenize(Tokenizer):
     def one_hot(self, input_sequences, maxlen):
         # The third dimension of the matrix is equal to the length of the word index plus one:
         # There is no '0' index in the word index.
-        X = np.zeros((len(input_sequences), maxlen, len(self.word_index) + 1), dtype=np.bool)
+        x = np.zeros((len(input_sequences), maxlen, len(self.word_index) + 1), dtype=np.bool)
         for i, sentence in enumerate(input_sequences):
             for t, char in enumerate(sentence):
-                X[i, t, self.word_index[char]] = True
-        return X
+                x[i, t, self.word_index[char]] = True
+        return x
 
