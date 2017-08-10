@@ -15,5 +15,5 @@ class CustomCallback(Callback):
         predictions = self.model.predict(np.array(validation_sample))
         print('\nSome predictions on randomly sampled validation data:\n')
         for index in range(len(predictions)):
-            print('Target: %s' % self.decypher(validation_sample[index]))
-            print('Prediction: %s' % self.decypher(predictions[index]))
+            print('Target:     %s' % self.decypher(validation_sample[index]))
+            print('Prediction: %s\n' % self.decypher(predictions[index]))
