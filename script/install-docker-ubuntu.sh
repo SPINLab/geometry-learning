@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 sudo apt-get update
-
-# For Ubuntu version 14.04 (Trusty)
-eval $(cat /etc/*release | grep VERSION_ID)
-
-if [ VERSION_ID = "14.04" ]; then
-  sudo apt-get -y install linux-image-extra-$(uname -r) linux-image-extra-virtual
-fi
-
 sudo apt-get install -y \
     apt-transport-https \
     ca-certificates \
