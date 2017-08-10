@@ -6,6 +6,7 @@ from keras.layers import LSTM
 
 from topoml_util.CustomCallback import CustomCallback
 from topoml_util.GeoVectorizer import GeoVectorizer
+from topoml_util.geom_loss import geom_loss
 
 # TODO: increase the num_steps in the training set to 10,000,000 (like sketch-rnn)
 # TODO: fiddle with the batch size on CUDA cores
@@ -39,7 +40,7 @@ decoded = LSTM(GEO_VECTOR_LEN, return_sequences=True)(decoded)
 decoder = Model(encoded_inputs, decoded)
 
 ae = Model(inputs, decoder(encoder(inputs)))
-ae.compile(loss=losses.mean_squared_error, optimizer='rmsprop')
+ae.compile(loss=geom_loss, optimizer='rmsprop')
 ae.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log', histogram_freq=1, write_graph=True)

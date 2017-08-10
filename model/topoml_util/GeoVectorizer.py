@@ -1,14 +1,15 @@
 from shapely.wkt import loads
 import numpy as np
 
-GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString", "MultiPolygon",
-                  "Geometry"]
-GEO_VECTOR_LEN = 14  # The amount of positions needed to describe the features of a geometry point
+GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
+                  "MultiPolygon", "Geometry"]
+GEO_VECTOR_LEN = 13  # The amount of positions needed to describe the features of a geometry point
 X_INDEX = 0  # float: the X coordinate
 Y_INDEX = 1  # float: the Y coordinate
-RENDER_INDEX = 11
-STOP_INDEX = 12
 GEOM_TYPE_INDEX = 2
+RENDER_INDEX = 10
+STOP_INDEX = 11
+FULL_STOP_INDEX = 12
 
 
 class GeoVectorizer:

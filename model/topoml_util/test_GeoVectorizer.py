@@ -1,7 +1,7 @@
 import unittest
 import pandas
 
-from model.topoml_util.GeoVectorizer import GeoVectorizer
+from model.topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX
 
 TOPOLOGY_CSV = 'test_files/polygon_multipolygon.csv'
 SOURCE_DATA = pandas.read_csv(TOPOLOGY_CSV)
@@ -34,14 +34,14 @@ class TestVectorizer(unittest.TestCase):
 
         self.assertEqual(num_records, 13)
         self.assertEqual(num_points, 47)
-        self.assertEqual(num_features, 14)
+        self.assertEqual(num_features, GEO_VECTOR_LEN)
 
         for record in vectorized:
             points = [point for point in record if point[0] > 0]
             # Every first point should have a "render" code
-            self.assertEqual(points[0][11], 1)
+            self.assertEqual(points[0][RENDER_INDEX], 1)
             # Every last point should have a "full stop" code
-            self.assertEqual(points[-1][13], 1)
+            self.assertEqual(points[-1][FULL_STOP_INDEX], 1)
 
     def test_decypher(self):
         self.maxDiff = None
