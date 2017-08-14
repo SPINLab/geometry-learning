@@ -9,6 +9,7 @@ brt_wkt = SOURCE_DATA['brt_wkt']
 osm_wkt = SOURCE_DATA['osm_wkt']
 target_wkt = SOURCE_DATA['intersection_wkt']
 
+
 class TestVectorizer(unittest.TestCase):
     def test_max_points(self):
         max_points = GeoVectorizer.max_points(brt_wkt, osm_wkt)

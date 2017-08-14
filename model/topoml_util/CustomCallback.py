@@ -13,7 +13,6 @@ class CustomCallback(Callback):
         random.seed(datetime.now())
         validation_sample = random.sample(list(self.validation_data[0]), 5)
         predictions = self.model.predict(np.array(validation_sample))
-        print('\nSome predictions on randomly sampled validation data:\n')
         for index in range(len(predictions)):
             print('Target:     %s' % self.decypher(validation_sample[index]))
             print('Prediction: %s\n' % self.decypher(predictions[index]))

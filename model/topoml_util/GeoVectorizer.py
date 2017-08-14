@@ -3,13 +3,13 @@ import numpy as np
 
 GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
                   "MultiPolygon", "Geometry"]
-GEO_VECTOR_LEN = 13  # The amount of positions needed to describe the features of a geometry point
+GEO_VECTOR_LEN = 16  # The amount of positions needed to describe the features of a geometry point
 X_INDEX = 0  # float: the X coordinate
 Y_INDEX = 1  # float: the Y coordinate
-GEOM_TYPE_INDEX = 2
-RENDER_INDEX = 10
-STOP_INDEX = 11
-FULL_STOP_INDEX = 12
+GEOM_TYPE_INDEX = 5
+RENDER_INDEX = GEOM_TYPE_INDEX + 8
+STOP_INDEX = RENDER_INDEX + 1
+FULL_STOP_INDEX = STOP_INDEX + 1
 
 
 class GeoVectorizer:
@@ -111,7 +111,7 @@ class GeoVectorizer:
         :return vectors: a filled-in nested array of vectors.
         """
         for point_index, point in enumerate(points):
-            geom_type_one_hot = GEOMETRY_TYPES.index(geom_type) + 2  # offset from coordinate entries
+            geom_type_one_hot = GEOMETRY_TYPES.index(geom_type) + GEOM_TYPE_INDEX  # offset from coordinate entries
             # [11:14] boolean: [render, end of first geometry, end of second geometry]
 
             vectors[point_index + offset][X_INDEX] = point[0]
@@ -130,6 +130,54 @@ class GeoVectorizer:
         """
         Decyphers a encoded 2D coordinate and one-hot vector back to a wkt geometry
         :param vector:
+        :return:
+        """
+        action_types = ["render", "stop", "full stop"]
+        wkt_start = {
+            "GeometryCollection": "(",
+            "Polygon": "((",
+            "MultiPolygon": "(((",
+            "Point": "(",
+            "LineString": "(",
+            "MultiPoint": "((",
+            "MultiLineString": "((",
+            "Geometry": "("
+        }
+        wkt_end = {
+            "GeometryCollection": ")",
+            "Polygon": "))",
+            "MultiPolygon": ")))",
+            "Point": ")",
+            "LineString": ")",
+            "MultiPoint": "))",
+            "MultiLineString": "))",
+            "Geometry": ")"
+        }
+
+        geom_type = GEOMETRY_TYPES[np.argmax(vector[0][GEOM_TYPE_INDEX:RENDER_INDEX])]
+        wkt = geom_type.upper() + wkt_start[geom_type]
+
+        # If an empty geometrycollection:
+        if sum(vector[0][RENDER_INDEX:]) == 0:
+            pass
+
+        for point in vector:
+            action_type = np.argmax(point[RENDER_INDEX:])
+
+            wkt += ' '.join([str(point[0]), str(point[1])])
+            if action_types[action_type] == 'render':
+                wkt += ','
+
+            if action_types[action_type] == 'full stop':
+                break
+
+        return wkt + wkt_end[geom_type]
+
+    @staticmethod
+    def decypher_gaussian(vector):
+        """
+        Decyphers a encoded 2D gaussian coordinate estimation and one-hot vectors back to a wkt geometry
+        :param vector: input vector
         :return:
         """
         action_types = ["render", "stop", "full stop"]
