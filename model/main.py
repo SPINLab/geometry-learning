@@ -10,6 +10,7 @@ from topoml_util.CustomCallback import CustomCallback
 from topoml_util.GeoVectorizer import GeoVectorizer
 from topoml_util.GeoVectorizer import GEO_VECTOR_LEN as TARGET_GEO_VECTOR_LEN
 from topoml_util.geom_loss import geom_loss
+from topoml_util.geom_loss import geom_gaussian_loss
 
 # TODO: increase the num_steps in the training set to 10,000,000 (like sketch-rnn)
 # TODO: use recurrent dropout
@@ -49,7 +50,7 @@ decoded = TimeDistributed(Dense(TARGET_GEO_VECTOR_LEN))(decoded)
 decoder = Model(encoded_inputs, decoded)
 
 ae = Model(inputs, decoder(encoder(inputs)))
-ae.compile(loss=geom_loss, optimizer=OPTIMIZER)
+ae.compile(loss=geom_gaussian_loss, optimizer=OPTIMIZER)
 ae.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
