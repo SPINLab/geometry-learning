@@ -4,7 +4,7 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard
 from keras.engine import Model
-from keras.layers import LSTM, RepeatVector, TimeDistributed, Dense, GRU, K
+from keras.layers import LSTM, RepeatVector, TimeDistributed, Dense, GRU, K, initializers
 
 from topoml_util.CustomCallback import CustomCallback
 from topoml_util.GeoVectorizer import GeoVectorizer

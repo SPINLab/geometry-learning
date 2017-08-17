@@ -1,3 +1,4 @@
+from numpy.random.mtrand import multivariate_normal
 from shapely.wkt import loads
 import numpy as np
 
@@ -178,7 +179,7 @@ class GeoVectorizer:
         """
         Decyphers a encoded 2D gaussian coordinate estimation and one-hot vectors back to a wkt geometry
         :param vector: input vector
-        :return:
+        :return wkt: a well-known-text representation text string
         """
         action_types = ["render", "stop", "full stop"]
         wkt_start = {
@@ -204,6 +205,13 @@ class GeoVectorizer:
 
         geom_type = GEOMETRY_TYPES[np.argmax(vector[0][GEOM_TYPE_INDEX:RENDER_INDEX])]
         wkt = geom_type.upper() + wkt_start[geom_type]
+
+        def point_to_gaussian_sample(geom_point, num_samples):
+            # [mean_x, mean_y, sigma_x, sigma_y, rho] = geom_point[:, :, 0:5]
+            sampled = multivariate_normal(mean=geom_point[:, :, 0:2],
+                                          cov=[geom_point[:, :, 2:4], geom_point[:, :, 4:5]],
+                                          size=num_samples)
+            return sampled
 
         # If an empty geometrycollection:
         if sum(vector[0][RENDER_INDEX:]) == 0:
