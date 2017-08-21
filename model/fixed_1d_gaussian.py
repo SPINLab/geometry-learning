@@ -11,9 +11,8 @@ from topoml_util.geom_loss import gaussian_1d_loss
 
 TIMESTAMP = str(datetime.now())
 TIMESTAMP = TIMESTAMP.replace(':', '.')
-LATENT_SIZE = 3
-EPOCHS = 600
-BATCH_SIZE = 1000
+EPOCHS = 60
+BATCH_SIZE = 100
 TRAINING_SIZE = 100000
 TRAIN_VALIDATE_SPLIT = 0.2
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
@@ -24,9 +23,9 @@ input_1d = np.append(input_1d, np.zeros(shape=(TRAINING_SIZE, 1, 1)), axis=2)
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(GEO_VECTOR_LEN, return_sequences=True)(inputs)
-model = TimeDistributed(Dense(LATENT_SIZE))(model)
+model = TimeDistributed(Dense(GEO_VECTOR_LEN))(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.0001))
+model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.00005))
 model.summary()
 
 my_callback = CustomCallback(lambda x: str(x))
