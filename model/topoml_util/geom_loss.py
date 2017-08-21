@@ -65,6 +65,6 @@ def gaussian_1d_loss(target, prediction):
     x = target[:, :, 0:1]
     mu = prediction[:, :, 0:1]
     sigma = K.exp(K.abs(prediction[:, :, 1:2]))
-    z = K.exp(-(((x - mu) / 2 * sigma) ** 2))
+    z = K.exp(-((K.abs(x - mu) / 2 * sigma) ** 2))
     pdf = z / K.sqrt(2 * np.pi * sigma ** 2)
-    return pdf
+    return -K.log(pdf)
