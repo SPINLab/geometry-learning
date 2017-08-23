@@ -1,6 +1,6 @@
 import numpy as np
 from keras import backend as K
-from keras.backend import tf, epsilon
+from keras.backend import epsilon
 from keras.losses import mse, categorical_crossentropy
 
 from .GeoVectorizer import GEOM_TYPE_INDEX, RENDER_INDEX
@@ -30,35 +30,34 @@ def geom_gaussian_loss(y_true, y_pred):
 # Just a version of the probability density function of
 # https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Bivariate_case
 def gaussian_2d_loss(true, pred):
-    """Returns result of eq # 24 of http://arxiv.org/abs/1308.0850"""
+    """Returns results of eq # 24 of http://arxiv.org/abs/1308.0850"""
     x_coord = true[:, :, 0]
     y_coord = true[:, :, 1]
     mu_x = pred[:, :, 0]
     mu_y = pred[:, :, 1]
-    sigma_x = pred[:, :, 2]
-    sigma_y = pred[:, :, 3]
-    rho = pred[:, :, 4]
+    sigma_x = K.softplus(pred[:, :, 2])
+    sigma_y = K.softplus(pred[:, :, 3])
+    rho = K.tanh(K.abs(pred[:, :, 4] * (1 - epsilon())))
 
-    norm1 = K.abs(x_coord - mu_x)
-    norm2 = K.abs(y_coord - mu_y)
+    norm1 = K.abs(K.log(1 + x_coord - mu_x))
+    norm2 = K.abs(K.log(1 + y_coord - mu_y))
 
     # exponentiate the sigmas and also make correlative rho between -1 and 1.
     # eq. # 21 and 22 of http://arxiv.org/abs/1308.0850
     # analogous to https://github.com/tensorflow/magenta/blob/master/magenta/models/sketch_rnn/model.py#L326
-    sigma_x = K.exp(K.abs(sigma_x))
-    sigma_y = K.exp(K.abs(sigma_y))
-    rho = K.tanh(rho)
+    variance_x = K.square(sigma_x)
+    variance_y = K.square(sigma_y)
     s1s2 = sigma_x * sigma_y  # very large if sigma_x and/or sigma_y are very large
 
     # eq 25 of http://arxiv.org/abs/1308.0850
-    z = ((K.square(tf.div(norm1, sigma_x))) +
-         (K.square(tf.div(norm2, sigma_y))) -
-         (2 * tf.div(tf.multiply(rho, tf.multiply(norm1, norm2)), s1s2)))
-    neg_rho = 1 - (K.square(rho))  # never very large
-    result = K.exp(tf.div(-z, (2 * neg_rho)))
-    denom = 2 * np.pi * (s1s2 * (K.sqrt(neg_rho)))  # very small if s1s2 and/or neg_rho are very large
-    result = tf.div(result, denom)  # very large if denom is very small
-    return -K.log(result + epsilon())  # negative if result is very large
+    z = ((K.square(norm1) / variance_x) +
+         (K.square(norm2) / variance_y) -
+         (2 * rho * norm1 * norm2 / s1s2))  # → -∞ if rho * norm1 * norm2 → ∞ and/or s1s2 → 0
+    neg_rho = 1 - K.square(rho)  # → 0 if rho → {1, -1}
+    numerator = K.exp(-z / (2 * neg_rho))  # → ∞ if z → -∞ and/or neg_rho → 0
+    denominator = 2 * np.pi * s1s2 * K.sqrt(neg_rho)  # → 0 if s1s2 → 0 and/or neg_rho → 0
+    pdf = numerator / denominator  # → ∞ if denominator → 0 and/or if numerator → ∞
+    return -K.log(pdf + epsilon())  # → -∞ if pdf → ∞
 
 
 def gaussian_1d_loss(target, prediction):

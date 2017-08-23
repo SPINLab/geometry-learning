@@ -25,7 +25,7 @@ inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(GEO_VECTOR_LEN, return_sequences=True)(inputs)
 model = TimeDistributed(Dense(GEO_VECTOR_LEN))(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_2d_loss, optimizer=Adam(lr=0.00001))
+model.compile(loss=gaussian_2d_loss, optimizer=Adam(lr=0.0001))
 model.summary()
 
 my_callback = CustomCallback(lambda x: str(x))

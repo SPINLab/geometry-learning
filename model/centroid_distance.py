@@ -31,11 +31,11 @@ target_vectors = loaded['centroid_distance']
 target_vectors = np.repeat(target_vectors, max_points, axis=1)
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
-model = LSTM(128, return_sequences=True,
+model = LSTM(256, return_sequences=True,
              kernel_initializer='ones')(inputs)
 model = TimeDistributed(Dense(2))(model)
 model = Model(inputs, model)
-model.compile(loss='mse', optimizer=sgd(lr=0.0001))
+model.compile(loss='mse', optimizer=sgd(lr=0.001))
 model.summary()
 
 # tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)

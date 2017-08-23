@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
-from scipy.stats import multivariate_normal
+# from matplotlib import pyplot
 
 from .geom_loss import geom_loss, geom_gaussian_loss, gaussian_2d_loss, gaussian_1d_loss
 
@@ -45,67 +45,100 @@ class TestGeomLossFunction(unittest.TestCase):
 
 class TestGaussian2dLoss(unittest.TestCase):
     def test_2d_gaussian_zeros(self):
-        tensor1 = np.array([[[0, 0]]], dtype=float)
-        tensor2 = np.array([[[0, 0, 0, 0, 0]]], dtype=float)
-        normal = gaussian_2d_loss(tensor1, tensor2).eval()
-        self.assertAlmostEqual(normal, 1.837876438091012, places=PRECISION)
-
-    def test_2d_gaussian_ones(self):
-        tensor1 = np.array([[[1, 1]]], dtype=float)
-        tensor2 = np.array([[[1, 1, 1, 1, 1]]], dtype=float)
-        normal = gaussian_2d_loss(tensor1, tensor2).eval()
-        self.assertAlmostEqual(normal, 3.4040932272216642, places=PRECISION)
-
-    def test_2d_guassian_relative_loss(self):
-        tensor0 = np.array([[[1, 2]]], dtype=float)
-        tensor1 = np.array([[[1, 2, 0, 0, 0]]], dtype=float)
-        tensor2 = np.array([[[1, 2, 1, 1, 1]]], dtype=float)
-        tensor3 = np.array([[[1, 2, -1, -1, -1]]], dtype=float)
-        tensor4 = np.array([[[1, 2, -1, -1, 4]]], dtype=float)
-        loss1 = gaussian_2d_loss(tensor0, tensor1).eval()
-        loss2 = gaussian_2d_loss(tensor0, tensor2).eval()
-        loss3 = gaussian_2d_loss(tensor0, tensor3).eval()
-        loss4 = gaussian_2d_loss(tensor0, tensor4).eval()
-        self.assertLess(loss1, loss2)
-        self.assertEqual(loss2, loss3)
-        self.assertLess(loss1, loss3)
-
-    def test_2d_gaussian_sigma_rho_ones(self):
-        tensor1 = np.array([[[1, 2]]], dtype=float)
-        tensor2 = np.array([[[1, 2, 1, 1, 1]]], dtype=float)
-        normal = gaussian_2d_loss(tensor1, tensor2).eval()
-        self.assertAlmostEqual(normal, 3.4040932272216642, places=PRECISION)
+        target = np.array([[[0, 0]]], dtype=float)
+        prediction = np.array([[[0, 0, 0, 0, 0]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.1048509233685306, places=PRECISION)
 
     def test_2d_gaussian_small_mu_diff(self):
-        tensor1 = np.array([[[5, 52]]], dtype=float)
-        tensor2 = np.array([[[5 + 1e-6, 52 + 1e-6, 0, 0, 0]]], dtype=float)
-        normal = gaussian_2d_loss(tensor1, tensor2).eval()
-        self.assertAlmostEqual(normal, 1.8378764380920121, places=PRECISION)
+        target = np.array([[[5, 52]]], dtype=float)
+        prediction = np.array([[[5 + 1e-6, 52 + 1e-6, 0, 0, 0]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.1048509233706119, places=PRECISION)
 
     def test_2d_gaussian_small_sigma_diff(self):
         tensor_train = np.array([[[5, 52]]], dtype=float)
         tensor_predict = np.array([[[5, 52, 1e-6, 1e-6, 0]]], dtype=float)
-        normal = gaussian_2d_loss(tensor_train, tensor_predict).eval()
-        self.assertAlmostEqual(normal, 1.8378784380897555, places=PRECISION)
+        loss = gaussian_2d_loss(tensor_train, tensor_predict).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.1048523660629765, places=PRECISION)
+
+    def test_2d_gaussian_mu_ones(self):
+        target = np.array([[[1, 1]]], dtype=float)
+        prediction = np.array([[[1, 1, 1, 1, 0]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 2.3829037437816121, places=PRECISION)
+
+    def test_2d_gaussian_mu_minus_ones(self):
+        target = np.array([[[1, 1]]], dtype=float)
+        prediction = np.array([[[1, 1, -1, -1, 0]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 2.3829037437816121, places=PRECISION)
+
+    def test_2d_gaussian_ones(self):
+        target = np.array([[[1, 1]]], dtype=float)
+        prediction = np.array([[[1, 1, 1, 1, 1]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.9491232946784192, places=PRECISION)
+
+    def test_2d_gaussian_rho_one(self):
+        target = np.array([[[1, 2]]], dtype=float)
+        prediction = np.array([[[1, 2, 0, 0, 1]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.9491232946784192, places=PRECISION)
+
+    def test_2d_gaussian_rho_minus_one(self):
+        target = np.array([[[1, 2]]], dtype=float)
+        prediction = np.array([[[1, 2, 0, 0, -1]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.9491232946784192, places=PRECISION)
+
+    def test_2d_gaussian_rho_two(self):
+        target = np.array([[[1, 2]]], dtype=float)
+        prediction = np.array([[[1, 2, 0, 0, 2]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.9491232946784192, places=PRECISION)
+
+    def test_2d_gaussian_rho_minus_two(self):
+        target = np.array([[[1, 2]]], dtype=float)
+        prediction = np.array([[[1, 2, 0, 0, -2]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.9491232946784192, places=PRECISION)
 
     def test_2d_gaussian_big_diff(self):
-        tensor1 = np.array([[[5, 52]]], dtype=float)
-        tensor2 = np.array([[[1, 2, 3, 4, 5]]], dtype=float)
-        normal = gaussian_2d_loss(tensor1, tensor2).eval()
-        self.assertAlmostEqual(normal, 16.11809565095832, places=PRECISION)
+        target = np.array([[[5, 52]]], dtype=float)
+        prediction = np.array([[[1, 2, 3, 4, 5]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 16.11809565095832, places=PRECISION)
 
     def test_2d_gaussian_really_big_diff(self):
-        tensor1 = np.array([[[5, 52]]], dtype=float)
-        tensor2 = np.array([[[5e4, 5e4, 3, 4, 5]]], dtype=float)
-        normal = gaussian_2d_loss(tensor1, tensor2).eval()
-        self.assertAlmostEqual(normal, 16.11809565095832, places=PRECISION)
+        target = np.array([[[5, 52]]], dtype=float)
+        prediction = np.array([[[0, 0, 3, 4, 5]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 16.11809565095832, places=PRECISION)
 
     def test_2d_gaussian_max_neg_rho(self):
         min_rho = -19.06  # This is about the limit of rho before geom_gaussian_loss returns NaN
-        tensor1 = np.array([[[5, 52]]], dtype=float)
-        tensor2 = np.array([[[5, 52, -1, -1, min_rho]]], dtype=float)
-        normal = gaussian_2d_loss(tensor1, tensor2).eval()
-        self.assertAlmostEqual(normal, -18.183949628149232, places=PRECISION)
+        target = np.array([[[5, 52]]], dtype=float)
+        prediction = np.array([[[5, 52, -1, -1, min_rho]]], dtype=float)
+        loss = gaussian_2d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], -18.505382378927028, places=PRECISION)
+
+    def test_2d_guassian_relative_loss(self):
+        tensor0 = np.array([[[1, 2]]], dtype=float)
+        tensor1 = np.array([[[1, 2, 0, 0, 0]]], dtype=float)
+        tensor2 = np.array([[[1, 2, 1, 1, 0]]], dtype=float)
+        tensor3 = np.array([[[1, 2, 1, 1, 1]]], dtype=float)
+        tensor4 = np.array([[[1, 2, -1, -1, -1]]], dtype=float)
+        tensor5 = np.array([[[1, 2, -1, -1, 4]]], dtype=float)
+        loss1 = gaussian_2d_loss(tensor0, tensor1).eval()
+        loss2 = gaussian_2d_loss(tensor0, tensor2).eval()
+        loss3 = gaussian_2d_loss(tensor2, tensor3).eval()
+        loss4 = gaussian_2d_loss(tensor0, tensor4).eval()
+        loss4 = gaussian_2d_loss(tensor0, tensor4).eval()
+        self.assertLess(loss1, loss2)
+        self.assertLess(loss2, loss3)
+        self.assertEqual(loss2, loss3)
+        self.assertLess(loss1, loss3)
 
 
 class TestGeomGaussianLoss(unittest.TestCase):

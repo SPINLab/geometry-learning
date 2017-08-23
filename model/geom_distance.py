@@ -34,7 +34,7 @@ inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(128, return_sequences=True)(inputs)
 model = TimeDistributed(Dense(2))(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.00005))
+model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.001))
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)

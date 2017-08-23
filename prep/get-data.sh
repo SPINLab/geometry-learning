@@ -22,7 +22,7 @@ ogr2ogr -f "PostgreSQL" PG:"host=postgis port=5432 dbname=postgres user=postgres
 
 # extract the joined data
 # https://gis.stackexchange.com/questions/185072/ogr2ogr-sql-query-from-text-file#185141
-ogr2ogr -f CSV topology-training.csv PG:"host=postgis port=5432 dbname=postgres user=postgres password=postgres" -overwrite -sql @/data/prep/spatial-join.sql
+ogr2ogr -f CSV topology-training.csv PG:"host=postgis port=5432 dbname=postgres user=postgres password=postgres" -overwrite -sql @../prep/spatial-join.sql
 lines=$(tail -n +2 topology-training.csv | wc -l)
 echo
 echo "Wrote $lines number of data points"
