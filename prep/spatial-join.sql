@@ -1,6 +1,8 @@
 SELECT st_astext(st_snaptogrid(gebouw.wkb_geometry, 0.000001)) AS brt_wkt,
   st_astext(st_snaptogrid(ST_GeometryN(osm_buildings.wkb_geometry, 1), 0.000001)) AS osm_wkt,
-  st_astext(st_snaptogrid(st_intersection(gebouw.wkb_geometry, osm_buildings.wkb_geometry), 0.000001)) AS intersection_wkt
+  st_astext(st_snaptogrid(st_intersection(gebouw.wkb_geometry, osm_buildings.wkb_geometry), 0.000001)) AS intersection_wkt,
+  st_distance(st_transform(st_centroid(gebouw.wkb_geometry), 28992), st_transform(st_centroid(osm_buildings.wkb_geometry), 28992)) AS centroid_distance,
+  st_distance(st_transform(gebouw.wkb_geometry, 28992), st_transform(osm_buildings.wkb_geometry, 28992)) AS geom_distance
 FROM gebouw, osm_buildings
 WHERE
   -- Allow only polygons (there are a few point buildings in there, don't ask me why)
