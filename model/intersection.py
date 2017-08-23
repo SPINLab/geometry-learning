@@ -5,7 +5,7 @@ from keras import Input
 from keras.callbacks import TensorBoard
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense
-from keras.optimizers import Adam
+from keras.optimizers import Adam, sgd
 
 from topoml_util.CustomCallback import CustomCallback
 from topoml_util.GeoVectorizer import GeoVectorizer
@@ -27,11 +27,8 @@ EPOCHS = 500
 OPTIMIZER = 'adam'
 
 loaded = np.load(DATA_FILE)
-training_vectors = loaded['X']
-target_vectors = loaded['y']
-# Make room for extra gaussian parameters
-training_vectors = np.insert(training_vectors, slice(3, 6), [0, 0, 0], axis=2)
-target_vectors = np.insert(target_vectors, slice(3, 6), [0, 0, 0], axis=2)
+training_vectors = loaded['input_geoms']
+target_vectors = loaded['intersection']
 (_, max_points, GEO_VECTOR_LEN) = training_vectors.shape
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
@@ -48,7 +45,7 @@ decoded = TimeDistributed(Dense(TARGET_GEO_VECTOR_LEN))(decoded)
 decoder = Model(encoded_inputs, decoded)
 
 ae = Model(inputs, decoder(encoder(inputs)))
-ae.compile(loss=geom_gaussian_loss, optimizer=Adam(lr=0.0001))
+ae.compile(loss=geom_gaussian_loss, optimizer=sgd(lr=0.0001))
 ae.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)

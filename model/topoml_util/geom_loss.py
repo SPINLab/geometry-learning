@@ -1,7 +1,7 @@
 import numpy as np
 from keras import backend as K
 from keras.backend import tf, epsilon
-from keras.losses import mse, categorical_crossentropy, kullback_leibler_divergence
+from keras.losses import mse, categorical_crossentropy
 
 from .GeoVectorizer import GEOM_TYPE_INDEX, RENDER_INDEX
 
