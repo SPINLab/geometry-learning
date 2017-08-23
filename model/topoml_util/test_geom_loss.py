@@ -172,23 +172,28 @@ class TestGaussian1d(unittest.TestCase):
         target = np.array([[[1., 0.]]])
         prediction = np.array([[[1., 0.]]])
         loss = gaussian_1d_loss(target, prediction).eval()
-        self.assertAlmostEqual(loss[0, 0, 0], 0., places=PRECISION)
+        self.assertAlmostEqual(loss[0, 0, 0], 0.73568186422336956, places=PRECISION)
 
     def test_one_mu_loss(self):
         target = np.array([[[1., 0.]]])
         prediction = np.array([[[0., 0.]]])
         loss = gaussian_1d_loss(target, prediction).eval()
-        self.assertAlmostEqual(loss[0, 0, 0], 0.31069656037692778, places=PRECISION)
+        self.assertAlmostEqual(loss[0, 0, 0], 0.90219415240769696, places=PRECISION)
 
     def test_minus_one_sigma_loss(self):
         target = np.array([[[1., 0.]]])
         prediction = np.array([[[1., -1.]]])
         loss = gaussian_1d_loss(target, prediction).eval()
-        self.assertAlmostEqual(loss[0, 0, 0], 1.0844375514192275, places=PRECISION)
+        self.assertAlmostEqual(loss[0, 0, 0], 1.0551951862023454, places=PRECISION)
 
     def test_minus_two_sigma_loss(self):
         target = np.array([[[1., 0.]]])
         prediction = np.array([[[1., -2.]]])
         loss = gaussian_1d_loss(target, prediction).eval()
-        self.assertAlmostEqual(loss[0, 0, 0], 2.9478068901215075, places=PRECISION)
+        self.assertAlmostEqual(loss[0, 0, 0], 1.6143488206244256, places=PRECISION)
 
+    def test_big_mu_sigma_diff(self):
+        target = np.array([[[52., 0.]]])
+        prediction = np.array([[[0., 80]]])  # Increase second value with .001 and the loss will jump to inf!
+        loss = gaussian_1d_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0, 0], 16.11809565095832, places=PRECISION)
