@@ -64,7 +64,9 @@ def gaussian_2d_loss(true, pred):
 def gaussian_1d_loss(target, prediction):
     x = target[:, :, 0:1]
     mu = prediction[:, :, 0:1]
-    sigma = K.exp(K.abs(prediction[:, :, 1:2]))
-    z = K.exp(-((K.abs(x - mu) / 2 * sigma) ** 2))
-    pdf = z / K.sqrt(2 * np.pi * sigma ** 2)
-    return -K.log(pdf)
+    norm = K.log(1 + x - mu)  # needs log of norm to counter large mu diffs
+    variance = K.softplus(K.square(prediction[:, :, 1:2]))
+
+    z = K.exp(-K.square(K.abs(norm)) / 2 * variance)  # z -> 0 if sigma
+    pdf = z / K.sqrt(2 * np.pi * variance)  # pdf -> 0 if sigma is very large or z -> 0
+    return -K.log(pdf + epsilon())  # inf if pdf -> 0
