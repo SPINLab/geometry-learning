@@ -1,7 +1,7 @@
 import numpy as np
 import pandas
 
-from topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN
+from topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX, STOP_INDEX
 
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 GEODATA_VECTORIZED = '../files/geodata_vectorized.npz'
@@ -20,6 +20,10 @@ osm_wkt = truncated_data[:, 1]
 intersection_set = truncated_data[:, 2]
 centroid_distance = truncated_data[:, 3]
 geom_distance = truncated_data[:, 4]
+brt_centroid = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_data[:, 5]]
+osm_centroid = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_data[:, 6]]
+brt_centroid_rd = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_data[:, 7]]
+osm_centroid_rd = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_data[:, 8]]
 
 training_set = brt_wkt + ';' + osm_wkt
 print(len(training_set), 'max length data points in training set')
@@ -40,16 +44,33 @@ for record_index in range(len(brt_wkt)):
         for feature_index, feature in enumerate(point):
             intersection_vectors[record_index][point_index][feature_index] = feature
 
-# Make room for extra gaussian parameters
+# Concatenate centroids
+centroids = np.append(brt_centroid, osm_centroid, axis=1)
+# Fix the stop and full stop bits on the first centroid
+centroids[:, 0, FULL_STOP_INDEX] = 0
+centroids[:, 0, STOP_INDEX] = 1
+
+centroids_rd = np.append(brt_centroid_rd, osm_centroid_rd, axis=1)
+# Fix the stop and full stop bits on the first centroid
+centroids_rd[:, 0, FULL_STOP_INDEX] = 0
+centroids_rd[:, 0, STOP_INDEX] = 1
+
+# Make room for extra gaussian parameters in distance properties
 centroid_distance = np.reshape(centroid_distance, (len(centroid_distance), 1, 1))
 centroid_distance = np.insert(centroid_distance, 1, 0, axis=2)
 geom_distance = np.reshape(geom_distance, (len(geom_distance), 1, 1))
 geom_distance = np.insert(geom_distance, 1, 0, axis=2)
+
+print('Saving compressed numpy data file $s' % GEODATA_VECTORIZED)
 
 np.savez_compressed(GEODATA_VECTORIZED,
                     input_geoms=training_vectors,
                     intersection=intersection_vectors,
                     centroid_distance=centroid_distance,
                     geom_distance=geom_distance,
+                    brt_centroid=brt_centroid,
+                    osm_centroid=osm_centroid,
+                    centroids=centroids,
+                    centroids_rd=centroids_rd,
                     )
 print('Saved vectorized geometries to %s' % GEODATA_VECTORIZED)
