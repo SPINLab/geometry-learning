@@ -55,6 +55,9 @@ class GeoVectorizer:
         elif shape.geom_type == 'GeometryCollection':
             if not len(shape.geoms) == 0:  # not GEOMETRYCOLLECTION EMPTY
                 raise ValueError("Don't know how to process non-empty GeometryCollection type")
+        elif shape.geom_type == 'Point':
+            vectors = GeoVectorizer.vectorize_points(shape.coords, vectors,
+                                                     shape.geom_type, is_last=True)
         else:
             raise ValueError("Don't know how to get the number of points from geometry type %s" % (
                 shape.geom_type))
