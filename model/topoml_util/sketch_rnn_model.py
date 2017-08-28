@@ -30,6 +30,7 @@ import tensorflow as tf
 def tf_2d_normal(x1, x2, mu1, mu2, s1, s2, rho):
     """Returns result of eq # 24 of http://arxiv.org/abs/1308.0850."""
     # exponentiate the sigmas and also make corr between -1 and 1.
+    print_op = tf.Print()
     s1 = tf.exp(s1)
     s2 = tf.exp(s2)
     rho = tf.tanh(rho)

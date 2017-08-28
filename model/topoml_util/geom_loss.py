@@ -35,19 +35,20 @@ def gaussian_2d_loss(true, pred):
     y_coord = true[:, :, 1]
     mu_x = pred[:, :, 0]
     mu_y = pred[:, :, 1]
-    sigma_x = K.softplus(pred[:, :, 2])
-    sigma_y = K.softplus(pred[:, :, 3])
+
+    # exponentiate the sigmas and also make correlative rho between -1 and 1.
+    # eq. # 21 and 22 of http://arxiv.org/abs/1308.0850
+    # analogous to https://github.com/tensorflow/magenta/blob/master/magenta/models/sketch_rnn/model.py#L326
+    sigma_x = pred[:, :, 2]
+    sigma_y = pred[:, :, 3]
     rho = K.tanh(K.abs(pred[:, :, 4] * (1 - epsilon())))
 
     norm1 = K.abs(K.log(1 + x_coord - mu_x))
     norm2 = K.abs(K.log(1 + y_coord - mu_y))
 
-    # exponentiate the sigmas and also make correlative rho between -1 and 1.
-    # eq. # 21 and 22 of http://arxiv.org/abs/1308.0850
-    # analogous to https://github.com/tensorflow/magenta/blob/master/magenta/models/sketch_rnn/model.py#L326
-    variance_x = K.square(sigma_x)
-    variance_y = K.square(sigma_y)
-    s1s2 = sigma_x * sigma_y  # very large if sigma_x and/or sigma_y are very large
+    variance_x = K.softplus(K.square(sigma_x))
+    variance_y = K.softplus(K.square(sigma_y))
+    s1s2 = K.softplus(sigma_x * sigma_y)  # very large if sigma_x and/or sigma_y are very large
 
     # eq 25 of http://arxiv.org/abs/1308.0850
     z = ((K.square(norm1) / variance_x) +
@@ -63,9 +64,11 @@ def gaussian_2d_loss(true, pred):
 def gaussian_1d_loss(target, prediction):
     x = target[:, :, 0:1]
     mu = prediction[:, :, 0:1]
-    norm = K.log(1 + x - mu)  # needs log of norm to counter large mu diffs
-    variance = K.softplus(K.square(prediction[:, :, 1:2]))
+    norm = K.log(1 + K.abs(x - mu))  # needs log of norm to counter large mu diffs
+    variance = K.softplus(K.square(prediction[:, :, 1:2]))  # Softplus: prevent NaN on 0 sigma and converge to 0
 
-    z = K.exp(-K.square(K.abs(norm)) / 2 * variance)  # z -> 0 if sigma
-    pdf = z / K.sqrt(2 * np.pi * variance)  # pdf -> 0 if sigma is very large or z -> 0
+    z = K.exp(-K.square(K.abs(norm)) / (2 * variance) + epsilon())  # z -> 0 if sigma
+
+    # pdf -> 0 if sigma is very large or z -> 0; NaN if variance -> 0
+    pdf = z / K.sqrt((2 * np.pi * variance) + epsilon())
     return -K.log(pdf + epsilon())  # inf if pdf -> 0
