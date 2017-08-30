@@ -20,10 +20,4 @@ ogr2ogr -f "PostgreSQL" PG:"host=postgis port=5432 dbname=postgres user=postgres
 # http://www.bostongis.com/PrinterFriendly.aspx?content_name=ogr_cheatsheet
 ogr2ogr -f "PostgreSQL" PG:"host=postgis port=5432 dbname=postgres user=postgres password=postgres" gis.osm_buildings_a_free_1.shp -overwrite -progress -nln osm_buildings -nlt PROMOTE_TO_MULTI -lco EXTRACT_SCHEMA_FROM_LAYER_NAME=no
 
-# extract the joined data
-# https://gis.stackexchange.com/questions/185072/ogr2ogr-sql-query-from-text-file#185141
-ogr2ogr -f CSV topology-training.csv PG:"host=postgis port=5432 dbname=postgres user=postgres password=postgres" -overwrite -sql @../prep/spatial-join.sql
-lines=$(tail -n +2 topology-training.csv | wc -l)
-echo
-echo "Wrote $lines number of data points"
-echo "The script ran successfully. The generated data set was saved to files/topology-training.csv"
+bash ./export-data.sh
