@@ -22,17 +22,18 @@ BATCH_SIZE = 512
 TRAIN_VALIDATE_SPLIT = 0.1
 LATENT_SIZE = 16
 EPOCHS = 50
-OPTIMIZER = Adam(lr=0.005)
+OPTIMIZER = Adam(lr=0.001)
 # OPTIMIZER = SGD
 
 loaded = np.load(DATA_FILE)
-training_vectors = loaded['centroids_rd'][:, :, 0:2]
+training_vectors = loaded['centroids'][:, :, 0:2]
 
-base_precision = 1e-1
-base = np.floor(base_precision * training_vectors[:, 0:1, :]) / base_precision
+# Bring coordinates and distance in roughly the same scale
+base_precision = 1e6
+base = np.floor(base_precision * training_vectors[:, 0:1, :])
 base = np.repeat(base, 2, axis=1)
+training_vectors = (base_precision * training_vectors) - base
 
-training_vectors = training_vectors - base
 (data_points, max_points, GEO_VECTOR_LEN) = training_vectors.shape
 target_vectors = loaded['centroid_distance'][:, 0, :]
 
@@ -42,7 +43,7 @@ model = Dense(16, activation='relu')(model)
 model = Dense(2)(model)
 
 model = Model(inputs, model)
-model.compile(loss='mse', optimizer=OPTIMIZER)
+model.compile(loss=gaussian_1d_loss, optimizer=OPTIMIZER)
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
