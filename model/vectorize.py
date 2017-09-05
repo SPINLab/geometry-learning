@@ -5,7 +5,7 @@ from topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDE
 
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 GEODATA_VECTORIZED = '../files/geodata_vectorized.npz'
-MAX_SEQUENCE_LEN = 220
+MAX_SEQUENCE_LEN = 250
 
 print('Reading data...')
 training_data = pandas.read_csv(TOPOLOGY_TRAINING_CSV)
@@ -61,16 +61,17 @@ centroid_distance = np.insert(centroid_distance, 1, 0, axis=2)
 geom_distance = np.reshape(geom_distance, (len(geom_distance), 1, 1))
 geom_distance = np.insert(geom_distance, 1, 0, axis=2)
 
-print('Saving compressed numpy data file $s' % GEODATA_VECTORIZED)
+print('Saving compressed numpy data file', GEODATA_VECTORIZED)
 
-np.savez_compressed(GEODATA_VECTORIZED,
-                    input_geoms=training_vectors,
-                    intersection=intersection_vectors,
-                    centroid_distance=centroid_distance,
-                    geom_distance=geom_distance,
-                    brt_centroid=brt_centroid,
-                    osm_centroid=osm_centroid,
-                    centroids=centroids,
-                    centroids_rd=centroids_rd,
-                    )
-print('Saved vectorized geometries to %s' % GEODATA_VECTORIZED)
+np.savez_compressed(
+    GEODATA_VECTORIZED,
+    input_geoms=training_vectors,
+    intersection=intersection_vectors,
+    centroid_distance=centroid_distance,
+    geom_distance=geom_distance,
+    brt_centroid=brt_centroid,
+    osm_centroid=osm_centroid,
+    centroids=centroids,
+    centroids_rd=centroids_rd,
+)
+print('Saved vectorized geometries to', GEODATA_VECTORIZED)
