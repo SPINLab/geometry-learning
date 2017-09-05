@@ -65,13 +65,13 @@ print('Saving compressed numpy data file', GEODATA_VECTORIZED)
 
 np.savez_compressed(
     GEODATA_VECTORIZED,
-    input_geoms=training_vectors,
-    intersection=intersection_vectors,
-    centroid_distance=centroid_distance,
-    geom_distance=geom_distance,
-    brt_centroid=brt_centroid,
-    osm_centroid=osm_centroid,
-    centroids=centroids,
-    centroids_rd=centroids_rd,
+    input_geoms=training_vectors,           # Sets of two geometries in WGS84 lon/lat, 25% of them overlapping
+    intersection=intersection_vectors,      # Geometries representing the intersection in WGS84 lon/lat
+    centroid_distance=centroid_distance,    # Distance in meters between the centroids
+    geom_distance=geom_distance,            # Distance in meters between the geometries, 0 if intersecting
+    brt_centroid=brt_centroid,              # Centroid point in WGS84 lon/lat of the BRT geometry
+    osm_centroid=osm_centroid,              # Centroid point in WGS84 lon/lat of the OSM geometry
+    centroids=centroids,                    # Two centroid points for BRT and OSM in WGS84 lon/lat
+    centroids_rd=centroids_rd,              # Two centroid points for BRT and OSM in Netherlands RD meters
 )
 print('Saved vectorized geometries to', GEODATA_VECTORIZED)
