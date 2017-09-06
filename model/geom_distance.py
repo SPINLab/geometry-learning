@@ -9,9 +9,6 @@ from keras.optimizers import Adam
 
 from topoml_util.CustomCallback import CustomCallback
 
-# TODO: increase the num_steps in the training set to 10,000,000 (like sketch-rnn)
-# TODO: use recurrent dropout
-
 # To suppress tensorflow info level messages:
 # export TF_CPP_MIN_LOG_LEVEL=2
 from topoml_util.geom_loss import gaussian_1d_loss
