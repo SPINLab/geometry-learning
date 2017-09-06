@@ -4,8 +4,8 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard
 from keras.engine import Model
-from keras.layers import LSTM, TimeDistributed, Dense
-from keras.optimizers import Adam, sgd
+from keras.layers import LSTM, Dense
+from keras.optimizers import Adam
 
 from topoml_util.CustomCallback import CustomCallback
 
@@ -15,26 +15,29 @@ from topoml_util.CustomCallback import CustomCallback
 # To suppress tensorflow info level messages:
 # export TF_CPP_MIN_LOG_LEVEL=2
 from topoml_util.geom_loss import gaussian_1d_loss
+from topoml_util.geom_scaler import localized_normal
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FILE = '../files/geodata_vectorized.npz'
-BATCH_SIZE = 100
+BATCH_SIZE = 512
 TRAIN_VALIDATE_SPLIT = 0.1
-LATENT_SIZE = 256
-EPOCHS = 500
+LATENT_SIZE = 64
+EPOCHS = 50
 OPTIMIZER = 'adam'
 
 loaded = np.load(DATA_FILE)
 training_vectors = loaded['input_geoms']
+# Bring coordinates and distance in roughly the same scale
+training_vectors = localized_normal(training_vectors, 1e4)
+
 (data_points, max_points, GEO_VECTOR_LEN) = training_vectors.shape
-target_vectors = loaded['geom_distance']
-target_vectors = np.repeat(target_vectors, max_points, axis=1)
+target_vectors = loaded['geom_distance'][:, 0, :]
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
-model = LSTM(128, return_sequences=True)(inputs)
-model = TimeDistributed(Dense(2))(model)
+model = LSTM(LATENT_SIZE, activation='relu')(inputs)
+model = Dense(2)(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.001))
+model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.005))
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
