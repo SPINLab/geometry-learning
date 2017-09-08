@@ -6,7 +6,7 @@ epsilon = 1e-8
 # Adapted version of the probability density function of
 # https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Bivariate_case
 # augmented to negative log likelihood loss configuration
-def np_gaussian_2d_loss(true, pred):
+def np_rank2_gaussian_bivariate_loss(true, pred):
     """Returns results of eq # 24 of http://arxiv.org/abs/1308.0850"""
     x_coord = true[:, 0]
     y_coord = true[:, 1]

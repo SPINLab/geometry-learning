@@ -3,31 +3,29 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard
 from keras.engine import Model
-from keras.layers import Dense
+from keras.layers import Dense, LSTM, LeakyReLU
 from keras.optimizers import Adam
 
 from topoml_util.CustomCallback import CustomCallback
-from topoml_util.geom_loss import gaussian_2d_loss
+from topoml_util.geom_loss import r3_bivariate_gaussian_loss
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-EPOCHS = 100
+EPOCHS = 20
 BATCH_SIZE = 512
 TRAINING_SIZE = 100000
 TRAIN_VALIDATE_SPLIT = 0.2
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
 
-input_2d_ones = np.ones(shape=(TRAINING_SIZE, 2))
-input_2d_zeros = np.zeros(shape=(TRAINING_SIZE, 3))
-input_2d = np.append(input_2d_ones, input_2d_zeros, axis=1)
-(max_points, vector_len) = input_2d.shape
+input_2d = np.repeat([[[0.2, 15, 0, 0, 0]]], 11, axis=1)
+input_2d = np.repeat(input_2d, TRAINING_SIZE, axis=0)
+(data_points, max_points, vector_len) = input_2d.shape
 
-input_2d = np.repeat([[5, 52, 0, 0, 0]], TRAINING_SIZE, axis=0)
-
-inputs = Input(name='Input', shape=(vector_len,))
-model = Dense(32, activation='relu')(inputs)
-model = Dense(5)(model)
+inputs = Input(name='Input', shape=(max_points, vector_len))
+model = LSTM(vector_len, return_sequences=True)(inputs)
+# The dense layer is required for input values exceeding 1e0
+model = Dense(vector_len)(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_2d_loss, optimizer=Adam(lr=0.0001))
+model.compile(loss=r3_bivariate_gaussian_loss, optimizer=Adam(lr=0.01))
 model.summary()
 
 my_callback = CustomCallback(lambda x: str(x))

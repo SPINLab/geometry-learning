@@ -8,11 +8,11 @@ from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
 
 from topoml_util.CustomCallback import CustomCallback
+from topoml_util.geom_loss import gaussian_1d_loss
+from topoml_util.geom_scaler import localized_normal
 
 # To suppress tensorflow info level messages:
 # export TF_CPP_MIN_LOG_LEVEL=2
-from topoml_util.geom_loss import gaussian_1d_loss
-from topoml_util.geom_scaler import localized_normal
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FILE = '../files/geodata_vectorized.npz'

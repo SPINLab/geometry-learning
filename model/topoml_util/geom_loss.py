@@ -18,7 +18,7 @@ def geom_loss(y_true, y_pred):
 
 def geom_gaussian_loss(y_true, y_pred):
     # loss fn based on eq #26 of http://arxiv.org/abs/1308.0850.
-    gaussian_loss = gaussian_2d_loss(y_true, y_pred)
+    gaussian_loss = r3_bivariate_gaussian_loss(y_true, y_pred)
     geom_type_error = categorical_crossentropy(K.softmax(y_true[:, :, GEOM_TYPE_INDEX:RENDER_INDEX]),
                                                K.softmax(y_pred[:, :, GEOM_TYPE_INDEX:RENDER_INDEX]))
     render_error = categorical_crossentropy(K.softmax(y_true[:, :, RENDER_INDEX:]),
@@ -30,19 +30,26 @@ def geom_gaussian_loss(y_true, y_pred):
 # Adapted version of the probability density function of
 # https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Bivariate_case
 # augmented to negative log likelihood loss configuration
-def gaussian_2d_loss(true, pred):
-    """Returns results of eq # 24 of http://arxiv.org/abs/1308.0850"""
-    x_coord = true[:, 0]
-    y_coord = true[:, 1]
-    mu_x = pred[:, 0]
-    mu_y = pred[:, 1]
+def r3_bivariate_gaussian_loss(true, pred):
+    """
+    Rank 3 bivariate gaussian loss function
+    Returns results of eq # 24 of http://arxiv.org/abs/1308.0850
+    WARNING this setup will only converge LSTMS
+    :param true: truth values with at least [mu1, mu2, sigma1, sigma2, rho]
+    :param pred: values predicted from a model with the same shape requirements as truth values
+    :return:
+    """
+    x_coord = true[:, :, 0]
+    y_coord = true[:, :, 1]
+    mu_x = pred[:, :, 0]
+    mu_y = pred[:, :, 1]
 
     # exponentiate the sigmas and also make correlative rho between -1 and 1.
     # eq. # 21 and 22 of http://arxiv.org/abs/1308.0850
     # analogous to https://github.com/tensorflow/magenta/blob/master/magenta/models/sketch_rnn/model.py#L326
-    sigma_x = K.exp(K.abs(pred[:, 2]))
-    sigma_y = K.exp(K.abs(pred[:, 3]))
-    rho = K.tanh(pred[:, 4]) * 0.9  # avoid drifting to -1 or 1 to prevent NaN
+    sigma_x = K.exp(K.abs(pred[:, :, 2]))
+    sigma_y = K.exp(K.abs(pred[:, :, 3]))
+    rho = K.tanh(pred[:, :, 4]) * 0.1  # avoid drifting to -1 or 1 to prevent NaN
 
     norm1 = K.log(1 + K.abs(x_coord - mu_x))
     norm2 = K.log(1 + K.abs(y_coord - mu_y))
@@ -59,7 +66,7 @@ def gaussian_2d_loss(true, pred):
     numerator = K.exp(-z / (2 * neg_rho))  # → ∞ if z → -∞ and/or neg_rho → 0
     denominator = (2 * np.pi * s1s2 * K.sqrt(neg_rho)) + epsilon()  # → 0 if s1s2 → 0 and/or neg_rho → 0
     pdf = numerator / denominator  # → ∞ if denominator → 0 and/or if numerator → ∞
-    return -K.log(pdf + epsilon())  # → -∞ if pdf → ∞
+    return K.log(K.sum(-K.log(pdf + epsilon())))  # → -∞ if pdf → ∞
 
 
 def gaussian_1d_loss(target, prediction):
