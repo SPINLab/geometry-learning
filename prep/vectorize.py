@@ -5,7 +5,7 @@ from topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDE
 
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 GEODATA_VECTORIZED = '../files/geodata_vectorized.npz'
-MAX_SEQUENCE_LEN = 250
+MAX_SEQUENCE_LEN = 300
 
 print('Reading data...')
 training_data = pandas.read_csv(TOPOLOGY_TRAINING_CSV)
@@ -33,13 +33,22 @@ max_points = GeoVectorizer.max_points(brt_wkt, osm_wkt)
 training_vectors = np.zeros((len(training_set), max_points, GEO_VECTOR_LEN))
 intersection_vectors = np.zeros((len(intersection_set), max_points, GEO_VECTOR_LEN))
 
+broken_records = []
 for record_index in range(len(brt_wkt)):
-    training_vector = GeoVectorizer.vectorize_two_wkts(brt_wkt[record_index], osm_wkt[record_index], max_points)
+    try:
+        training_vector = GeoVectorizer.vectorize_two_wkts(brt_wkt[record_index], osm_wkt[record_index], max_points)
+        target_vector = GeoVectorizer.vectorize_wkt(intersection_set[record_index], max_points)
+    except Exception as e:
+        print('Creating dummy record', record_index, ':', e)
+        training_vectors[record_index, 0, FULL_STOP_INDEX] = 1
+        intersection_vectors[record_index, 0, FULL_STOP_INDEX] = 1
+        broken_records.append(record_index)
+        continue
+
     for point_index, point in enumerate(training_vector):
         for feature_index, feature in enumerate(point):
             training_vectors[record_index][point_index][feature_index] = feature
 
-    target_vector = GeoVectorizer.vectorize_wkt(training_set[record_index], max_points)
     for point_index, point in enumerate(target_vector):
         for feature_index, feature in enumerate(point):
             intersection_vectors[record_index][point_index][feature_index] = feature

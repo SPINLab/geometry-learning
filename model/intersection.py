@@ -8,10 +8,10 @@ from keras.layers import LSTM, TimeDistributed, Dense, Flatten
 from keras.optimizers import Adam, sgd
 
 from topoml_util.CustomCallback import CustomCallback
-from topoml_util.GeoVectorizer import GeoVectorizer
+from topoml_util.GeoVectorizer import GeoVectorizer, FULL_STOP_INDEX
 from topoml_util.GeoVectorizer import GEO_VECTOR_LEN as TARGET_GEO_VECTOR_LEN
 from topoml_util.geom_loss import geom_gaussian_loss
-from topoml_util.geom_scaler import localized_normal
+from topoml_util.geom_scaler import localized_normal, localized_mean
 
 # To suppress tensorflow info level messages:
 # export TF_CPP_MIN_LOG_LEVEL=2
@@ -25,14 +25,25 @@ EPOCHS = 50
 OPTIMIZER = Adam(lr=1e-4)
 
 loaded = np.load(DATA_FILE)
-training_vectors = loaded['input_geoms']
-training_vectors = localized_normal(training_vectors, 1e4)
-target_vectors = loaded['intersection']
-target_vectors = localized_normal(target_vectors, 1e4)
+raw_training_vectors = loaded['input_geoms']
+raw_target_vectors = loaded['intersection']
+
+training_vectors = []
+target_vectors = []
+
+for index, target in enumerate(raw_target_vectors):
+    if not target[0, 0] == 0:  # a zero coordinate designates an empty geometry
+        training_vectors.append(raw_training_vectors[index])
+        target_vectors.append(raw_target_vectors[index])
+
+means = localized_mean(training_vectors)
+training_vectors = localized_normal(training_vectors, means, 1e4)
+target_vectors = localized_normal(target_vectors, means, 1e4)
 (_, max_points, GEO_VECTOR_LEN) = training_vectors.shape
 
 inputs = Input(shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(inputs)
+model = TimeDistributed(Dense(64))(model)
 model = Dense(GEO_VECTOR_LEN)(model)
 model = Model(inputs, model)
 model.compile(loss=geom_gaussian_loss, optimizer=OPTIMIZER)
