@@ -28,8 +28,10 @@ raw_training_vectors = np.random.normal(size=(100000, 6, 2))
 triangle_sets = np.array([[Polygon(point_set[0:3]).wkt, Polygon(point_set[3:]).wkt]
                           for point_set in raw_training_vectors])
 max_points = GeoVectorizer.max_points(triangle_sets[:, 0], triangle_sets[:, 1])
-raw_training_vectors = [GeoVectorizer.vectorize_two_wkts(*triangle_set, max_points) for triangle_set in triangle_sets]
-raw_training_vectors = [GeoVectorizer.interpolate(point_sequence, len(point_sequence) * 20) for point_sequence in raw_training_vectors]
+raw_training_vectors = [GeoVectorizer.vectorize_two_wkts(*triangle_set, max_points)
+                        for triangle_set in triangle_sets]
+# raw_training_vectors = [GeoVectorizer.interpolate(point_sequence, len(point_sequence) * 20)
+#                         for point_sequence in raw_training_vectors]
 (_, max_points, GEO_VECTOR_LEN) = np.array(raw_training_vectors).shape
 
 print('Intersecting triangles and pruning')
@@ -43,7 +45,6 @@ for index, (a, b) in enumerate(triangle_sets):
 
 training_vectors = np.array(training_vectors)
 target_vectors = np.array(target_vectors)
-
 
 inputs = Input(shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(inputs)
