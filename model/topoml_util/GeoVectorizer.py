@@ -193,8 +193,9 @@ class GeoVectorizer:
             wkt += ' '.join([str(point[0]), str(point[1])])
             if action_types[action_type] == 'render':
                 wkt += ','
-
-            if action_types[action_type] == 'full stop':
+            elif action_types[action_type] == 'stop':
+                wkt += wkt_end[geom_type] + '\n' + geom_type.upper() + wkt_start[geom_type]
+            else:  # action_types[action_type] == 'full stop':
                 break
 
         return wkt + wkt_end[geom_type]
@@ -248,8 +249,9 @@ class GeoVectorizer:
             wkt += ' '.join([str(point[0]), str(point[1])])
             if action_types[action_type] == 'render':
                 wkt += ','
-
-            if action_types[action_type] == 'full stop':
+            elif action_types[action_type] == 'stop':
+                wkt += wkt_end[geom_type] + '\n' + geom_type.upper() + wkt_start[geom_type]
+            else:  # action_types[action_type] == 'full stop':
                 break
 
         return wkt + wkt_end[geom_type]
