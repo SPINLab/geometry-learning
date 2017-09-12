@@ -34,10 +34,9 @@ def r3_bivariate_gaussian_loss(true, pred):
     """
     Rank 3 bivariate gaussian loss function
     Returns results of eq # 24 of http://arxiv.org/abs/1308.0850
-    WARNING this setup will only converge LSTMS
     :param true: truth values with at least [mu1, mu2, sigma1, sigma2, rho]
     :param pred: values predicted from a model with the same shape requirements as truth values
-    :return:
+    :return: the log of the summed max likelihood
     """
     x_coord = true[:, :, 0]
     y_coord = true[:, :, 1]
