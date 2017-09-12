@@ -27,6 +27,28 @@ class GeoVectorizer:
         return max_points
 
     @staticmethod
+    def interpolate(input_vectors, max_points):
+        if len(input_vectors) > max_points:
+            raise ValueError('The length of the input vector is already larger than max points', max_points)
+
+        interpolated = np.copy(input_vectors)  # just in case len(input_vectors) == max_points
+
+        index = 0
+        while max_points > len(interpolated) > index:
+            if not interpolated[index, RENDER_INDEX]:
+                index += 1
+                continue
+            halfway = np.mean(interpolated[index:index + 2, 0:2], axis=0, keepdims=True)
+            halfway = np.append(halfway, interpolated[index, 2:])
+            interpolated = np.insert(interpolated, index + 1, halfway, axis=0)
+            index += 2
+
+        if len(interpolated) < max_points:
+            interpolated = GeoVectorizer.interpolate(interpolated, max_points)
+
+        return interpolated
+
+    @staticmethod
     def num_points_from_wkt(wkt):
         shape = loads(wkt)
         if shape.geom_type == 'Polygon':
