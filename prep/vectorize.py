@@ -24,6 +24,7 @@ brt_centroid = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_dat
 osm_centroid = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_data[:, 6]]
 brt_centroid_rd = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_data[:, 7]]
 osm_centroid_rd = [GeoVectorizer.vectorize_wkt(point, 1) for point in truncated_data[:, 8]]
+intersection_surface = truncated_data[:, 9]
 
 training_set = brt_wkt + ';' + osm_wkt
 print(len(training_set), 'max length data points in training set')
@@ -64,23 +65,26 @@ centroids_rd = np.append(brt_centroid_rd, osm_centroid_rd, axis=1)
 centroids_rd[:, 0, FULL_STOP_INDEX] = 0
 centroids_rd[:, 0, STOP_INDEX] = 1
 
-# Make room for extra gaussian parameters in distance properties
+# Make room for extra gaussian parameters in distance and surface properties
 centroid_distance = np.reshape(centroid_distance, (len(centroid_distance), 1, 1))
 centroid_distance = np.insert(centroid_distance, 1, 0, axis=2)
 geom_distance = np.reshape(geom_distance, (len(geom_distance), 1, 1))
 geom_distance = np.insert(geom_distance, 1, 0, axis=2)
+intersection_surface = np.reshape(intersection_surface, (len(intersection_surface), 1, 1))
+intersection_surface = np.insert(intersection_surface, 1, 0, axis=2)
 
 print('Saving compressed numpy data file', GEODATA_VECTORIZED)
 
 np.savez_compressed(
     GEODATA_VECTORIZED,
-    input_geoms=training_vectors,           # Sets of two geometries in WGS84 lon/lat, 25% of them overlapping
-    intersection=intersection_vectors,      # Geometries representing the intersection in WGS84 lon/lat
-    centroid_distance=centroid_distance,    # Distance in meters between the centroids
-    geom_distance=geom_distance,            # Distance in meters between the geometries, 0 if intersecting
-    brt_centroid=brt_centroid,              # Centroid point in WGS84 lon/lat of the BRT geometry
-    osm_centroid=osm_centroid,              # Centroid point in WGS84 lon/lat of the OSM geometry
-    centroids=centroids,                    # Two centroid points for BRT and OSM in WGS84 lon/lat
-    centroids_rd=centroids_rd,              # Two centroid points for BRT and OSM in Netherlands RD meters
+    input_geoms=training_vectors,               # Sets of two geometries in WGS84 lon/lat, 25% of them overlapping
+    intersection=intersection_vectors,          # Geometries representing the intersection in WGS84 lon/lat
+    centroid_distance=centroid_distance,        # Distance in meters between the centroids
+    geom_distance=geom_distance,                # Distance in meters between the geometries, 0 if intersecting
+    brt_centroid=brt_centroid,                  # Centroid point in WGS84 lon/lat of the BRT geometry
+    osm_centroid=osm_centroid,                  # Centroid point in WGS84 lon/lat of the OSM geometry
+    centroids=centroids,                        # Two centroid points for BRT and OSM in WGS84 lon/lat
+    centroids_rd=centroids_rd,                  # Two centroid points for BRT and OSM in Netherlands RD meters
+    intersection_surface=intersection_surface,  # Surface in square meters of the intersection
 )
 print('Saved vectorized geometries to', GEODATA_VECTORIZED)
