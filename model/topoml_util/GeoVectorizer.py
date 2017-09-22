@@ -4,13 +4,13 @@ import numpy as np
 
 GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
                   "MultiPolygon", "Geometry"]
-GEO_VECTOR_LEN = 16  # The amount of positions needed to describe the features of a geometry point
 X_INDEX = 0  # float: the X coordinate
 Y_INDEX = 1  # float: the Y coordinate
 GEOM_TYPE_INDEX = 5
 RENDER_INDEX = GEOM_TYPE_INDEX + 8
 STOP_INDEX = RENDER_INDEX + 1
 FULL_STOP_INDEX = STOP_INDEX + 1
+GEO_VECTOR_LEN = FULL_STOP_INDEX + 1  # The amount of positions needed to describe the features of a geometry point
 
 
 class GeoVectorizer:
@@ -156,7 +156,7 @@ class GeoVectorizer:
         """
         Decyphers a encoded 2D coordinate and one-hot vector back to a wkt geometry
         :param vector:
-        :return:
+        :return: a \n delimited string of one or more well-known text geometries
         """
         action_types = ["render", "stop", "full stop"]
         wkt_start = {
@@ -201,9 +201,9 @@ class GeoVectorizer:
         return wkt + wkt_end[geom_type]
 
     @staticmethod
-    def decypher_gaussian(vector):
+    def decypher_gmm_geom(vector):
         """
-        Decyphers a encoded 2D gaussian coordinate estimation and one-hot vectors back to a wkt geometry
+        Decyphers a encoded vector of 2D gaussian mixture model components and one-hot vectors back to a wkt geometry
         :param vector: input vector
         :return wkt: a well-known-text representation text string
         """

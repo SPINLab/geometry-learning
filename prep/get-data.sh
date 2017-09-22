@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+echo "importing data... this will take a while, depending on your internet connection speed"
 set -ex
 mkdir -p /data/files
 cd /data/files

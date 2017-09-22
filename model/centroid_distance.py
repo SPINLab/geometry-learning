@@ -7,7 +7,7 @@ from keras.engine import Model
 from keras.layers import Dense, Flatten
 from keras.optimizers import Adam
 
-from topoml_util.CustomCallback import CustomCallback
+from topoml_util.ConsoleLogger import DecypherAll
 from topoml_util.geom_loss import gaussian_1d_loss
 
 # To suppress tensorflow info level messages:
@@ -15,7 +15,7 @@ from topoml_util.geom_loss import gaussian_1d_loss
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FILE = '../files/geodata_vectorized.npz'
-BATCH_SIZE = 512
+BATCH_SIZE = 1024
 TRAIN_VALIDATE_SPLIT = 0.1
 LATENT_SIZE = 16
 EPOCHS = 50
@@ -45,7 +45,7 @@ model.compile(loss=gaussian_1d_loss, optimizer=OPTIMIZER)
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
-my_callback = CustomCallback(lambda x: str(x))
+my_callback = DecypherAll(lambda x: str(x))
 
 history = model.fit(x=training_vectors,
                     y=target_vectors,
@@ -54,4 +54,6 @@ history = model.fit(x=training_vectors,
                     validation_split=TRAIN_VALIDATE_SPLIT,
                     callbacks=[my_callback, tb_callback]).history
 
-print(history)
+prediction = model.predict(training_vectors[0:1000])
+error = np.sum(np.abs(prediction[:, 0] - target_vectors[0:1000, 0])) / 1000
+print('Error factor:', error)

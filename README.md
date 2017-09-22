@@ -43,6 +43,7 @@ Due to the cross-platform dependency issues installing python geospatial package
 - Run `docker-compose build` in the root folder of this repository
 - **!! Make sure `./script/get-data.sh` has LF line endings if you run this on windows!!**. To be sure, you can install [Git for windows](https://git-for-windows.github.io/), open a git bash shell in the repo folder and issue a `dos2unix ./script/*.sh`. This will convert the line endings to unix line feeds.
 - Run `docker-compose up`. Once the container has exited, you should see a `files` directory in your repo folder with a file `topology-training.csv`. This contains your extracted geometries, distances and intersections. 
+- You can re-create the topology-training csv using `docker-compose run data-prep export-data.sh`
 
 ## Using self-installed libraries
 If you need to run or debug locally, you need the following dependencies:

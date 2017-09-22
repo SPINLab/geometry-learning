@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 
 
-class CustomCallback(Callback):
+class DecypherAll(Callback):
     def __init__(self, decypher):
         super().__init__()
         self.decypher = decypher

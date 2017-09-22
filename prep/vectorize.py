@@ -48,11 +48,11 @@ for record_index in range(len(brt_wkt)):
 
     for point_index, point in enumerate(training_vector):
         for feature_index, feature in enumerate(point):
-            training_vectors[record_index][point_index][feature_index] = feature
+            training_vectors[record_index, point_index, feature_index] = feature
 
     for point_index, point in enumerate(target_vector):
         for feature_index, feature in enumerate(point):
-            intersection_vectors[record_index][point_index][feature_index] = feature
+            intersection_vectors[record_index, point_index, feature_index] = feature
 
 # Concatenate centroids
 centroids = np.append(brt_centroid, osm_centroid, axis=1)
