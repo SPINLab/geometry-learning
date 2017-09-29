@@ -4,6 +4,11 @@ from wkt2pyplot import wkt2pyplot
 
 
 class TestWktToPyplotPoly(unittest.TestCase):
+    def test_geometrycollection_empty(self):
+        inputs = ['GEOMETRYCOLLECTION EMPTY']  # This is valid WKT
+        plt, fig, ax = wkt2pyplot(inputs)
+        plt.show()  # It should show an empty plot
+
     def test_polygon_conversion(self):
         TIMESTAMP = str(datetime.now()).replace(':', '.')
 
@@ -26,6 +31,8 @@ class TestWktToPyplotPoly(unittest.TestCase):
             'POINT(-0.477272727268 -0.0664545454754)',
             'POINT(-0.974272727277 0.301545454562)',
         ]
-        plt = wkt2pyplot(inputs, [target], prediction)
+        plt, fig, ax = wkt2pyplot(inputs, [target], prediction)
+        plt.text(0.01, 0.06, 'prediction: some more text', transform=ax.transAxes)
+        plt.text(0.01, 0.01, 'target: some text', transform=ax.transAxes)
 
-        plt.savefig('test_files/plt_' + TIMESTAMP + '.png')
+        plt.show()
