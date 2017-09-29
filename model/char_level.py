@@ -1,11 +1,9 @@
 from datetime import datetime
 
 import pandas
-import tensorflow as tf
 from keras import Input
-from keras.activations import tanh
 from keras.engine import Model
-from keras.layers import LSTM, Dense
+from keras.layers import LSTM
 from topoml_util.ConsoleLogger import DecypherAll
 from topoml_util.Tokenizer import Tokenize
 
