@@ -80,6 +80,20 @@ def r3_univariate_gaussian(true, pred):
     return pdf
 
 
+def r2_univariate_gaussian(true, pred):
+    x = true[:, 0:1]
+    mu = pred[:, 0:1]
+    sigma = pred[:, 1:2]
+
+    norm = K.log(1 + K.abs(x - mu))  # needs log of norm to counter large mu diffs
+    variance = K.softplus(K.square(sigma))  # Softplus: prevent NaN on 0 sigma and converge to 0
+    z = K.exp(-K.square(K.abs(norm)) / (2 * variance) + epsilon())  # z -> 0 if sigma
+
+    # pdf -> 0 if sigma is very large or z -> 0; NaN if variance -> 0
+    pdf = z / K.sqrt((2 * np.pi * variance) + epsilon())
+    return pdf
+
+
 # Adapted to Keras from https://github.com/tensorflow/magenta/blob/master/magenta/models/sketch_rnn/model.py#L268
 # Adapted version of the probability density function of
 # https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Bivariate_case
@@ -117,6 +131,11 @@ def r4_bivariate_gaussian(true, pred):
     return pdf
 
 
-def gaussian_1d_loss(target, prediction):
-    pdf = r3_univariate_gaussian(target, prediction)  # pdf -> 0 if sigma is very large or z -> 0
+def r3_univariate_gaussian_loss(true, pred):
+    pdf = r3_univariate_gaussian(true, pred)  # pdf -> 0 if sigma is very large or z -> 0
+    return -K.log(pdf + epsilon())  # inf if pdf -> 0
+
+
+def r2_univariate_gaussian_loss(true, pred):
+    pdf = r2_univariate_gaussian(true, pred)
     return -K.log(pdf + epsilon())  # inf if pdf -> 0
