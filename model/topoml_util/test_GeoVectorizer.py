@@ -3,6 +3,7 @@ import pandas
 import numpy as np
 
 from model.topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX
+from test_files import gmm_output
 
 TOPOLOGY_CSV = 'test_files/polygon_multipolygon.csv'
 SOURCE_DATA = pandas.read_csv(TOPOLOGY_CSV)
@@ -97,3 +98,9 @@ class TestVectorizer(unittest.TestCase):
         target_vector = GeoVectorizer.vectorize_wkt(target_wkt[0], max_points)
         decyphered = GeoVectorizer.decypher(target_vector)
         self.assertEqual(decyphered, target_wkt[0])
+
+    def test_decypher_gmm_geom(self):
+        pred = gmm_output.prediction
+        sample_size = 10
+        points = GeoVectorizer(gmm_size=5).decypher_gmm_geom(pred, sample_size=sample_size)
+        self.assertEqual(len(points), sample_size * len(pred))
