@@ -8,7 +8,7 @@ from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
 
 from topoml_util.ConsoleLogger import DecypherAll
-from topoml_util.geom_loss import gaussian_1d_loss
+from topoml_util.geom_loss import r2_univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 
 # To suppress tensorflow info level messages:
@@ -36,7 +36,7 @@ inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE, activation='relu')(inputs)
 model = Dense(2)(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.005))
+model.compile(loss=r2_univariate_gaussian_loss, optimizer=Adam(lr=0.005))
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)

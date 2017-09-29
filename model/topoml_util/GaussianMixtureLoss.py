@@ -41,7 +41,7 @@ class GaussianMixtureLoss:
 
         return gmm_loss + geom_type_error + render_error
 
-    def rank3_univariate_gaussian_mixture_loss(self, y_true, y_pred):
+    def r3_univariate_gmm_loss(self, y_true, y_pred):
         """
         A simple loss function for rank 2 single gaussian mixture models
         :param y_true: rank 2 of shape(records, record features) truth values tensor
