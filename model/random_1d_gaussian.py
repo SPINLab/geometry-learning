@@ -6,11 +6,10 @@ from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense
 from keras.optimizers import Adam
 
-from topoml_util.CustomCallback import CustomCallback
+from topoml_util.ConsoleLogger import DecypherAll
 from topoml_util.geom_loss import gaussian_1d_loss
 
-TIMESTAMP = str(datetime.now())
-TIMESTAMP = TIMESTAMP.replace(':', '.')
+TIMESTAMP = str(datetime.now()).replace(':', '.')
 EPOCHS = 60
 BATCH_SIZE = 100
 TRAINING_SIZE = 50000
@@ -28,7 +27,7 @@ model = Model(inputs, model)
 model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.001))
 model.summary()
 
-my_callback = CustomCallback(lambda x: str(x))
+my_callback = DecypherAll(lambda x: str(x))
 
 model.fit(x=input_1d,
           y=input_1d,
