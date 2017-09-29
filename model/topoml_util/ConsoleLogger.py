@@ -18,8 +18,8 @@ class DecypherAll(Callback):
 
         print('')
 
-        for index in range(len(predictions)):
-            print('Input:      %s' % self.decypher(input_samples[index]))
-            print('Target:     %s' % self.decypher(target_samples[index]))
-            print('Prediction: %s\n' % self.decypher(predictions[index]))
+        for (input, target, prediction) in zip(input_samples, target_samples, predictions):
+            print('Input:      %s' % self.decypher(input))
+            print('Target:     %s' % self.decypher(target))
+            print('Prediction: %s\n' % self.decypher(prediction))
 
