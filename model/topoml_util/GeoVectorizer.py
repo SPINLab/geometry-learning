@@ -1,4 +1,3 @@
-from numpy.random.mtrand import multivariate_normal
 from shapely.wkt import loads
 import numpy as np
 
@@ -7,13 +6,39 @@ GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "Multi
 X_INDEX = 0  # float: the X coordinate
 Y_INDEX = 1  # float: the Y coordinate
 GEOM_TYPE_INDEX = 5
-RENDER_INDEX = GEOM_TYPE_INDEX + 8
+GEOM_TYPE_LEN = 8
+RENDER_INDEX = GEOM_TYPE_INDEX + GEOM_TYPE_LEN
 STOP_INDEX = RENDER_INDEX + 1
 FULL_STOP_INDEX = STOP_INDEX + 1
 GEO_VECTOR_LEN = FULL_STOP_INDEX + 1  # The amount of positions needed to describe the features of a geometry point
 
+action_types = ["render", "stop", "full stop"]
+wkt_start = {
+    "GeometryCollection": " EMPTY",
+    "Polygon": "((",
+    "MultiPolygon": "(((",
+    "Point": "(",
+    "LineString": "(",
+    "MultiPoint": "((",
+    "MultiLineString": "((",
+    "Geometry": "("
+}
+wkt_end = {
+    "GeometryCollection": "",
+    "Polygon": "))",
+    "MultiPolygon": ")))",
+    "Point": ")",
+    "LineString": ")",
+    "MultiPoint": "))",
+    "MultiLineString": "))",
+    "Geometry": ")"
+}
+
 
 class GeoVectorizer:
+    def __init__(self, gmm_size):
+        self.gmm_size = gmm_size
+
     @staticmethod
     def max_points(wkt_set1, wkt_set2):
         max_points = 0
@@ -158,34 +183,12 @@ class GeoVectorizer:
         :param vector:
         :return: a \n delimited string of one or more well-known text geometries
         """
-        action_types = ["render", "stop", "full stop"]
-        wkt_start = {
-            "GeometryCollection": "(",
-            "Polygon": "((",
-            "MultiPolygon": "(((",
-            "Point": "(",
-            "LineString": "(",
-            "MultiPoint": "((",
-            "MultiLineString": "((",
-            "Geometry": "("
-        }
-        wkt_end = {
-            "GeometryCollection": ")",
-            "Polygon": "))",
-            "MultiPolygon": ")))",
-            "Point": ")",
-            "LineString": ")",
-            "MultiPoint": "))",
-            "MultiLineString": "))",
-            "Geometry": ")"
-        }
-
         geom_type = GEOMETRY_TYPES[np.argmax(vector[0][GEOM_TYPE_INDEX:RENDER_INDEX])]
         wkt = geom_type.upper() + wkt_start[geom_type]
 
         # If an empty geometrycollection:
-        if sum(vector[0][RENDER_INDEX:]) == 0:
-            pass
+        if geom_type == 'GeometryCollection':
+            return wkt
 
         for point in vector:
             action_type = np.argmax(point[RENDER_INDEX:])
@@ -200,58 +203,37 @@ class GeoVectorizer:
 
         return wkt + wkt_end[geom_type]
 
-    @staticmethod
-    def decypher_gmm_geom(vector):
+    def decypher_gmm_geom(self, vector, sample_size=10):
         """
         Decyphers a encoded vector of 2D gaussian mixture model components and one-hot vectors back to a wkt geometry
-        :param vector: input vector
-        :return wkt: a well-known-text representation text string
+        :param vector:  a rank 2 input vector of sequences from a gaussian mixture model and two one-hot vectors for
+                        geometry type and 'pen state' or stop indicator, all as a concatenated sequence
+        :param sample_size: number of points to sample from each mixture component
+        :return a list of max_points * sample size sampled 2d points
         """
-        action_types = ["render", "stop", "full stop"]
-        wkt_start = {
-            "GeometryCollection": "(",
-            "Polygon": "((",
-            "MultiPolygon": "(((",
-            "Point": "(",
-            "LineString": "(",
-            "MultiPoint": "((",
-            "MultiLineString": "((",
-            "Geometry": "("
-        }
-        wkt_end = {
-            "GeometryCollection": ")",
-            "Polygon": "))",
-            "MultiPolygon": ")))",
-            "Point": ")",
-            "LineString": ")",
-            "MultiPoint": "))",
-            "MultiLineString": "))",
-            "Geometry": ")"
-        }
+        one_hot_start = (self.gmm_size * 6)
+        render_state_start = one_hot_start + GEOM_TYPE_LEN
+        (max_points, _) = vector[:, 0:one_hot_start].shape
+        components = np.reshape(
+            vector[:, 0:one_hot_start],  # use only the gaussian components
+            (max_points, int(one_hot_start / 6), 6))   # reshape to a rank 3 to split the different components
 
-        geom_type = GEOMETRY_TYPES[np.argmax(vector[0][GEOM_TYPE_INDEX:RENDER_INDEX])]
-        wkt = geom_type.upper() + wkt_start[geom_type]
+        most_likely = np.argmax(components[:, :, 5], axis=1)  # the highest-scoring component
 
-        def point_to_gaussian_sample(geom_point, num_samples):
-            # [mean_x, mean_y, sigma_x, sigma_y, rho] = geom_point[:, :, 0:5]
-            sampled = multivariate_normal(mean=geom_point[:, :, 0:2],
-                                          cov=[geom_point[:, :, 2:4], geom_point[:, :, 4:5]],
-                                          size=num_samples)
-            return sampled
-
-        # If an empty geometrycollection:
-        if sum(vector[0][RENDER_INDEX:]) == 0:
-            pass
-
-        for point in vector:
-            action_type = np.argmax(point[RENDER_INDEX:])
-
-            wkt += ' '.join([str(point[0]), str(point[1])])
-            if action_types[action_type] == 'render':
-                wkt += ','
-            elif action_types[action_type] == 'stop':
-                wkt += wkt_end[geom_type] + '\n' + geom_type.upper() + wkt_start[geom_type]
-            else:  # action_types[action_type] == 'full stop':
+        sample = []
+        for index, highest in enumerate(most_likely):
+            render_state = np.argmax(vector[index, render_state_start:])
+            if action_types[render_state] == 'full stop':
+                print('Stop on node', index)
+                index -= 1  # Prevent errors on reshaping in case of no full stop encounter
                 break
 
-        return wkt + wkt_end[geom_type]
+            [mean_x, mean_y, sigma_x, sigma_y, rho] = components[index, highest, 0:5]
+            sampled = np.random.multivariate_normal(
+                mean=[mean_x, mean_y],
+                cov=[[0, 0], [0, 0]],
+                size=sample_size)
+            # sample.append(np.repeat([mean_x, mean_y], 10))
+            sample.append(sampled)
+
+        return np.reshape(sample, ((index + 1) * sample_size, 2))  # reshape to 2d points
