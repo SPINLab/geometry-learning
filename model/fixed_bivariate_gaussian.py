@@ -6,7 +6,7 @@ from keras.engine import Model
 from keras.layers import Dense, LSTM, LeakyReLU
 from keras.optimizers import Adam
 
-from topoml_util.CustomCallback import CustomCallback
+from topoml_util.ConsoleLogger import DecypherAll
 from topoml_util.geom_loss import r3_bivariate_gaussian_loss
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
@@ -28,7 +28,7 @@ model = Model(inputs, model)
 model.compile(loss=r3_bivariate_gaussian_loss, optimizer=Adam(lr=0.01))
 model.summary()
 
-my_callback = CustomCallback(lambda x: str(x))
+my_callback = DecypherAll(lambda x: str(x))
 
 model.fit(x=input_2d,
           y=input_2d,

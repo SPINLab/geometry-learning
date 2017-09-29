@@ -7,7 +7,7 @@ from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
 
 from topoml_util.LoggerCallback import EpochLogger
-from topoml_util.geom_loss import gaussian_1d_loss
+from topoml_util.geom_loss import r2_univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.GeoVectorizer import GeoVectorizer
 from topoml_util.wkt2pyplot import wkt2pyplot
@@ -45,7 +45,7 @@ model = Dense(64)(inputs)
 model = LSTM(LATENT_SIZE, activation='relu')(model)
 model = Dense(2)(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=OPTIMIZER)
+model.compile(loss=r2_univariate_gaussian_loss, optimizer=OPTIMIZER)
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)

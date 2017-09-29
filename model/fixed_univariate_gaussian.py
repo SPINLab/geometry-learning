@@ -7,7 +7,7 @@ from keras.layers import LSTM, TimeDistributed, Dense
 from keras.optimizers import Adam
 
 from topoml_util.ConsoleLogger import DecypherAll
-from topoml_util.geom_loss import gaussian_1d_loss
+from topoml_util.geom_loss import r3_univariate_gaussian_loss
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 EPOCHS = 60
@@ -16,21 +16,21 @@ TRAINING_SIZE = 100000
 TRAIN_VALIDATE_SPLIT = 0.2
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
 
-input_1d = np.repeat([[[52]]], TRAINING_SIZE, axis=0)
-input_1d = np.append(input_1d, np.zeros(shape=(TRAINING_SIZE, 1, 1)), axis=2)
-(_, max_points, GEO_VECTOR_LEN) = input_1d.shape
+univariate = np.repeat([[[52]]], TRAINING_SIZE, axis=0)
+univariate = np.append(univariate, np.zeros(shape=(TRAINING_SIZE, 1, 1)), axis=2)
+(_, max_points, GEO_VECTOR_LEN) = univariate.shape
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(GEO_VECTOR_LEN, return_sequences=True)(inputs)
-model = TimeDistributed(Dense(GEO_VECTOR_LEN))(model)
+model = Dense(GEO_VECTOR_LEN)(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.01))
+model.compile(loss=r3_univariate_gaussian_loss, optimizer=Adam(lr=0.01))
 model.summary()
 
 my_callback = DecypherAll(lambda x: str(x))
 
-model.fit(x=input_1d,
-          y=input_1d,
+model.fit(x=univariate,
+          y=univariate,
           epochs=EPOCHS,
           batch_size=BATCH_SIZE,
           validation_split=TRAIN_VALIDATE_SPLIT,
