@@ -7,7 +7,7 @@ from keras.layers import LSTM, TimeDistributed, Dense
 from keras.optimizers import Adam
 
 from topoml_util.ConsoleLogger import DecypherAll
-from topoml_util.geom_loss import gaussian_1d_loss
+from topoml_util.geom_loss import r3_univariate_gaussian_loss
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 EPOCHS = 60
@@ -24,7 +24,7 @@ inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(GEO_VECTOR_LEN, return_sequences=True)(inputs)
 model = TimeDistributed(Dense(GEO_VECTOR_LEN))(model)
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=Adam(lr=0.001))
+model.compile(loss=r3_univariate_gaussian_loss, optimizer=Adam(lr=0.001))
 model.summary()
 
 my_callback = DecypherAll(lambda x: str(x))
