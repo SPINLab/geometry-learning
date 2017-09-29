@@ -1,15 +1,18 @@
+from datetime import datetime
+
 import pandas
 import tensorflow as tf
 from keras import Input
 from keras.activations import tanh
 from keras.engine import Model
 from keras.layers import LSTM, Dense
-from topoml_util.CustomCallback import CustomCallback
+from topoml_util.ConsoleLogger import DecypherAll
 from topoml_util.Tokenizer import Tokenize
 
 # To suppress tensorflow info level messages:
 # export TF_CPP_MIN_LOG_LEVEL=2
 
+TIMESTAMP = str(datetime.now()).replace(':', '.')
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 MAX_SEQUENCE_LEN = 220
 TRAIN_VALIDATE_SPLIT = 0.1
@@ -47,7 +50,7 @@ def main():
     # encoder = Model(inputs=inputs, outputs=encoded)
 
     # tb_callback = TensorBoard(log_dir='./tensorboard_log', histogram_freq=1, write_graph=True, write_images=True)
-    my_callback = CustomCallback(tokenizer.decypher)
+    my_callback = DecypherAll(tokenizer.decypher)
 
     encoder.fit(x=input_one_hot,
                 y=target_one_hot,
