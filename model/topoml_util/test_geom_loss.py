@@ -2,9 +2,8 @@ import unittest
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
-# from matplotlib import pyplot
 
-from .geom_loss import geom_loss, geom_gaussian_loss, r3_bivariate_gaussian_loss, gaussian_1d_loss
+from .geom_loss import geom_loss, geom_gaussian_loss, r3_bivariate_gaussian_loss, r3_univariate_gaussian_loss
 
 PRECISION = 6
 sess = tf.InteractiveSession()
@@ -204,29 +203,29 @@ class TestGaussian1d(unittest.TestCase):
     def test_zero_loss(self):
         target = np.array([[[1., 0.]]])
         prediction = np.array([[[1., 0.]]])
-        loss = gaussian_1d_loss(target, prediction).eval()
+        loss = r3_univariate_gaussian_loss(target, prediction).eval()
         self.assertAlmostEqual(loss[0, 0, 0], 0.73568186422336956, places=PRECISION)
 
     def test_one_mu_loss(self):
         target = np.array([[[1., 0.]]])
         prediction = np.array([[[0., 0.]]])
-        loss = gaussian_1d_loss(target, prediction).eval()
+        loss = r3_univariate_gaussian_loss(target, prediction).eval()
         self.assertAlmostEqual(loss[0, 0, 0], 0.90219415240769696, places=PRECISION)
 
     def test_minus_one_sigma_loss(self):
         target = np.array([[[1., 0.]]])
         prediction = np.array([[[1., -1.]]])
-        loss = gaussian_1d_loss(target, prediction).eval()
+        loss = r3_univariate_gaussian_loss(target, prediction).eval()
         self.assertAlmostEqual(loss[0, 0, 0], 1.0551951862023454, places=PRECISION)
 
     def test_minus_two_sigma_loss(self):
-        target = np.array([[[1., 0.]]])
-        prediction = np.array([[[1., -2.]]])
-        loss = gaussian_1d_loss(target, prediction).eval()
-        self.assertAlmostEqual(loss[0, 0, 0], 1.6143488206244256, places=PRECISION)
+        target = np.array([[1., 0.]])
+        prediction = np.array([[1., -2.]])
+        loss = r3_univariate_gaussian_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 1.6143488206244256, places=PRECISION)
 
     def test_big_mu_sigma_diff(self):
-        target = np.array([[[52., 0.]]])
-        prediction = np.array([[[0., 80]]])  # Increase second value with .001 and the loss will jump to inf!
-        loss = gaussian_1d_loss(target, prediction).eval()
-        self.assertAlmostEqual(loss[0, 0, 0], 16.11809565095832, places=PRECISION)
+        target = np.array([[52., 0.]])
+        prediction = np.array([[0., 80]])  # Increase second value with .001 and the loss will jump to inf!
+        loss = r3_univariate_gaussian_loss(target, prediction).eval()
+        self.assertAlmostEqual(loss[0, 0], 16.11809565095832, places=PRECISION)

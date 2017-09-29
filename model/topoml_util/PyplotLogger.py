@@ -28,6 +28,7 @@ class DecypherAll(Callback):
 
         for (input, target, prediction) in zip(input_samples, target_samples, predictions):
             timestamp = str(datetime.now()).replace(':', '.')
+
             print('Input:')
             pp.pprint(input)
             print('Target:')
