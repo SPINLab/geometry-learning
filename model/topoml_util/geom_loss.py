@@ -6,17 +6,7 @@ from keras.losses import mse, categorical_crossentropy
 from .GeoVectorizer import GEOM_TYPE_INDEX, RENDER_INDEX
 
 
-def geom_loss(y_true, y_pred):
-    print(y_true.shape)
-    coordinate_error = mse(y_true[:, :, 0:2], y_pred[:, :, 0:2])
-    geom_type_error = categorical_crossentropy(K.softmax(y_true[:, :, GEOM_TYPE_INDEX:RENDER_INDEX]),
-                                               K.softmax(y_pred[:, :, GEOM_TYPE_INDEX:RENDER_INDEX]))
-    render_error = categorical_crossentropy(K.softmax(y_true[:, :, RENDER_INDEX:]),
-                                            K.softmax(y_pred[:, :, RENDER_INDEX:]))
-    return coordinate_error + geom_type_error + render_error
-
-
-def geom_gaussian_loss(y_true, y_pred):
+def r3_geom_gaussian_loss(y_true, y_pred):
     # loss fn based on eq #26 of http://arxiv.org/abs/1308.0850.
     gaussian_loss = r3_bivariate_gaussian_loss(y_true, y_pred)
     geom_type_error = categorical_crossentropy(K.softmax(y_true[:, :, GEOM_TYPE_INDEX:RENDER_INDEX]),
@@ -69,17 +59,6 @@ def r3_bivariate_gaussian(true, pred):
     return pdf
 
 
-def r3_univariate_gaussian(true, pred):
-    x = true[:, :, 0:1]
-    mu = pred[:, :, 0:1]
-    norm = K.log(1 + x - mu)  # needs log of norm to counter large mu diffs
-    variance = K.softplus(K.square(pred[:, :, 1:2]))
-
-    z = K.exp(-K.square(K.abs(norm)) / 2 * variance)  # z -> 0 if sigma
-    pdf = z / K.sqrt(2 * np.pi * variance)  # pdf -> 0 if sigma is very large or z -> 0
-    return pdf
-
-
 def r2_univariate_gaussian(true, pred):
     x = true[:, 0:1]
     mu = pred[:, 0:1]
@@ -89,6 +68,19 @@ def r2_univariate_gaussian(true, pred):
     variance = K.softplus(K.square(sigma))  # Softplus: prevent NaN on 0 sigma and converge to 0
     z = K.exp(-K.square(K.abs(norm)) / (2 * variance) + epsilon())  # z -> 0 if sigma
 
+    # pdf -> 0 if sigma is very large or z -> 0; NaN if variance -> 0
+    pdf = z / K.sqrt((2 * np.pi * variance) + epsilon())
+    return pdf
+
+
+def r3_univariate_gaussian(true, pred):
+    x = true[:, :, 0:1]
+    mu = pred[:, :, 0:1]
+    sigma = pred[:, :, 1:2]
+
+    norm = K.log(1 + K.abs(x - mu))  # needs log of norm to counter large mu diffs
+    variance = K.softplus(K.square(sigma))
+    z = K.exp(-K.square(K.abs(norm)) / (2 * variance) + epsilon())  # z -> 0 if sigma
     # pdf -> 0 if sigma is very large or z -> 0; NaN if variance -> 0
     pdf = z / K.sqrt((2 * np.pi * variance) + epsilon())
     return pdf
