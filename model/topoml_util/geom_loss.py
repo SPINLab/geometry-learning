@@ -69,22 +69,20 @@ def r3_bivariate_gaussian(true, pred):
     return pdf
 
 
+def r3_univariate_gaussian(true, pred):
+    x = true[:, :, 0:1]
+    mu = pred[:, :, 0:1]
+    norm = K.log(1 + x - mu)  # needs log of norm to counter large mu diffs
+    variance = K.softplus(K.square(pred[:, :, 1:2]))
+
+    z = K.exp(-K.square(K.abs(norm)) / 2 * variance)  # z -> 0 if sigma
+    pdf = z / K.sqrt(2 * np.pi * variance)  # pdf -> 0 if sigma is very large or z -> 0
+    return pdf
+
+
 # Adapted to Keras from https://github.com/tensorflow/magenta/blob/master/magenta/models/sketch_rnn/model.py#L268
 # Adapted version of the probability density function of
 # https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Bivariate_case
-# augmented to negative log likelihood loss configuration
-def r4_bivariate_gaussian_loss(true, pred):
-    """
-    Rank 4 bivariate gaussian loss function
-    Returns results of eq # 24 of http://arxiv.org/abs/1308.0850
-    :param true: truth values with at least [mu1, mu2, sigma1, sigma2, rho]
-    :param pred: values predicted from a model with the same shape requirements as truth values
-    :return: the log of the summed max likelihood
-    """
-    pdf = r4_bivariate_gaussian(true, pred)
-    return K.log(K.sum(-K.log(pdf + epsilon())))  # → -∞ if pdf → ∞
-
-
 def r4_bivariate_gaussian(true, pred):
     """
     Rank 4 bivariate gaussian function
@@ -120,13 +118,5 @@ def r4_bivariate_gaussian(true, pred):
 
 
 def gaussian_1d_loss(target, prediction):
-    x = target[:, 0:1]
-    mu = prediction[:, 0:1]
-    sigma = prediction[:, 1:2]
-    norm = K.log(1 + K.abs(x - mu))  # needs log of norm to counter large mu diffs
-    variance = K.softplus(K.square(sigma))  # Softplus: prevent NaN on 0 sigma and converge to 0
-    z = K.exp(-K.square(K.abs(norm)) / (2 * variance) + epsilon())  # z -> 0 if sigma
-
-    # pdf -> 0 if sigma is very large or z -> 0; NaN if variance -> 0
-    pdf = z / K.sqrt((2 * np.pi * variance) + epsilon())
+    pdf = r3_univariate_gaussian(target, prediction)  # pdf -> 0 if sigma is very large or z -> 0
     return -K.log(pdf + epsilon())  # inf if pdf -> 0
