@@ -35,6 +35,7 @@ class EpochLogger(Callback):
                 pp.pprint(target)
                 print('Prediction:')
                 pp.pprint(prediction)
+                print('')
 
             if self.aggregate_func:
                 self.aggregate_func(
