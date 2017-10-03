@@ -1,4 +1,4 @@
-from topoml_util.geom_loss import r4_bivariate_gaussian, r3_bivariate_gaussian, r3_univariate_gaussian
+from topoml_util.geom_loss import bivariate_gaussian, univariate_gaussian
 from keras import backend as K
 
 
@@ -25,7 +25,7 @@ class GaussianMixtureLoss:
 
         pi_index = 5
         pi_weights = K.softmax(predicted_components[:, :, :, pi_index])
-        gmm = r4_bivariate_gaussian(true_components, predicted_components) * pi_weights
+        gmm = bivariate_gaussian(true_components, predicted_components) * pi_weights
         gmm_loss = K.log(K.sum(-K.log(gmm + K.epsilon()), keepdims=True))
 
         # TODO: Zero out loss terms beyond the last point
@@ -41,19 +41,24 @@ class GaussianMixtureLoss:
 
         return gmm_loss + geom_type_error + render_error
 
-    def r3_univariate_gmm_loss(self, y_true, y_pred):
+    def univariate_gmm_loss(self, true, pred):
         """
-        A simple loss function for rank 2 single gaussian mixture models
-        :param y_true: rank 2 of shape(records, record features) truth values tensor
-        :param y_pred: rank 2 of shape(records, record features) truth values tensor
-        :return: rank 3 loss values tensor
+        A simple loss function for rank agnostic single gaussian mixture models
+        :param true: truth values tensor
+        :param pred: prediction values tensor
+        :return: loss values tensor
         """
-        # true_components = K.reshape(y_true, (-1, self.num_components, 3))
-        # predicted_components = K.reshape(y_pred, (-1, self.num_components, 3))
+        if not true.shape == pred.shape:
+            print(
+                'Warning: truth', true.shape, 'and prediction tensors', pred.shape, 'do not have the same shape. The '
+                'outcome of the loss function may be unpredictable.')
 
-        # pi_index = 2
-        # pi_weights = K.softmax(predicted_components[:, :, pi_index])
-        gmm = r3_univariate_gaussian(y_true, y_pred)
-        gmm_loss = -K.log(gmm + K.epsilon())
+        # true_components = K.reshape(true, (-1, self.num_components, 3))
+        predicted_components = K.reshape(pred, (-1, self.num_components, 3))
+
+        pi_index = 2
+        pi_weights = K.softmax(pred[..., pi_index])
+        gmm = univariate_gaussian(true, predicted_components) * pi_weights
+        gmm_loss = -K.log(K.sum(gmm + K.epsilon()))
 
         return gmm_loss
