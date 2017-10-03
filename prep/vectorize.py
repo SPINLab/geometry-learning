@@ -1,7 +1,7 @@
 import numpy as np
 import pandas
 
-from topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX, STOP_INDEX
+from model.topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX, STOP_INDEX
 
 TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
 GEODATA_VECTORIZED = '../files/geodata_vectorized.npz'
@@ -9,8 +9,9 @@ MAX_SEQUENCE_LEN = 300
 
 print('Reading data...')
 training_data = pandas.read_csv(TOPOLOGY_TRAINING_CSV)
-truncated_data = \
-    np.array([record for record in training_data.values if len(record[0] + ';' + record[1]) <= MAX_SEQUENCE_LEN])
+truncated_data = np.array([
+    record for record in training_data.values
+    if len(record[0] + ';' + record[1]) <= MAX_SEQUENCE_LEN])
 raw_training_set = training_data['brt_wkt'] + ';' + training_data['osm_wkt']
 raw_target_set = training_data['intersection_wkt']
 print(len(raw_training_set), 'data points in training set')
@@ -78,13 +79,13 @@ print('Saving compressed numpy data file', GEODATA_VECTORIZED)
 np.savez_compressed(
     GEODATA_VECTORIZED,
     input_geoms=training_vectors,               # Sets of two geometries in WGS84 lon/lat, 25% of them overlapping
-    intersection=intersection_vectors,          # Geometries representing the intersection in WGS84 lon/lat
+    intersection=intersection_vectors,          # Geometries representing the intersection_surface_area in WGS84 lon/lat
     centroid_distance=centroid_distance,        # Distance in meters between the centroids
     geom_distance=geom_distance,                # Distance in meters between the geometries, 0 if intersecting
     brt_centroid=brt_centroid,                  # Centroid point in WGS84 lon/lat of the BRT geometry
     osm_centroid=osm_centroid,                  # Centroid point in WGS84 lon/lat of the OSM geometry
     centroids=centroids,                        # Two centroid points for BRT and OSM in WGS84 lon/lat
     centroids_rd=centroids_rd,                  # Two centroid points for BRT and OSM in Netherlands RD meters
-    intersection_surface=intersection_surface,  # Surface in square meters of the intersection
+    intersection_surface=intersection_surface,  # Surface in square meters of the intersection_surface_area
 )
 print('Saved vectorized geometries to', GEODATA_VECTORIZED)
