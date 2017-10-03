@@ -7,7 +7,7 @@ from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
 
 from topoml_util.LoggerCallback import EpochLogger
-from topoml_util.geom_loss import r2_univariate_gaussian_loss
+from topoml_util.geom_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.GeoVectorizer import GeoVectorizer
 from topoml_util.wkt2pyplot import wkt2pyplot
@@ -17,11 +17,11 @@ from topoml_util.wkt2pyplot import wkt2pyplot
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FILE = '../files/geodata_vectorized.npz'
-BATCH_SIZE = 2048
+BATCH_SIZE = 8192
 TRAIN_VALIDATE_SPLIT = 0.1
 LATENT_SIZE = 128
-EPOCHS = 50
-OPTIMIZER = Adam(lr=1e-4)
+EPOCHS = 350
+OPTIMIZER = Adam(lr=1e-3)
 
 loaded = np.load(DATA_FILE)
 raw_training_vectors = loaded['input_geoms']
@@ -41,11 +41,15 @@ target_vectors = np.array(target_vectors)
 (_, max_points, GEO_VECTOR_LEN) = training_vectors.shape
 
 inputs = Input(shape=(max_points, GEO_VECTOR_LEN))
-model = Dense(64)(inputs)
+model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(inputs)
+model = Dense(32, activation='relu')(model)
+model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(model)
+model = Dense(32, activation='relu')(model)
 model = LSTM(LATENT_SIZE, activation='relu')(model)
+model = Dense(64)(model)
 model = Dense(2)(model)
 model = Model(inputs, model)
-model.compile(loss=r2_univariate_gaussian_loss, optimizer=OPTIMIZER)
+model.compile(loss=univariate_gaussian_loss, optimizer=OPTIMIZER)
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)

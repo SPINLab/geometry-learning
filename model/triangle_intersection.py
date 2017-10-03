@@ -6,17 +6,15 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard
 from keras.engine import Model
-from keras.layers import LSTM, TimeDistributed, Dense, Flatten
+from keras.layers import LSTM, TimeDistributed, Dense, Flatten, LeakyReLU
 from keras.optimizers import Adam, sgd
 
-from topoml_util.CustomCallback import CustomCallback
+from topoml_util.LoggerCallback import EpochLogger
 from topoml_util.GeoVectorizer import GeoVectorizer
 from topoml_util.geom_loss import geom_gaussian_loss
+from topoml_util.wkt2pyplot import wkt2pyplot
 
-# To suppress tensorflow info level messages:
-# export TF_CPP_MIN_LOG_LEVEL=2
-
-TIMESTAMP = str(datetime.now())
+TIMESTAMP = str(datetime.now()).replace(':', '.')
 BATCH_SIZE = 1024
 TRAIN_VALIDATE_SPLIT = 0.1
 LATENT_SIZE = 256
@@ -47,7 +45,8 @@ training_vectors = np.array(training_vectors)
 target_vectors = np.array(target_vectors)
 
 inputs = Input(shape=(max_points, GEO_VECTOR_LEN))
-model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(inputs)
+model = LSTM(LATENT_SIZE, return_sequences=True)(inputs)
+model = LeakyReLU()(model)
 model = TimeDistributed(Dense(64, activation='relu'))(model)
 model = Dense(GEO_VECTOR_LEN)(model)
 model = Model(inputs, model)
@@ -55,15 +54,19 @@ model.compile(loss=geom_gaussian_loss, optimizer=OPTIMIZER)
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
-my_callback = CustomCallback(GeoVectorizer.decypher)
+epoch_callback = EpochLogger(
+    input_func=GeoVectorizer.decypher,
+    target_func=GeoVectorizer.decypher,
+    predict_func=GeoVectorizer.decypher,
+    aggregate_func=wkt2pyplot,
+    stdout=True
+)
 
-history = model.fit(
+model.fit(
     x=training_vectors,
     y=target_vectors,
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
-    callbacks=[my_callback, tb_callback]
-).history
-
-print(history)
+    callbacks=[epoch_callback, tb_callback]
+)
