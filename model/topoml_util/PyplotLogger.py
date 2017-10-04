@@ -37,11 +37,10 @@ class DecypherAll(Callback):
             pp.pprint(prediction)
 
             input_polys = GeoVectorizer.decypher(input)
-            target_points = [Point(point).wkt for point in
-                             GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(target, 10)]
+            target_polys = GeoVectorizer.decypher(target)
             prediction_points = [Point(point).wkt for point in
                                  GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(prediction, 10)]
 
-            plt = wkt2pyplot(input_polys.split('\n'), target_points, prediction_points)
+            plt = wkt2pyplot(input_polys.split('\n'), [target_polys], prediction_points)
             plt.savefig('test_files/plt_' + timestamp + '.png')
             plt.close('all')
