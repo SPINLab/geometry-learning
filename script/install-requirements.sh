@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 sudo apt-get update
 sudo apt-get install -y libgeos-dev
 sudo pip3 install --upgrade keras
@@ -12,3 +13,10 @@ sudo cp -P cuda/include/cudnn.h /usr/local/cuda/include
 sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
 sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
 sudo ldconfig
+
+sudo apt-get install -y lxde
+sudo startlxde
+sudo add-apt-repository ppa:x2go/stable
+sudo apt-get update
+sudo apt-get install -y x2goserver x2goserver-xsession
+sudo reboot
