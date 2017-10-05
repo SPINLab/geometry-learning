@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -e
+cd ~
 sudo apt-get update
-sudo apt-get install -y libgeos-dev
-sudo pip3 install --upgrade keras
+sudo apt-get install -y libgeos-dev python3-tk  # reinstall python3?
+sudo pip3 install --upgrade keras  # check ~/.keras/keras.json for correct settings!
 sudo pip3 install shapely
 # Install magenta requirement cuda 8.0 v6 for tf 1.2
 # From https://gitlab.com/nvidia/cuda/blob/c5e8c8d7a9fd444c4e45573f36cbeb8f4e10f71c/8.0/runtime/cudnn6/Dockerfile
@@ -14,11 +15,12 @@ sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
 sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
 sudo ldconfig
 
-sudo apt-get install -y lxde # xorg?
-sudo rm /home/ubuntu/.Xauthority
+sudo apt-get install -y lxde
+# sudo rm /home/ubuntu/.Xauthority
 sudo startlxde
-sudo add-apt-repository ppa:x2go/stable
+sudo add-apt-repository -y ppa:x2go/stable
 sudo apt-get update
 sudo apt-get install -y x2goserver x2goserver-xsession
 wget https://download.jetbrains.com/python/pycharm-community-2017.2.3.tar.gz
+tar xvzf pycharm-community-2017.2.3.tar.gz
 sudo reboot
