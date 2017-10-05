@@ -3,11 +3,12 @@ import numpy as np
 
 GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
                   "MultiPolygon", "Geometry"]
-X_INDEX = 0  # float: the X coordinate
-Y_INDEX = 1  # float: the Y coordinate
-GEOM_TYPE_INDEX = 5
-GEOM_TYPE_LEN = 8
-RENDER_INDEX = GEOM_TYPE_INDEX + GEOM_TYPE_LEN
+X_INDEX = 0             # float: the X coordinate
+Y_INDEX = 1             # float: the Y coordinate
+GEOM_TYPE_INDEX = 5     # Start index of the geometry type
+GEOM_TYPE_LEN = 8       # There's 8 positions in the one-hot encoding for the geometry type
+RENDER_INDEX = GEOM_TYPE_INDEX + GEOM_TYPE_LEN  # Render index start
+RENDER_LEN = 3          # Render one-hot vector length
 STOP_INDEX = RENDER_INDEX + 1
 FULL_STOP_INDEX = STOP_INDEX + 1
 GEO_VECTOR_LEN = FULL_STOP_INDEX + 1  # The amount of positions needed to describe the features of a geometry point
@@ -36,7 +37,7 @@ wkt_end = {
 
 
 class GeoVectorizer:
-    def __init__(self, gmm_size):
+    def __init__(self, gmm_size=None):
         self.gmm_size = gmm_size
 
     @staticmethod
