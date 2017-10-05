@@ -1,3 +1,4 @@
+import os
 import pprint
 from shapely.geometry import Point
 from topoml_util.wkt2pyplot import wkt2pyplot
@@ -12,17 +13,21 @@ pp = pprint.PrettyPrinter()
 
 
 class DecypherAll(Callback):
-    def __init__(self, gmm_size, sample_size=3, stdout=False):
+    def __init__(self, gmm_size, sample_size=3, stdout=False, plot_dir='plots'):
         """
         Class constructor that instantiates with a few vital settings in order to decypher the output
         :param gmm_size: size as an integer of the gaussian mixture model
         :param sample_size: size as an integer of the number of samples to log
         :param stdout: boolean whether or not to log to stdout. Mixture models can have a lot of output.
+        :param plot_dir: string of a directory to save plots to, relative to the path called to execute the script
         """
         super().__init__()
         self.gmm_size = gmm_size
         self.sample_size = sample_size
         self.stdout = stdout
+
+        os.makedirs(plot_dir, exist_ok=True)
+        self.plot_dir = plot_dir
 
     def on_epoch_end(self, epoch, logs=None):
         """
@@ -56,5 +61,5 @@ class DecypherAll(Callback):
                                  GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(prediction, 10)]
 
             plt, fig, ax = wkt2pyplot(input_polys.split('\n'), target_points, prediction_points)
-            plt.savefig('test_files/plt_' + timestamp + '.png')
+            plt.savefig(self.plot_dir + '/plt_' + timestamp + '.png')
             plt.close('all')
