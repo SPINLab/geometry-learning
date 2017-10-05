@@ -22,11 +22,11 @@ TIMESTAMP = str(datetime.now()).replace(':', '.')
 PLOT_DIR = './plots/' + TIMESTAMP + ' ' + SCRIPT_NAME
 DATA_FILE = '../files/geodata_vectorized.npz'
 BATCH_SIZE = 2048
-GAUSSIAN_MIXTURE_COMPONENTS = 1
+GAUSSIAN_MIXTURE_COMPONENTS = 10
 TRAIN_VALIDATE_SPLIT = 0.1
 REPEAT_DEEP_ARCH = 2
 LATENT_SIZE = 128
-EPOCHS = 200
+EPOCHS = 400
 OPTIMIZER = Adam(lr=1e-3)
 
 # Archive the configuration
@@ -86,36 +86,6 @@ model.fit(
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
     callbacks=[decypher, tb_callback])
-
-prediction = model.predict(training_vectors[-10000:])
-intersecting_error = np.abs(prediction[:, 0] - target_vectors[0:1000, 0])
-
-decyphered = [GeoVectorizer.decypher(vector).split('\n') for vector in training_vectors[0:1000]]
-zipped = zip(decyphered, target_vectors[0:1000, 0], prediction[:, 0])
-sorted_results = sorted(zipped, key=lambda record: abs(record[2] - record[1]))
-
-print('Intersection surface area mean:', np.mean(target_vectors))
-print('Intersecting error mean:', np.mean(intersecting_error))
-
-plot_samples = 50
-print('Saving top and bottom', plot_samples, 'results as plots, this will take a few minutes...')
-# print('Worst', plot_samples, 'results: ', sorted_results[-plot_samples:])
-for result in sorted_results[-plot_samples:]:
-    timestamp = str(datetime.now()).replace(':', '.')
-    plot, fig, ax = wkt2pyplot(result[0])
-    plot.text(0.01, 0.06, 'target: ' + str(result[1]), transform=ax.transAxes)
-    plot.text(0.01, 0.01, 'prediction: ' + str(result[2]), transform=ax.transAxes)
-    plot.savefig('./plot_images/bad_' + timestamp + '.png')
-    plot.close()
-
-# print('Best', plot_samples, 'results:', sorted_results[0:plot_samples])
-for result in sorted_results[0:plot_samples]:
-    timestamp = str(datetime.now()).replace(':', '.')
-    plot, fig, ax = wkt2pyplot(result[0])
-    plot.text(0.01, 0.06, 'target: ' + str(result[1]), transform=ax.transAxes)
-    plot.text(0.01, 0.01, 'prediction: ' + str(result[2]), transform=ax.transAxes)
-    plot.savefig('./plot_images/good_' + timestamp + '.png')
-    plot.close()
 
 print('Done!')
 
