@@ -1,7 +1,7 @@
-from matplotlib.collections import PatchCollection
+import matplotlib
+matplotlib.use('Agg')  # for headless machine instances
 from shapely import wkt
 from matplotlib import pyplot as plt
-from matplotlib.patches import Polygon
 
 
 def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='green', target_color='red',
@@ -23,9 +23,9 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
     input_polys = []
     for input_geom in input_geoms:
         if len(input_geom.bounds) > 0 and input_geom.geom_type == 'Polygon':
-            input_polys.append(Polygon(input_geom.boundary.coords))
+            input_polys.append(matplotlib.patches.Polygon(input_geom.boundary.coords))
 
-    inputs = PatchCollection(input_polys, alpha=0.4, linewidth=1)
+    inputs = matplotlib.collections.PatchCollection(input_polys, alpha=0.4, linewidth=1)
     inputs.set_color(input_color)
     ax.add_collection(inputs)
 
@@ -43,7 +43,8 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
                 plt.plot(geom.coords.xy[0][0], geom.coords.xy[1][0],
                          marker='o', color=target_color, linewidth=0)
             elif geom.type == 'Polygon':
-                collection = PatchCollection([Polygon(geom.boundary.coords)], alpha=0.4, linewidth=1)
+                collection = matplotlib.collections.PatchCollection([matplotlib.patches.Polygon(geom.boundary.coords)],
+                                                                    alpha=0.4, linewidth=1)
                 collection.set_color(target_color)
                 ax.add_collection(collection)
 
@@ -54,7 +55,8 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
                 plt.plot(geom.coords.xy[0][0], geom.coords.xy[1][0],
                          marker='o', color=pred_color, linewidth=0)
             elif geom.type == 'Polygon':
-                collection = PatchCollection([Polygon(geom.boundary.coords)], alpha=0.4, linewidth=1)
+                collection = matplotlib.collections.PatchCollection([matplotlib.patches.Polygon(geom.boundary.coords)],
+                                                                    alpha=0.4, linewidth=1)
                 collection.set_color(pred_color)
                 ax.add_collection(collection)
 
