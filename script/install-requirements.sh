@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -e
+git config --global user.name reinvantveer
+git config --global user.email 'rein.van.t.veer@geodan.nl'
+
 cd ~
 sudo apt-get update
 sudo apt-get install -y libgeos-dev python3-tk  # reinstall python3?
