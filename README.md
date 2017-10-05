@@ -44,32 +44,40 @@ Once you have everything installed, cd to the prep directory and execute `get-da
 After you have created your `topology-training.csv`, convert it to a numpy archive using `cd model && python3 vectorize.py`. Note there is a pre-built `geodata-vectorized.npz` under `files`
 
 # Running the models
-Models are run from the `model` directory. Each one of them is a more or less elaborate strategy to work with real-valued data, often combined with categorical data, using LSTMs.
+Model scripts are run from the `model` directory. Each one of them is a more or less elaborate strategy to work with real-valued data, often combined with categorical data, using LSTMs.
 
 You can monitor progress using tensorboard:
 `tensorboard --log_dir ./model/tensorboard`
 or
 `python3 -m tensorflow.tensorboard --logdir ./model/tensorboard`
 
-## Fixed 1d gaussian
+## Gaussian verification experiments
+Many models include gaussian parameter outputs as part of the task. The job of these models is to verify the accuracy and stability of univariate and bivariate gaussian loss functions.
+
+### `fixed_univariate_gaussian.py`
 The most simple of gaussian approximations. Attempts to approximate a mu of 52. as close as possible with a sigma of 0. Converges in about 10 epochs to exactly [52. 0.].
-`python3 fixed_1d_gaussian.py`
 
-## Fixed 2d gaussian
+
+### `fixed_bivariate_gaussian.py`
 Attempts to approximate a bivariate gaussian with mu's of a realistic coordinate set of [5, 52], sigmas of 0 and rho of 0. Converges in about 30 epochs, but weirdly brings rho towards +/- 9e0 instead of 0.
-`python3 fixed_2d_gaussian.py`
 
-## 'Geometric' distance
+### `random_univariate_gaussian.py`
+Trains to approximate a randomly instantiated set of integers between 1 and 20. 
+
+
+## Distance models
+
+### `centroid_distance.py`
+Calculate the distance between the centroids (of two polygons) in meters, expressed as a single gaussian. Converges to deviations of centimeters in about 50 epochs. This is a helpful demo model, since centroidal distances can in general practice be used between any set of two (multi)geometries, whether this are (multi)points, (multi)polygons or other.
+
+### `geom_distance.py`
 Approximates the distance between two polygons in meters, expressed as a single gaussian. This is an approximation of a vanilla distance query such as [PostGIS:ST_distance](http://postgis.net/docs/ST_Distance.html). If the polygons intersect, the distance is 0. Converges in about 25 epochs to centimeter-level precision. Intersecting geometries do not converge to exactly 0, but to levels within centimeters deviation.
-`python3 geom_distance.py`
 
-## Centroid distance
-Calculate the distance between the centroids (of two polygons) in meters, expressed as a single gaussian. Converges to deviations of centimeters in about 50 epochs.
-`python3 centroid_distance.py`
 
 ## Intersection auto-encoder
+
+### `intersection.py` 
 Approximates the intersection of two geometries into a new geometry. Work in progress.
-`python3 intersection.py`. 
 
 ## Character-level model
-There is one model that uses a character-level strategy to approximate intersections. Work in progress.
+There is one model that uses a character-level sequence-to-sequence strategy to approximate intersections. Work in progress.
