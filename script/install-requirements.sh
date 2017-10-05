@@ -14,9 +14,11 @@ sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
 sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
 sudo ldconfig
 
-sudo apt-get install -y lxde
+sudo apt-get install -y lxde # xorg?
+sudo rm /home/ubuntu/.Xauthority
 sudo startlxde
 sudo add-apt-repository ppa:x2go/stable
 sudo apt-get update
 sudo apt-get install -y x2goserver x2goserver-xsession
+wget https://download.jetbrains.com/python/pycharm-community-2017.2.3.tar.gz
 sudo reboot
