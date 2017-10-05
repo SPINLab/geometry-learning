@@ -104,4 +104,5 @@ ENV/
 /model/tensorboard/
 /model/tensorboard_log/
 !/files/geodata_vectorized.npz
-/model/topoml_util/test_files/*.png
+/model/plots/*.png
+/model/configs/*.py
