@@ -6,34 +6,18 @@ If you value your time, go for the dockerized version.
 Note there is a pre-built `geodata-vectorized.npz` under `files`, so you don't need to rebuild the training data.
 
 ## Numpy archive description
-The numpy archive contains vectors deserialized from well-known text geometries, using the [shapely](https://pypi.python.org/pypi/Shapely) library. They are encoded as a combination of real-valued and one-hot components:
+The numpy archive `geodata-vectorized.npz` under `files` contains vectors deserialized from well-known text geometries, using the [shapely](https://pypi.python.org/pypi/Shapely) library. They are re-serialized as a 3D tensor as a combination of real-valued and one-hot components:
 
-### input_geoms
-A nested array of shape (?, ?, 16) - depending on the sequence length settings - of deserialized WKT polygons with the following encoding:
-- [:, :, 0:5]:  The polygon point/node coordinates in lon/lat
-- [:, :, 5:13]: The geometry type, a one-hot encoded sequence of set {GeometryCollection, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, Geometry}
-- [:, :, 13:]:  A one-hot encoded sequence of actions in set {render, stop, full stop}
-
-### intersection
-Geometries representing the intersection in WGS84 lon/lat, same geometry encoding as `input_geoms`
-
-### centroid_distance
-Distance as gaussian with parameters mean and sigma shape [:, :, 2] in meters between the centroids
-
-### geom_distance
-Distance as gaussian with mean and sigma shape [:, :, 2] in meters between the geometries, distance 0 if intersecting
-
-### brt_centroid
-Centroid point in WGS84 lon/lat of the BRT geometry
-
-### osm_centroid
-Centroid point in WGS84 lon/lat of the OSM geometry
-
-### centroids
-Two centroid points for BRT and OSM in WGS84 lon/lat
-
-### centroids_rd
-Two centroid points for BRT and OSM in Netherlands RD meters
+|Script|Description|
+|:------|:----|
+|input_geoms| A nested array of shape (?, ?, 16) - depending on the sequence length settings - of deserialized WKT polygons with the following encoding: `[:, :, 0:5]`:  The polygon point/node coordinates in lon/lat, `[:, :, 5:13]`: The geometry type, a one-hot encoded sequence of set {GeometryCollection, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, Geometry}, `[:, :, 13:]`:  A one-hot encoded sequence of actions in set {render, stop, full stop}
+|intersection|Geometries representing the intersection in WGS84 lon/lat, same geometry encoding as `input_geoms`
+|centroid_distance|Distance as gaussian with parameters mean and sigma shape `[:, :, 2]` in meters between the centroids
+|geom_distance|Distance as gaussian with mean and sigma shape `[:, :, 2]` in meters between the geometries, distance 0 if intersecting
+|brt_centroid|Centroid point in WGS84 lon/lat of the BRT geometry
+|osm_centroid|Centroid point in WGS84 lon/lat of the OSM geometry
+|centroids|Two centroid points for BRT and OSM in WGS84 lon/lat
+|centroids_rd|Two centroid points for BRT and OSM in Netherlands RD meters
 
 ## Docker
 Due to the cross-platform dependency issues installing python geospatial packages, the setup has been [Dockerized](https://www.docker.com/) to ensure cross-platform interoperability. This is the easiest way to use. 
