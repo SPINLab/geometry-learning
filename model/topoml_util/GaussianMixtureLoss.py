@@ -15,6 +15,7 @@ class GaussianMixtureLoss:
         :param y_pred: rank 3 of shape(records, points, point features) predicted values tensor
         :return: a summed mixture loss and categorical cross entropy losses for the geometry type and stop bits
         """
+        # TODO: make rank agnostic
         tc_shape = y_true.shape
         if not tc_shape.ndims == 3:
             raise ValueError('This function works on tensors of rank 3.')
@@ -23,10 +24,13 @@ class GaussianMixtureLoss:
         geom_type_index = 6 * self.num_components  # Calculate offset from parameters times components
         render_index = geom_type_index + 8
 
-        true_components = y_true[:, :, :geom_type_index]
+        true_components = y_true[..., :geom_type_index]
         shape = [-1, self.num_points, self.num_components, 6]
         true_components = K.reshape(true_components, tuple(shape))
-        predicted_components = K.reshape(y_pred[:, :, :geom_type_index], (-1, self.num_points, self.num_components, 6))
+
+        # TODO: make reshape op rank agnostic
+        predicted_components = K.reshape(y_pred[..., :geom_type_index],
+                                         (-1, self.num_points, self.num_components, 6))
 
         pi_index = 5  # mixture component weight
         pi_weights = K.softmax(predicted_components[..., pi_index])
@@ -48,7 +52,7 @@ class GaussianMixtureLoss:
 
     def univariate_gmm_loss(self, true, pred):
         """
-        A simple loss function for rank agnostic single gaussian mixture models
+        A simple loss function for rank 3 single gaussian mixture models
         :param true: truth values tensor
         :param pred: prediction values tensor
         :return: loss values tensor
@@ -59,6 +63,7 @@ class GaussianMixtureLoss:
                 'outcome of the loss function may be unpredictable.')
 
         # true_components = K.reshape(true, (-1, self.num_components, 3))
+        # TODO: make reshape op rank agnostic
         predicted_components = K.reshape(pred, (-1, self.num_components, 3))
 
         pi_index = 2
