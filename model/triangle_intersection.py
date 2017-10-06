@@ -15,11 +15,11 @@ from topoml_util.geom_loss import geom_gaussian_loss
 from topoml_util.wkt2pyplot import wkt2pyplot
 
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-BATCH_SIZE = 1024
+BATCH_SIZE = 2048
 TRAIN_VALIDATE_SPLIT = 0.1
-LATENT_SIZE = 256
-EPOCHS = 50
-OPTIMIZER = Adam(lr=1e-4)
+LATENT_SIZE = 64
+EPOCHS = 400
+OPTIMIZER = Adam(lr=1e-3, decay=1e-4)
 
 print('Creating triangles')
 raw_training_vectors = np.random.normal(size=(100000, 6, 2))
@@ -28,8 +28,8 @@ triangle_sets = np.array([[Polygon(point_set[0:3]).wkt, Polygon(point_set[3:]).w
 max_points = GeoVectorizer.max_points(triangle_sets[:, 0], triangle_sets[:, 1])
 raw_training_vectors = [GeoVectorizer.vectorize_two_wkts(*triangle_set, max_points)
                         for triangle_set in triangle_sets]
-# raw_training_vectors = [GeoVectorizer.interpolate(point_sequence, len(point_sequence) * 20)
-#                         for point_sequence in raw_training_vectors]
+# triangles = [GeoVectorizer.interpolate(point_sequence, len(point_sequence) * 20)
+#                         for point_sequence in triangles]
 (_, max_points, GEO_VECTOR_LEN) = np.array(raw_training_vectors).shape
 
 print('Intersecting triangles and pruning')
@@ -45,15 +45,16 @@ training_vectors = np.array(training_vectors)
 target_vectors = np.array(target_vectors)
 
 inputs = Input(shape=(max_points, GEO_VECTOR_LEN))
-model = LSTM(LATENT_SIZE, return_sequences=True)(inputs)
-model = LeakyReLU()(model)
-model = TimeDistributed(Dense(64, activation='relu'))(model)
+model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(inputs)
+model = Dense(32, activation='relu')(model)
+model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(model)
+model = Dense(32, activation='relu')(model)
 model = Dense(GEO_VECTOR_LEN)(model)
 model = Model(inputs, model)
 model.compile(loss=geom_gaussian_loss, optimizer=OPTIMIZER)
 model.summary()
 
-tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
+tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP)
 epoch_callback = EpochLogger(
     input_func=GeoVectorizer.decypher,
     target_func=GeoVectorizer.decypher,
