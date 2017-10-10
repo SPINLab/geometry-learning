@@ -41,12 +41,17 @@ class GeoVectorizer:
         self.gmm_size = gmm_size
 
     @staticmethod
-    def max_points(wkt_set1, wkt_set2):
+    def max_points(*wkt_sets):
+        """
+        Determines the maximum summed size (length) of elements in an arbitrary length 1d array of well-known-text
+        geometries
+        :param wkt_sets: arbitrary length array of 1d arrays containing well-known-text geometry entries
+        :return: scalar integer representing the longest set of points length
+        """
         max_points = 0
 
-        for index, _ in enumerate(wkt_set1):
-            number_of_points = GeoVectorizer.num_points_from_wkt(wkt_set1[index]) + \
-                               GeoVectorizer.num_points_from_wkt(wkt_set2[index])
+        for wkts in zip(*wkt_sets):
+            number_of_points = sum([GeoVectorizer.num_points_from_wkt(wkt) for wkt in wkts])
             if number_of_points > max_points:
                 max_points = number_of_points
 
@@ -61,7 +66,7 @@ class GeoVectorizer:
 
         index = 0
         while max_points > len(interpolated) > index:
-            if not interpolated[index, RENDER_INDEX]:
+            if not interpolated[index, RENDER_INDEX]:  # i.e. no STOP or FULL stop
                 index += 1
                 continue
             halfway = np.mean(interpolated[index:index + 2, 0:2], axis=0, keepdims=True)
@@ -166,14 +171,18 @@ class GeoVectorizer:
             geom_type_one_hot = GEOMETRY_TYPES.index(geom_type) + GEOM_TYPE_INDEX  # offset from coordinate entries
             # [11:14] boolean: [render, end of first geometry, end of second geometry]
 
-            vectors[point_index + offset][X_INDEX] = point[0]
-            vectors[point_index + offset][Y_INDEX] = point[1]
-            vectors[point_index + offset][geom_type_one_hot] = True
+            position = point_index + offset
+            vectors[position][X_INDEX] = point[0]
+            vectors[position][Y_INDEX] = point[1]
+            vectors[position][geom_type_one_hot] = True
 
             if point_index == len(points) - 1:
-                vectors[point_index + offset][STOP_INDEX + is_last] = True
+                if is_last:
+                    vectors[position:, STOP_INDEX + 1] = True
+                else:
+                    vectors[position, STOP_INDEX] = True
             else:
-                vectors[point_index + offset][RENDER_INDEX] = True
+                vectors[position, RENDER_INDEX] = True
 
         return vectors
 
@@ -206,9 +215,10 @@ class GeoVectorizer:
 
     def decypher_gmm_geom(self, vector, sample_size=10):
         """
-        Decyphers a encoded vector of 2D gaussian mixture model components and one-hot vectors back to a wkt geometry
-        :param vector:  a rank 2 input vector of sequences from a gaussian mixture model and two one-hot vectors for
-                        geometry type and 'pen state' or stop indicator, all as a concatenated sequence
+        Decyphers a encoded vector of bivariate gaussian mixture model components and one-hot vectors back to a wkt
+        geometry
+        :param vector: rank 2 input vector of sequences with parameters for a gaussian mixture model, two one-hot
+            vectors for geometry type and 'pen state' or stop indicator, all as a concatenated sequence
         :param sample_size: number of points to sample from each mixture component
         :return a list of max_points * sample size sampled 2d points
         """
