@@ -34,26 +34,44 @@ print('Vectorizing WKT geometries...')
 max_points = GeoVectorizer.max_points(brt_wkt, osm_wkt)
 training_vectors = np.zeros((len(training_set), max_points, GEO_VECTOR_LEN))
 intersection_vectors = np.zeros((len(intersection_set), max_points, GEO_VECTOR_LEN))
+brt_max_points = GeoVectorizer.max_points(brt_wkt)
+brt_vectors = np.zeros((len(brt_wkt), brt_max_points, GEO_VECTOR_LEN))
+osm_max_points = GeoVectorizer.max_points(osm_wkt)
+osm_vectors = np.zeros((len(osm_wkt), osm_max_points, GEO_VECTOR_LEN))
 
 broken_records = []
 for record_index in range(len(brt_wkt)):
     try:
         training_vector = GeoVectorizer.vectorize_two_wkts(brt_wkt[record_index], osm_wkt[record_index], max_points)
         target_vector = GeoVectorizer.vectorize_wkt(intersection_set[record_index], max_points)
+        brt_vector = GeoVectorizer.vectorize_wkt(brt_wkt[record_index], brt_max_points)
+        osm_vector = GeoVectorizer.vectorize_wkt(osm_wkt[record_index], osm_max_points)
     except Exception as e:
         print('Creating dummy record', record_index, ':', e)
-        training_vectors[record_index, 0, FULL_STOP_INDEX] = 1
-        intersection_vectors[record_index, 0, FULL_STOP_INDEX] = 1
+        training_vectors[record_index, 0:, FULL_STOP_INDEX] = 1
+        intersection_vectors[record_index, 0:, FULL_STOP_INDEX] = 1
+        brt_vectors[record_index, 0:, FULL_STOP_INDEX] = 1
+        osm_vectors[record_index, 0:, FULL_STOP_INDEX] = 1
+
         broken_records.append(record_index)
         continue
 
+    # Fill in the numpy zeros tensor value by value
     for point_index, point in enumerate(training_vector):
-        for feature_index, feature in enumerate(point):
-            training_vectors[record_index, point_index, feature_index] = feature
+        for feature_index, value in enumerate(point):
+            training_vectors[record_index, point_index, feature_index] = value
 
     for point_index, point in enumerate(target_vector):
-        for feature_index, feature in enumerate(point):
-            intersection_vectors[record_index, point_index, feature_index] = feature
+        for feature_index, value in enumerate(point):
+            intersection_vectors[record_index, point_index, feature_index] = value
+
+    for point_index, point in enumerate(brt_vector):
+        for feature_index, value in enumerate(point):
+            brt_vectors[record_index, point_index, feature_index] = value
+
+    for point_index, point in enumerate(osm_vector):
+        for feature_index, value in enumerate(point):
+            osm_vectors[record_index, point_index, feature_index] = value
 
 # Concatenate centroids
 centroids = np.append(brt_centroid, osm_centroid, axis=1)
@@ -78,8 +96,10 @@ print('Saving compressed numpy data file', GEODATA_VECTORIZED)
 
 np.savez_compressed(
     GEODATA_VECTORIZED,
-    input_geoms=training_vectors,               # Sets of two geometries in WGS84 lon/lat, 25% of them overlapping
-    intersection=intersection_vectors,          # Geometries representing the intersection_surface_area in WGS84 lon/lat
+    input_geoms=training_vectors,               # Two concatenated vectorized geoms in WGS84 lon/lat, with 25% overlap
+    brt_vectors=brt_vectors,                    # BRT building vector in WGS84 lon/lat
+    osm_vectors=osm_vectors,                    # OSM building vector in WGS84 lon/lat
+    intersection=intersection_vectors,          # Vectorized intersection geoms in WGS84 lon/lat
     centroid_distance=centroid_distance,        # Distance in meters between the centroids
     geom_distance=geom_distance,                # Distance in meters between the geometries, 0 if intersecting
     brt_centroid=brt_centroid,                  # Centroid point in WGS84 lon/lat of the BRT geometry
