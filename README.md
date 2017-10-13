@@ -37,7 +37,7 @@ If you need to run or debug locally, you need the following dependencies:
 |Shapely|`apt-get install -y libgeos-dev && pip install shapely`| |download and `pip install` [one of these wheels](http://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely)|
 |GDAL|`apt-get install -y libproj-dev && git clone https://github.com/OSGeo/gdal.git && cd gdal/gdal && ./configure --with-python && make >/dev/null 2>&1 && make install && ldconfig`| |download and `pip install` [one of these wheels](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)|
 |PostGIS|`apt-get install postgres postgis` | `brew install -y postgres postgis`| see [here](http://postgis.net/windows_downloads/) |
-
+|slackclient|`pip3 install slackclient`|`pip3 install slackclient`|`pip3 install slackclient`|
 Once you have everything installed, cd to the prep directory and execute `get-data.sh` en `export-data.sh`.
 
 ## Conversion to numpy archive
