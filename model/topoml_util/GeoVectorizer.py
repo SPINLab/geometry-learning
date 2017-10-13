@@ -3,15 +3,16 @@ import numpy as np
 
 GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
                   "MultiPolygon", "Geometry"]
-X_INDEX = 0             # float: the X coordinate
-Y_INDEX = 1             # float: the Y coordinate
-GEOM_TYPE_INDEX = 5     # Start index of the geometry type
-GEOM_TYPE_LEN = 8       # There's 8 positions in the one-hot encoding for the geometry type
+X_INDEX = 0                             # the X coordinate position
+Y_INDEX = 1                             # the Y coordinate position
+GEOM_TYPE_INDEX = 5                     # Start index of the geometry type
+GEOM_TYPE_LEN = 8                       # 8 positions in the one-hot encoding for the geometry type
 RENDER_INDEX = GEOM_TYPE_INDEX + GEOM_TYPE_LEN  # Render index start
-RENDER_LEN = 3          # Render one-hot vector length
-STOP_INDEX = RENDER_INDEX + 1
-FULL_STOP_INDEX = STOP_INDEX + 1
-GEO_VECTOR_LEN = FULL_STOP_INDEX + 1  # The amount of positions needed to describe the features of a geometry point
+RENDER_LEN = 3                                  # Render one-hot vector length
+ONE_HOT_LEN = GEOM_TYPE_LEN + RENDER_LEN        # Length of the one-hot encoded part
+STOP_INDEX = RENDER_INDEX + 1           # Stop index for the first geometry. A second one follows
+FULL_STOP_INDEX = STOP_INDEX + 1        # Full stop index. No more points to follow
+GEO_VECTOR_LEN = FULL_STOP_INDEX + 1    # The length needed to describe the features of a geometry point
 
 action_types = ["render", "stop", "full stop"]
 wkt_start = {
