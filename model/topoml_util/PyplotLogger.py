@@ -13,9 +13,10 @@ pp = pprint.PrettyPrinter()
 
 
 class DecypherAll(Callback):
-    def __init__(self, gmm_size, sample_size=3, stdout=False, plot_dir='plots'):
+    def __init__(self, gmm_size=1, sample_size=3, input_slice=lambda x: x[0:1], target_slice=lambda x: x[1:2], stdout=False, plot_dir='plots'):
         """
         Class constructor that instantiates with a few vital settings in order to decypher the output
+        :type target_slice: object
         :param gmm_size: size as an integer of the gaussian mixture model
         :param sample_size: size as an integer of the number of samples to log
         :param stdout: boolean whether or not to log to stdout. Mixture models can have a lot of output.
@@ -24,6 +25,8 @@ class DecypherAll(Callback):
         super().__init__()
         self.gmm_size = gmm_size
         self.sample_size = sample_size
+        self.input_slice = input_slice
+        self.target_slice = target_slice
         self.stdout = stdout
 
         os.makedirs(plot_dir, exist_ok=True)
@@ -36,10 +39,17 @@ class DecypherAll(Callback):
         :param logs: automatically instantiated by Keras
         """
         random.seed(datetime.now())
-        validation_samples = random.sample(range(len(self.validation_data[0])), self.sample_size)
-        input_samples = [self.validation_data[0][sample] for sample in validation_samples]
-        target_samples = [self.validation_data[1][sample] for sample in validation_samples]
-        predictions = self.model.predict(np.array(input_samples))
+
+        sample_indexes = random.sample(range(len(self.validation_data[0])), self.sample_size)
+        inputs = np.array(self.input_slice(self.validation_data))
+        targets = np.array(self.target_slice(self.validation_data))
+        input_samples = [inputs[:, sample_index] for sample_index in sample_indexes]
+        target_samples = [targets[:, sample_index] for sample_index in sample_indexes]
+
+        predictions = []
+        for sample_index in sample_indexes:
+            sample = inputs[:, sample_index:sample_index + 1]
+            predictions.append(self.model.predict([*sample]))
 
         print('\nPlotting output for %i inputs, targets and predictions...' % len(predictions))
 
@@ -54,12 +64,12 @@ class DecypherAll(Callback):
                 print('Prediction:')
                 pp.pprint(prediction)
 
-            input_polys = GeoVectorizer.decypher(input)
+            input_polys = [GeoVectorizer.decypher(poly) for poly in input]
             target_points = [Point(point).wkt for point in
-                             GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(target, 10)]
+                             GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(target[0], 1)]
             prediction_points = [Point(point).wkt for point in
-                                 GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(prediction, 10)]
+                                 GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(prediction[0], 10)]
 
-            plt, fig, ax = wkt2pyplot(input_polys.split('\n'), target_points, prediction_points)
+            plt, fig, ax = wkt2pyplot(input_polys, target_points, prediction_points)
             plt.savefig(self.plot_dir + '/plt_' + timestamp + '.png')
             plt.close('all')
