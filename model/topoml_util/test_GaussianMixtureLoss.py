@@ -6,6 +6,7 @@ from topoml_util.test_files import gmm_output
 from topoml_util.GaussianMixtureLoss import GaussianMixtureLoss
 
 sess = tf.InteractiveSession()
+DATA_FILE = '../files/geodata_vectorized.npz'
 
 
 class TestGaussianMixtureLoss(unittest.TestCase):
@@ -16,25 +17,25 @@ class TestGaussianMixtureLoss(unittest.TestCase):
         print(loss.eval())
 
     def test_single_gaussian_loss(self):
-        true = [
+        true = np.array([
             [1., 1., 0.],
             [1., 1., 0.],
             [1., 1., 0.],
             [1., 1., 0.],
-        ]
-        pred1 = [
+        ])
+        pred1 = np.array([
             [1., 1., 0.],
             [1., 1., 0.],
             [1., 1., 0.],
             [1., 1., 0.],
-        ]
-        pred2 = [
+        ])
+        pred2 = np.array([
             [0., 0., 0.],
             [0., 0., 0.],
             [0., 0., 0.],
             [0., 0., 0.],
-        ]
-        loss1 = GaussianMixtureLoss(num_components=1, num_points=1).rank2_1d_gaussian_mixture_loss(true, pred1)
-        loss2 = GaussianMixtureLoss(num_components=1, num_points=1).rank2_1d_gaussian_mixture_loss(true, pred2)
+        ])
+        loss1 = GaussianMixtureLoss(num_components=1, num_points=1).univariate_gmm_loss(true, pred1)
+        loss2 = GaussianMixtureLoss(num_components=1, num_points=1).univariate_gmm_loss(true, pred2)
         self.assertLess(loss1.eval(), loss2.eval())
 
