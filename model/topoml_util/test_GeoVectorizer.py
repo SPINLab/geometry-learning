@@ -103,4 +103,4 @@ class TestVectorizer(unittest.TestCase):
         pred = gmm_output.prediction
         sample_size = 10
         points = GeoVectorizer(gmm_size=5).decypher_gmm_geom(pred, sample_size=sample_size)
-        self.assertEqual(len(points), sample_size * len(pred))
+        self.assertEqual(len(points), 40)
