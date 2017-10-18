@@ -42,6 +42,17 @@ class GeoVectorizer:
         self.gmm_size = gmm_size
 
     @staticmethod
+    def softplus(x):
+        """Compute softplus values for each sets of values in x."""
+        return np.logaddexp(1.0, x)
+
+    @staticmethod
+    def softmax(x):
+        """Compute softmax values for each sets of values in x."""
+        e_x = np.exp(x - np.max(x))
+        return e_x / e_x.sum()
+
+    @staticmethod
     def max_points(*wkt_sets):
         """
         Determines the maximum summed size (length) of elements in an arbitrary length 1d array of well-known-text
@@ -216,8 +227,8 @@ class GeoVectorizer:
 
     def decypher_gmm_geom(self, vector, sample_size=10):
         """
-        Decyphers a encoded vector of bivariate gaussian mixture model components and one-hot vectors back to a wkt
-        geometry
+        Decyphers a encoded 2d vector of bivariate gaussian mixture model component(s) parameters and one-hot vectors
+        back to a wkt geometry
         :param vector: rank 2 input vector of sequences with parameters for a gaussian mixture model, two one-hot
             vectors for geometry type and 'pen state' or stop indicator, all as a concatenated sequence
         :param sample_size: number of points to sample from each mixture component
@@ -236,14 +247,18 @@ class GeoVectorizer:
         for index, highest in enumerate(most_likely):
             render_state = np.argmax(vector[index, render_state_start:])
             if action_types[render_state] == 'full stop':
-                print('Stop on node', index)
+                # print('Stop on node', index)
                 index -= 1  # Prevent errors on reshaping in case of no full stop encounter
                 break
 
             [mean_x, mean_y, sigma_x, sigma_y, rho] = components[index, highest, 0:5]
+            [sigma_x, sigma_y] = np.abs([sigma_x, sigma_y])
+            rho = np.tanh(rho)
+
             sampled = np.random.multivariate_normal(
                 mean=[mean_x, mean_y],
-                cov=[[0, 0], [0, 0]],
+                cov=[[sigma_x, rho], [rho, sigma_y]],  # TODO: tune this to decent values
+                # cov=[[0, 0], [0, 0]],
                 size=sample_size)
             # sample.append(np.repeat([mean_x, mean_y], 10))
             sample.append(sampled)
