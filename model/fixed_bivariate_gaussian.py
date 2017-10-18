@@ -25,7 +25,10 @@ model = LSTM(vector_len, return_sequences=True)(inputs)
 # The dense layer is required for input values exceeding 1e0
 model = Dense(vector_len)(model)
 model = Model(inputs, model)
-model.compile(loss=r3_bivariate_gaussian_loss, optimizer=Adam(lr=0.01))
+model.compile(
+    loss=r3_bivariate_gaussian_loss,
+    metrics='mse',
+    optimizer=Adam(lr=0.01))
 model.summary()
 
 my_callback = DecypherAll(lambda x: str(x))

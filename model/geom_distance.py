@@ -36,7 +36,10 @@ inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE, activation='relu')(inputs)
 model = Dense(2)(model)
 model = Model(inputs, model)
-model.compile(loss=r2_univariate_gaussian_loss, optimizer=Adam(lr=0.005))
+model.compile(
+    loss=r2_univariate_gaussian_loss,
+    metrics='mse',
+    optimizer=Adam(lr=0.005))
 model.summary()
 
 tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
