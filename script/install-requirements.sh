@@ -27,3 +27,9 @@ sudo apt-get install -y x2goserver x2goserver-xsession
 wget https://download.jetbrains.com/python/pycharm-community-2017.2.3.tar.gz
 tar xvzf pycharm-community-2017.2.3.tar.gz
 sudo reboot
+
+# Install Jenkins
+wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+echo "deb https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins-debian-stable.list
+sudo apt-get update
+sudo apt-get install jenkins
