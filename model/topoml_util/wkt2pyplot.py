@@ -1,5 +1,9 @@
 import matplotlib
-matplotlib.use('Agg')  # for headless machine instances
+import os
+
+if not os.environ.get('MATPLOTLIB_TEST'):
+    matplotlib.use('Agg')  # for headless machine instances
+
 from shapely import wkt
 from matplotlib import pyplot as plt
 
@@ -14,7 +18,7 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
     :param input_color: a pyplot-compatible notation of color, default green
     :param pred_color: a pyplot-compatible notation of color, default red
     :param target_color: a pyplot-compatible notation of color, default blue
-    :return: a matplotlib pyplot
+    :return: a matplotlib pyplot fig, ax and plt
     """
     input_geoms = [wkt.loads(input_wkt) for input_wkt in input_wkts]
 
@@ -41,7 +45,7 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
         for geom in target_geoms:
             if geom.type == 'Point':
                 plt.plot(geom.coords.xy[0][0], geom.coords.xy[1][0],
-                         marker='o', color=target_color, linewidth=0)
+                         marker='o', color=target_color, alpha=0.4, linewidth=0)
             elif geom.type == 'Polygon':
                 collection = matplotlib.collections.PatchCollection([matplotlib.patches.Polygon(geom.boundary.coords)],
                                                                     alpha=0.4, linewidth=1)
@@ -53,7 +57,7 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
         for geom in prediction_geoms:
             if geom.geom_type == 'Point':
                 plt.plot(geom.coords.xy[0][0], geom.coords.xy[1][0],
-                         marker='o', color=pred_color, linewidth=0)
+                         marker='o', color=pred_color, alpha=0.4, linewidth=0)
             elif geom.type == 'Polygon':
                 collection = matplotlib.collections.PatchCollection([matplotlib.patches.Polygon(geom.boundary.coords)],
                                                                     alpha=0.4, linewidth=1)
