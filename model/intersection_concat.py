@@ -4,9 +4,9 @@ from shutil import copyfile
 
 import numpy as np
 from keras import Input
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, concatenate, Reshape
+from keras.layers import LSTM, Dense, concatenate, Reshape, RepeatVector, TimeDistributed, LeakyReLU
 from keras.optimizers import Adam
 from slackclient import SlackClient
 
@@ -26,10 +26,10 @@ BATCH_SIZE = 1024
 GAUSSIAN_MIXTURE_COMPONENTS = 1
 TRAIN_VALIDATE_SPLIT = 0.1
 REPEAT_DEEP_ARCH = 2
-LSTM_SIZE = 128
+LSTM_SIZE = 256
 DENSE_SIZE = 64
 EPOCHS = 400
-OPTIMIZER = Adam(lr=1e-5, clipnorm=1.)
+OPTIMIZER = Adam(lr=1e-3, clipnorm=1.)
 
 # Archive the configuration
 copyfile(__file__, 'configs/' + TIMESTAMP + ' ' + SCRIPT_NAME)
@@ -64,28 +64,33 @@ output_size = target_max_points * output_seq_length
 Loss = GaussianMixtureLoss(num_components=GAUSSIAN_MIXTURE_COMPONENTS, num_points=target_max_points)
 
 brt_inputs = Input(shape=(brt_max_points, BRT_INPUT_VECTOR_LEN))
-brt_model = LSTM(128, activation='relu', return_sequences=True)(brt_inputs)
+brt_model = LSTM(64, activation='relu')(brt_inputs)
 
 osm_inputs = Input(shape=(osm_max_points, OSM_INPUT_VECTOR_LEN))
-osm_model = LSTM(128, activation='relu', return_sequences=True)(osm_inputs)
+osm_model = LSTM(64, activation='relu')(osm_inputs)
 
 concat = concatenate([brt_model, osm_model])
-model = LSTM(output_size, activation='relu')(concat)
-model = Dense(output_size)(model)
-# account for differences in concatenated input and output size
-model = Reshape((target_max_points, output_seq_length))(model)
+model = RepeatVector(target_max_points)(concat)
+model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
+model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
+model = TimeDistributed(Dense(256, activation='relu'))(model)
+model = Dense(output_seq_length)(model)
+
 model = Model(inputs=[brt_inputs, osm_inputs], outputs=model)
 model.compile(
     loss=Loss.geom_gaussian_mixture_loss,
     optimizer=OPTIMIZER)
 model.summary()
 
-tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME,
-                          histogram_freq=1, write_graph=True)
-decypher = DecypherAll(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS,
-                       plot_dir=PLOT_DIR,
-                       input_slice=lambda x: x[:2],
-                       target_slice=lambda x: x[2:3])
+# Callbacks
+callbacks = [
+    TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME, write_graph=False),
+    DecypherAll(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS,
+                plot_dir=PLOT_DIR,
+                input_slice=lambda x: x[:2],
+                target_slice=lambda x: x[2:3]),
+    EarlyStopping(patience=40)
+]
 
 model.fit(
     x=[brt_vectors, osm_vectors],
@@ -93,18 +98,17 @@ model.fit(
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
-    callbacks=[decypher, tb_callback])
+    callbacks=callbacks)
 
 slack_token = os.environ.get("SLACK_API_TOKEN")
 
 if slack_token:
     sc = SlackClient(slack_token)
     sc.api_call(
-      "chat.postMessage",
-      channel="#machinelearning",
-      text="Session " + TIMESTAMP + ' ' + SCRIPT_NAME + " completed successfully")
+        "chat.postMessage",
+        channel="#machinelearning",
+        text="Session " + TIMESTAMP + ' ' + SCRIPT_NAME + " completed successfully")
 else:
     print('No slack notification: no slack API token environment variable "SLACK_API_TOKEN" set.')
 
 print('Done!')
-
