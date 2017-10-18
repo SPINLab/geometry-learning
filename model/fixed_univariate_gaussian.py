@@ -24,7 +24,10 @@ inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(GEO_VECTOR_LEN, return_sequences=True)(inputs)
 model = Dense(GEO_VECTOR_LEN)(model)
 model = Model(inputs, model)
-model.compile(loss=r3_univariate_gaussian_loss, optimizer=Adam(lr=0.01))
+model.compile(
+    loss=r3_univariate_gaussian_loss,
+    metrics='mse',
+    optimizer=Adam(lr=0.01))
 model.summary()
 
 my_callback = DecypherAll(lambda x: str(x))
