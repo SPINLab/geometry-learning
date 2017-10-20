@@ -1,20 +1,27 @@
 from datetime import datetime
+import os
 import numpy as np
 from keras import Input
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, TimeDistributed, Dense
+from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
+from shutil import copyfile
 
 from topoml_util.ConsoleLogger import DecypherAll
-from topoml_util.geom_loss import r3_univariate_gaussian_loss
+from topoml_util.gaussian_loss import univariate_gaussian_loss
+from topoml_util.slack_send import notify
 
+SCRIPT_VERSION = "0.0.2"
+SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 EPOCHS = 60
 BATCH_SIZE = 100
 TRAINING_SIZE = 100000
 TRAIN_VALIDATE_SPLIT = 0.2
-tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
+
+# Archive the configuration
+copyfile(__file__, 'configs/' + TIMESTAMP + ' ' + SCRIPT_NAME)
 
 univariate = np.repeat([[[52]]], TRAINING_SIZE, axis=0)
 univariate = np.append(univariate, np.zeros(shape=(TRAINING_SIZE, 1, 1)), axis=2)
@@ -25,16 +32,22 @@ model = LSTM(GEO_VECTOR_LEN, return_sequences=True)(inputs)
 model = Dense(GEO_VECTOR_LEN)(model)
 model = Model(inputs, model)
 model.compile(
-    loss=r3_univariate_gaussian_loss,
-    metrics='mse',
-    optimizer=Adam(lr=0.01))
+    loss=univariate_gaussian_loss,
+    optimizer=Adam(lr=0.001))
 model.summary()
 
-my_callback = DecypherAll(lambda x: str(x))
+callbacks = [
+    TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME, write_graph=False),
+    DecypherAll(lambda x: str(x)),
+    EarlyStopping(patience=20, min_delta=0.001)
+]
 
-model.fit(x=univariate,
-          y=univariate,
-          epochs=EPOCHS,
-          batch_size=BATCH_SIZE,
-          validation_split=TRAIN_VALIDATE_SPLIT,
-          callbacks=[my_callback, tb_callback])
+history = model.fit(x=univariate,
+                    y=univariate,
+                    epochs=EPOCHS,
+                    batch_size=BATCH_SIZE,
+                    validation_split=TRAIN_VALIDATE_SPLIT,
+                    callbacks=callbacks).history
+
+notify(TIMESTAMP, SCRIPT_NAME, 'validation loss of ' + str(history['val_loss'][-1]))
+print(SCRIPT_NAME, 'finished successfully')

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import matplotlib
 import os
 
@@ -8,10 +10,10 @@ from shapely import wkt
 from matplotlib import pyplot as plt
 
 
-def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='green', target_color='red',
-               pred_color='blue'):
+def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None,
+               input_color='green', target_color='red', pred_color='blue'):
     """
-    Convert input, target and prediction well-known encoded geometry arrays to pyplot
+    Convert arrays of input, target and prediction well-known encoded geometry arrays to pyplot
     :param input_wkts: an array of input geometries, rendered in (standard) green
     :param target_wkts: optional array of target geometries, rendered in (standard) red
     :param prediction_wkts: optional array of prediction geometries, rendered in (standard) blue
@@ -57,7 +59,7 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
         for geom in prediction_geoms:
             if geom.geom_type == 'Point':
                 plt.plot(geom.coords.xy[0][0], geom.coords.xy[1][0],
-                         marker='o', color=pred_color, alpha=0.4, linewidth=0)
+                         marker='o', color=pred_color, alpha=0.1, linewidth=0)
             elif geom.type == 'Polygon':
                 collection = matplotlib.collections.PatchCollection([matplotlib.patches.Polygon(geom.boundary.coords)],
                                                                     alpha=0.4, linewidth=1)
@@ -67,3 +69,10 @@ def wkt2pyplot(input_wkts, target_wkts=None, prediction_wkts=None, input_color='
     plt.axis('auto')
 
     return plt, fig, ax
+
+
+def save_plot(geoms, plot_dir='plots', timestamp=None):
+    os.makedirs(plot_dir, exist_ok=True)
+    plt, fig, ax = wkt2pyplot(*geoms)
+    plt.savefig(plot_dir + '/plt_' + timestamp + '.png')
+    plt.close('all')
