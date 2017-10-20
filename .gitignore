@@ -103,6 +103,6 @@ ENV/
 /files/
 /model/tensorboard/
 /model/tensorboard_log/
-!/files/geodata_vectorized.npz
 /model/plots/*.png
 /model/configs/*.py
+/script/cuda/

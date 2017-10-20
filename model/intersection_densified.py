@@ -4,11 +4,10 @@ from shutil import copyfile
 
 import numpy as np
 from keras import Input
-from keras.callbacks import TensorBoard, TerminateOnNaN
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, Dense, Reshape
 from keras.optimizers import Adam
-from slackclient import SlackClient
 
 from topoml_util.GaussianMixtureLoss import GaussianMixtureLoss
 from topoml_util.GeoVectorizer import GEOM_TYPE_LEN, RENDER_LEN
@@ -16,13 +15,14 @@ from topoml_util.PyplotLogger import DecypherAll
 
 # To suppress tensorflow info level messages:
 # export TF_CPP_MIN_LOG_LEVEL=2
+from topoml_util.slack_send import notify
 
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 PLOT_DIR = './plots/' + TIMESTAMP + ' ' + SCRIPT_NAME
 DATA_FILE = '../files/densified_vectorized.npz'
 BATCH_SIZE = 1024
-GAUSSIAN_MIXTURE_COMPONENTS = 20
+GAUSSIAN_MIXTURE_COMPONENTS = 1
 DENSIFIED = 100
 TRAIN_VALIDATE_SPLIT = 0.1
 REPEAT_DEEP_ARCH = 2
@@ -59,29 +59,19 @@ model.compile(
     optimizer=OPTIMIZER)
 model.summary()
 
-tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME,
-                          histogram_freq=1, write_graph=True)
-decypher = DecypherAll(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS, plot_dir=PLOT_DIR)
-terminate_nan = TerminateOnNaN()
+callbacks = [
+    TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME, write_graph=False),
+    DecypherAll(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS, plot_dir=PLOT_DIR),
+    EarlyStopping(patience=40, min_delta=1e-3)
+]
 
-model.fit(
+history = model.fit(
     x=input_vectors,
     y=target_vectors,
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
-    callbacks=[decypher, tb_callback, terminate_nan])
+    callbacks=callbacks).history
 
-slack_token = os.environ.get("SLACK_API_TOKEN")
-
-if slack_token:
-    sc = SlackClient(slack_token)
-    sc.api_call(
-      "chat.postMessage",
-      channel="#machinelearning",
-      text="Session " + TIMESTAMP + ' ' + SCRIPT_NAME + " completed successfully")
-else:
-    print('No slack notification: no slack API token environment variable "SLACK_API_TOKEN" set.')
-
-print('Done!')
-
+notify(TIMESTAMP, SCRIPT_NAME, 'validation loss of ' + str(history['val_loss'][-1]))
+print(SCRIPT_NAME, 'finished successfully')

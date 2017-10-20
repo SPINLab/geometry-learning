@@ -1,18 +1,21 @@
 from datetime import datetime
-
+import os
 import numpy as np
 from keras import Input
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import Dense, Flatten
+from keras.layers import Dense, Flatten, LSTM
 from keras.optimizers import Adam
+from shutil import copyfile
 
 from topoml_util.ConsoleLogger import DecypherAll
-from topoml_util.geom_loss import gaussian_1d_loss
+from topoml_util.gaussian_loss import univariate_gaussian_loss
 
 # To suppress tensorflow info level messages:
 # export TF_CPP_MIN_LOG_LEVEL=2
+from topoml_util.slack_send import notify
 
+SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FILE = '../files/geodata_vectorized.npz'
 BATCH_SIZE = 1024
@@ -20,7 +23,9 @@ TRAIN_VALIDATE_SPLIT = 0.1
 LATENT_SIZE = 16
 EPOCHS = 50
 OPTIMIZER = Adam(lr=0.001)
-# OPTIMIZER = SGD
+
+# Archive the configuration
+copyfile(__file__, 'configs/' + TIMESTAMP + ' ' + SCRIPT_NAME)
 
 loaded = np.load(DATA_FILE)
 training_vectors = loaded['centroids'][:, :, 0:2]
@@ -36,24 +41,30 @@ target_vectors = loaded['centroid_distance'][:, 0, :]
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 # This can be a simple Dense layer of size 16 as well
-model = Flatten()(inputs)
-model = Dense(LATENT_SIZE, activation='relu')(model)
+#model = Flatten()(inputs)
+model = LSTM(LATENT_SIZE, activation='relu')(inputs)
 model = Dense(2)(model)
 
 model = Model(inputs, model)
-model.compile(loss=gaussian_1d_loss, optimizer=OPTIMIZER)
+model.compile(loss=univariate_gaussian_loss, optimizer=OPTIMIZER)
 model.summary()
 
-tb_callback = TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP, histogram_freq=1, write_graph=True)
-my_callback = DecypherAll(lambda x: str(x))
+callbacks = [
+    TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME, write_graph=False),
+    DecypherAll(lambda x: str(x)),
+    EarlyStopping(patience=40, min_delta=1e-3)
+]
 
 history = model.fit(x=training_vectors,
                     y=target_vectors,
                     epochs=EPOCHS,
                     batch_size=BATCH_SIZE,
                     validation_split=TRAIN_VALIDATE_SPLIT,
-                    callbacks=[my_callback, tb_callback]).history
+                    callbacks=callbacks).history
 
 prediction = model.predict(training_vectors[0:1000])
 error = np.sum(np.abs(prediction[:, 0] - target_vectors[0:1000, 0])) / 1000
 print('Error factor:', error)
+
+notify(TIMESTAMP, SCRIPT_NAME, 'validation loss of ' + str(history['val_loss'][-1]))
+print(SCRIPT_NAME, 'finished successfully')

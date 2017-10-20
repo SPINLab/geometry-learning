@@ -2,8 +2,7 @@
 A machine learning project for learning geospatial topology
 
 # Data preparation
-If you value your time, go for the dockerized version.
-Note there is a pre-built `geodata-vectorized.npz` under `files`, so you don't need to rebuild the training data.
+Note first that there are pre-built numpy archive files `geodata-vectorized.npz` under `files`, so you don't need to rebuild the training data. If you want to prepare the data yourself, or want to derive a different pipeline from it, I suggest you go for the dockerized version (if you value your time). The dockerized version uses a PostGIS database instance to implement an ETL process that does the heavy lifting. Afterwards it's mostly a question of converting to normalized numpy vectors that can be understood by machine learning frameworks and saving the data to numpy archives.
 
 ## Numpy archive description
 The numpy archive `geodata-vectorized.npz` under `files` contains vectors deserialized from well-known text geometries, using the [shapely](https://pypi.python.org/pypi/Shapely) library. They are re-serialized as a 3D tensor as a combination of real-valued and one-hot components:
@@ -74,10 +73,13 @@ Calculate the distance between the centroids (of two polygons) in meters, expres
 Approximates the distance between two polygons in meters, expressed as a single gaussian. This is an approximation of a vanilla distance query such as [PostGIS:ST_distance](http://postgis.net/docs/ST_Distance.html). If the polygons intersect, the distance is 0. Converges in about 25 epochs to centimeter-level precision. Intersecting geometries do not converge to exactly 0, but to levels within centimeters deviation.
 
 
-## Intersection auto-encoder
+## Intersection sequence-to-sequence auto-encoder
 
 ### `intersection.py` 
 Approximates the intersection of two geometries into a new geometry. Work in progress.
+
+### `intersection-concat.py` 
+Approximates the intersection of two concatenated geometries into a new geometry, a variation of the previous setup. Work in progress.
 
 ## Character-level model
 There is one model that uses a character-level sequence-to-sequence strategy to approximate intersections. Work in progress.
