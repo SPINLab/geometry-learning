@@ -1,19 +1,21 @@
 import os
 import pprint
+import random
+import numpy as np
 from shapely.geometry import Point
 from wkt2pyplot import save_plot
 from keras.callbacks import Callback
-import random
 from datetime import datetime
-import numpy as np
 
-from GeoVectorizer import GeoVectorizer
+from .GeoVectorizer import GeoVectorizer
+from .wkt2pyplot import save_plot
 
 pp = pprint.PrettyPrinter()
 
 
 class DecypherAll(Callback):
-    def __init__(self, gmm_size=1, sample_size=3, input_slice=lambda x: x[0:1], target_slice=lambda x: x[1:2], stdout=False, plot_dir='plots'):
+    def __init__(self, gmm_size=1, sample_size=3, input_slice=lambda x: x[0:1], target_slice=lambda x: x[1:2],
+                 stdout=False, save_plots=True, plot_dir='plots'):
         """
         Class constructor that instantiates with a few vital settings in order to decypher the output
         :type target_slice: object
@@ -28,6 +30,7 @@ class DecypherAll(Callback):
         self.input_slice = input_slice
         self.target_slice = target_slice
         self.stdout = stdout
+        self.save_plots = save_plots
 
         os.makedirs(plot_dir, exist_ok=True)
         self.plot_dir = plot_dir
@@ -64,10 +67,11 @@ class DecypherAll(Callback):
                 print('Prediction:')
                 pp.pprint(prediction_vectors)
 
-            input_polys = [GeoVectorizer.decypher(poly) for poly in input_vectors]
-            target_polys = [GeoVectorizer.decypher(target_vectors[0])]
-            prediction_points = [Point(point).wkt for point in
-                                 GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(prediction_vectors[0], 500)]
+            if self.save_plots:
+                input_polys = [GeoVectorizer.decypher(poly) for poly in input_vectors]
+                target_polys = [GeoVectorizer.decypher(target_vectors[0])]
+                prediction_points = [Point(point).wkt for point in
+                                     GeoVectorizer(gmm_size=self.gmm_size).decypher_gmm_geom(prediction_vectors[0], 500)]
 
-            geoms = input_polys, target_polys, prediction_points
-            save_plot(self.plot_dir, geoms, timestamp)
+                geoms = input_polys, target_polys, prediction_points
+                save_plot(geoms, self.plot_dir, timestamp)
