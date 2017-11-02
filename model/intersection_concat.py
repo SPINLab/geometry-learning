@@ -6,63 +6,60 @@ from shutil import copyfile
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, concatenate, RepeatVector, TimeDistributed
+from keras.layers import LSTM, Dense, concatenate, TimeDistributed, RepeatVector
 from keras.optimizers import Adam
-from slackclient import SlackClient
-
 from topoml_util.GaussianMixtureLoss import GaussianMixtureLoss
 from topoml_util.GeoVectorizer import ONE_HOT_LEN
 from topoml_util.PyplotLogger import DecypherAll
 from topoml_util.geom_scaler import localized_normal, localized_mean
-
-# To suppress tensorflow info level messages:
-# export TF_CPP_MIN_LOG_LEVEL=2
 from topoml_util.slack_send import notify
 
+SCRIPT_VERSION = "0.0.10"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
+SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 PLOT_DIR = './plots/' + TIMESTAMP + ' ' + SCRIPT_NAME
 DATA_FILE = '../files/geodata_vectorized.npz'
 BATCH_SIZE = 1024
 GAUSSIAN_MIXTURE_COMPONENTS = 1
 TRAIN_VALIDATE_SPLIT = 0.1
-REPEAT_DEEP_ARCH = 2
-LSTM_SIZE = 150
+LSTM_SIZE = 256
 DENSE_SIZE = 64
+REPEAT_HIDDEN = 2
 EPOCHS = 400
-OPTIMIZER = Adam(lr=1e-3, clipnorm=1.)
+OPTIMIZER = Adam(lr=1e-3)
 
 # Archive the configuration
-copyfile(__file__, 'configs/' + TIMESTAMP + ' ' + SCRIPT_NAME)
+copyfile(__file__, 'configs/' + SIGNATURE)
 
 loaded = np.load(DATA_FILE)
 raw_brt_vectors = loaded['brt_vectors']
 raw_osm_vectors = loaded['osm_vectors']
-raw_target_vectors = loaded['intersection']
+raw_intersection_vectors = loaded['intersection']
 
 brt_vectors = []
 osm_vectors = []
-target_vectors = []
+intersection_vectors = []
 
 # skip non-intersecting geometries
-for brt, osm, target in zip(raw_brt_vectors, raw_osm_vectors, raw_target_vectors):
+for brt, osm, target in zip(raw_brt_vectors, raw_osm_vectors, raw_intersection_vectors):
     if not target[0, 0] == 0:  # a zero coordinate designates an empty geometry
         brt_vectors.append(brt)
         osm_vectors.append(osm)
-        target_vectors.append(target)
+        intersection_vectors.append(target)
 
 # data whitening
-means = localized_mean(target_vectors)
+means = localized_mean(intersection_vectors)
 brt_vectors = localized_normal(brt_vectors, means, 1e4)
 osm_vectors = localized_normal(osm_vectors, means, 1e4)
-target_vectors = localized_normal(target_vectors, means, 1e4)
+intersection_vectors = localized_normal(intersection_vectors, means, 1e4)
 
 # shape determination
 (data_points, brt_max_points, BRT_INPUT_VECTOR_LEN) = brt_vectors.shape
 (_, osm_max_points, OSM_INPUT_VECTOR_LEN) = osm_vectors.shape
-target_max_points = target_vectors.shape[1]
+target_max_points = intersection_vectors.shape[1]
 output_seq_length = (GAUSSIAN_MIXTURE_COMPONENTS * 6) + ONE_HOT_LEN
-output_size = target_max_points * output_seq_length
+output_size_2d = target_max_points * output_seq_length
 
 Loss = GaussianMixtureLoss(num_components=GAUSSIAN_MIXTURE_COMPONENTS, num_points=target_max_points)
 
@@ -74,10 +71,11 @@ osm_model = LSTM(osm_max_points * 2, activation='relu')(osm_inputs)
 
 concat = concatenate([brt_model, osm_model])
 model = RepeatVector(target_max_points)(concat)
-model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
-model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
-model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
-model = TimeDistributed(Dense(256, activation='relu'))(model)
+
+for layer in range(REPEAT_HIDDEN):
+    model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
+
+model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 model = Dense(output_seq_length)(model)
 
 model = Model(inputs=[brt_inputs, osm_inputs], outputs=model)
@@ -92,13 +90,14 @@ callbacks = [
     DecypherAll(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS,
                 plot_dir=PLOT_DIR,
                 input_slice=lambda x: x[:2],
-                target_slice=lambda x: x[2:3]),
-    EarlyStopping(patience=40, min_delta=0.001)
+                target_slice=lambda x: x[2:3],
+                stdout=False),
+    EarlyStopping(patience=40, min_delta=1)
 ]
 
 history = model.fit(
     x=[brt_vectors, osm_vectors],
-    y=target_vectors,
+    y=intersection_vectors,
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
