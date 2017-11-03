@@ -1,19 +1,20 @@
 import os
 from datetime import datetime
-import os
+
 import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, TimeDistributed, Flatten, LeakyReLU
+from keras.layers import LSTM, Dense, LeakyReLU, TimeDistributed
 from keras.optimizers import Adam
+from matplotlib import pyplot as plt
 from topoml_util.ConsoleLogger import DecypherAll
 from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 from matplotlib import pyplot as plt
 
-SCRIPT_VERSION = "0.0.7"
+SCRIPT_VERSION = "0.1.0"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -24,9 +25,6 @@ TRAIN_VALIDATE_SPLIT = 0.1
 LATENT_SIZE = 128
 EPOCHS = 400
 OPTIMIZER = Adam(lr=1e-3)
-
-# Archive the configuration
-copyfile(__file__, 'configs/' + TIMESTAMP + ' ' + SCRIPT_NAME)
 
 loaded = np.load(DATA_FILE)
 training_vectors = loaded['input_geoms']
@@ -39,9 +37,9 @@ training_vectors = localized_normal(training_vectors, means, 1e4)
 target_vectors = loaded['geom_distance'][:, 0, :]
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
-model = LSTM(LATENT_SIZE, activation='relu')(inputs)
+model = LSTM(LATENT_SIZE, return_sequences=True)(inputs)
 model = LeakyReLU()(model)
-model = Dense(2)(model)
+model = Dense(2, activation='relu')(model)
 model = Model(inputs, model)
 model.compile(
     loss=univariate_gaussian_loss,
@@ -69,7 +67,7 @@ plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)
 plt.xlabel('Error')
 plt.ylabel('Frequency')
-plt.title('Histogram error frequency')
+plt.title('Geometric distance error')
 n, bins, patches = plt.hist(error, 50, facecolor='g', normed=False, alpha=0.75)
 os.makedirs(str(PLOT_DIR), exist_ok=True)
 plt.savefig(PLOT_DIR + '/plt_' + TIMESTAMP + '.png')
