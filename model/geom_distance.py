@@ -5,14 +5,13 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, LeakyReLU, TimeDistributed
+from keras.layers import LSTM, Dense, LeakyReLU
 from keras.optimizers import Adam
 from matplotlib import pyplot as plt
 from topoml_util.ConsoleLogger import DecypherAll
 from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
-from matplotlib import pyplot as plt
 
 SCRIPT_VERSION = "0.1.0"
 SCRIPT_NAME = os.path.basename(__file__)
@@ -70,7 +69,7 @@ plt.ylabel('Frequency')
 plt.title('Geometric distance error')
 n, bins, patches = plt.hist(error, 50, facecolor='g', normed=False, alpha=0.75)
 os.makedirs(str(PLOT_DIR), exist_ok=True)
-plt.savefig(PLOT_DIR + '/plt_' + TIMESTAMP + '.png')
+plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '.png')
 
 notify(TIMESTAMP, SCRIPT_NAME, 'validation loss of ' + str(history['val_loss'][-1]))
 print(SCRIPT_NAME, 'finished successfully')
