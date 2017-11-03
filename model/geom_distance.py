@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.1.1"
+SCRIPT_VERSION = "0.1.2"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -26,14 +26,30 @@ EPOCHS = 400
 OPTIMIZER = Adam(lr=1e-3)
 
 loaded = np.load(DATA_FILE)
-training_vectors = loaded['input_geoms']
+raw_input_vectors = loaded['input_geoms']
 
 # Bring coordinates and distance in the same scale
-means = localized_mean(training_vectors)
-training_vectors = localized_normal(training_vectors, means, 1e4)
+means = localized_mean(raw_input_vectors)
+raw_input_vectors = localized_normal(raw_input_vectors, means, 1e4)
 
-(data_points, max_points, GEO_VECTOR_LEN) = training_vectors.shape
-target_vectors = loaded['geom_distance'][:, 0, :]
+(data_points, max_points, GEO_VECTOR_LEN) = raw_input_vectors.shape
+raw_target_vectors = loaded['geom_distance'][:, 0, :]
+
+input_vectors = []
+target_vectors = []
+intersecting_count = 0
+non_intersecting_count = 0
+
+# create 50/50 intersecting/non-intersecting distribution
+for inputs, targets in zip(raw_input_vectors, raw_target_vectors):
+    if targets[0] == 0 and non_intersecting_count < intersecting_count:
+        input_vectors.append(inputs)
+        target_vectors.append(targets)
+        non_intersecting_count += 1
+    elif targets[0] != 0:
+        input_vectors.append(inputs)
+        target_vectors.append(targets)
+        intersecting_count += 1
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE)(inputs)
@@ -51,16 +67,17 @@ callbacks = [
     EarlyStopping(patience=40, min_delta=0.001)
 ]
 
-history = model.fit(x=training_vectors,
-                    y=target_vectors,
-                    epochs=EPOCHS,
-                    batch_size=BATCH_SIZE,
-                    validation_split=TRAIN_VALIDATE_SPLIT,
-                    callbacks=callbacks).history
+history = model.fit(
+    x=input_vectors,
+    y=target_vectors,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_split=TRAIN_VALIDATE_SPLIT,
+    callbacks=callbacks).history
 
 val_set_start = -round(data_points * TRAIN_VALIDATE_SPLIT)
-prediction = model.predict(training_vectors[val_set_start:])
-error = prediction[:, 0] - target_vectors[val_set_start:, 0]
+prediction = model.predict(raw_input_vectors[val_set_start:])
+error = prediction[:, 0] - raw_target_vectors[val_set_start:, 0]
 fig, ax = plt.subplots()
 plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 4)), transform=ax.transAxes)
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)
