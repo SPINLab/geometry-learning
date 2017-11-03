@@ -36,7 +36,7 @@ training_vectors = localized_normal(training_vectors, means, 1e4)
 target_vectors = loaded['geom_distance'][:, 0, :]
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
-model = LSTM(LATENT_SIZE, return_sequences=True)(inputs)
+model = LSTM(LATENT_SIZE)(inputs)
 model = LeakyReLU()(model)
 model = Dense(2, activation='relu')(model)
 model = Model(inputs, model)
