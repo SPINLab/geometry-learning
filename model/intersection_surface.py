@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.14"
+SCRIPT_VERSION = "0.0.15"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -61,7 +61,6 @@ means = localized_mean(combined_geom_vectors)
 brt_vectors = localized_normal(brt_vectors, means, 1e4)
 osm_vectors = localized_normal(osm_vectors, means, 1e4)
 area_vectors = np.array(area_vectors)
-area_vectors = (area_vectors - np.mean(area_vectors)) / np.std(area_vectors)
 
 # shape determination
 data_points, brt_max_points, brt_seq_len = brt_vectors.shape
@@ -75,7 +74,7 @@ plt.text(0.70, 0.94, r'area $\mu: $' + str(np.round(mu, 4)), transform=ax.transA
 plt.text(0.70, 0.88, r'area $\sigma: $' + str(np.round(sigma, 4)), transform=ax.transAxes)
 plt.xlabel('Area')
 plt.ylabel('Frequency')
-plt.title('Intersection surface area distribution normalized')
+plt.title('Intersection surface area distribution')
 n, bins, patches = plt.hist(area_vectors, bins=np.arange(area_vectors.min(), area_vectors.max()), facecolor='g',
                             normed=False, log=True, alpha=0.75)
 os.makedirs(str(PLOT_DIR), exist_ok=True)
