@@ -7,7 +7,13 @@ echo "Changes:"
 cat $1
 
 # TeamCity style
-CHANGED_MODEL_FILES="$(cat $1 | cut -d \: -f 1 | grep model | grep py | grep -v topoml_util)"
+CHANGED_MODEL_FILES="$(cat $1 | \
+  cut -d \: -f 1 | \
+  grep model | \
+  grep .py | \
+  grep -v topoml_util \
+  grep -v png \
+  )"
 echo ${CHANGED_MODEL_FILES}
 
 set -e
