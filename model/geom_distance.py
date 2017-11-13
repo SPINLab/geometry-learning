@@ -28,7 +28,7 @@ OPTIMIZER = Adam(lr=1e-3)
 loaded = np.load(DATA_FILE)
 raw_input_vectors = loaded['input_geoms']
 
-# Bring coordinates and distance in the same scale
+# Data normalization
 means = localized_mean(raw_input_vectors)
 raw_input_vectors = localized_normal(raw_input_vectors, means, 1e4)
 
@@ -70,6 +70,8 @@ plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_distance_distr.png')
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE)(inputs)
 model = LeakyReLU()(model)
+model = LSTM(LATENT_SIZE)(inputs)
+model = LeakyReLU()(model)
 model = Dense(2, activation='relu')(model)
 model = Model(inputs, model)
 model.compile(
@@ -102,7 +104,7 @@ plt.ylabel('Frequency')
 plt.title('Geometric distance error distribution in meters')
 plt.hist(error, 50, facecolor='g', normed=False, alpha=0.75)
 os.makedirs(str(PLOT_DIR), exist_ok=True)
-plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '.png')
+plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_error_distr.png')
 
 notify(TIMESTAMP, SCRIPT_NAME, 'validation loss of ' + str(history['val_loss'][-1]))
 print(SCRIPT_NAME, 'finished successfully')
