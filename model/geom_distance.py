@@ -5,7 +5,7 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, LeakyReLU
+from keras.layers import LSTM, Dense, LeakyReLU, TimeDistributed, Flatten
 from keras.optimizers import Adam
 from matplotlib import pyplot as plt
 from topoml_util.ConsoleLogger import DecypherAll
@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.1.5"
+SCRIPT_VERSION = "0.1.6"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -68,10 +68,12 @@ os.makedirs(str(PLOT_DIR), exist_ok=True)
 plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_distance_distr.png')
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
-model = LSTM(LATENT_SIZE)(inputs)
+model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(inputs)
+model = TimeDistributed(Dense(32))(model)
 model = LeakyReLU()(model)
-model = LSTM(LATENT_SIZE)(model)
-model = LeakyReLU()(model)
+model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(model)
+model = TimeDistributed(Dense(32))(model)
+model = Flatten()(model)
 model = Dense(2, activation='relu')(model)
 model = Model(inputs, model)
 model.compile(
