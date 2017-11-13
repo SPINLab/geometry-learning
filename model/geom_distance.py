@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.1.4"
+SCRIPT_VERSION = "0.1.5"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -28,7 +28,7 @@ OPTIMIZER = Adam(lr=1e-3)
 loaded = np.load(DATA_FILE)
 raw_input_vectors = loaded['input_geoms']
 
-# Bring coordinates and distance in the same scale
+# Data normalization
 means = localized_mean(raw_input_vectors)
 raw_input_vectors = localized_normal(raw_input_vectors, means, 1e4)
 
@@ -70,6 +70,8 @@ plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_distance_distr.png')
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE)(inputs)
 model = LeakyReLU()(model)
+model = LSTM(LATENT_SIZE)(model)
+model = LeakyReLU()(model)
 model = Dense(2, activation='relu')(model)
 model = Model(inputs, model)
 model.compile(
@@ -102,7 +104,7 @@ plt.ylabel('Frequency')
 plt.title('Geometric distance error distribution in meters')
 plt.hist(error, 50, facecolor='g', normed=False, alpha=0.75)
 os.makedirs(str(PLOT_DIR), exist_ok=True)
-plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '.png')
+plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_error_distr.png')
 
 notify(TIMESTAMP, SCRIPT_NAME, 'validation loss of ' + str(history['val_loss'][-1]))
 print(SCRIPT_NAME, 'finished successfully')
