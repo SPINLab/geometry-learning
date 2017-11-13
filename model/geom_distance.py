@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.1.7"
+SCRIPT_VERSION = "0.1.8"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -69,7 +69,6 @@ plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_distance_distr.png')
 
 inputs = Input(name='Input', shape=(max_points, GEO_VECTOR_LEN))
 model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(inputs)
-model = TimeDistributed(Dense(32))(model)
 model = LeakyReLU()(model)
 model = LSTM(LATENT_SIZE, activation='relu', return_sequences=True)(model)
 model = TimeDistributed(Dense(32))(model)
