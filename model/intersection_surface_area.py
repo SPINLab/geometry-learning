@@ -75,8 +75,8 @@ plt.text(0.70, 0.88, r'area $\sigma: $' + str(np.round(sigma, 4)), transform=ax.
 plt.xlabel('Area')
 plt.ylabel('Frequency')
 plt.title('Intersection surface area distribution')
-n, bins, patches = plt.hist(area_vectors, bins=np.arange(area_vectors.min(), area_vectors.max()), facecolor='g',
-                            normed=False, log=True, alpha=0.75)
+n, bins, patches = plt.hist(area_vectors, bins=50, facecolor='g',
+                            log=True, alpha=0.75)
 os.makedirs(str(PLOT_DIR), exist_ok=True)
 plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_area_distr.png')
 
