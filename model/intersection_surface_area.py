@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.20"
+SCRIPT_VERSION = "0.0.21"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -24,7 +24,7 @@ TRAIN_VALIDATE_SPLIT = 0.1
 LSTM_UNITS = 256
 DENSE_UNITS = 64
 REPEAT_HIDDEN = 1
-EPOCHS = 400
+EPOCHS = 800
 OPTIMIZER = Adam(lr=1e-3)
 
 loaded = np.load(DATA_FILE)
