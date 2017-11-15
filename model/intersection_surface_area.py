@@ -13,19 +13,19 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.21"
+SCRIPT_VERSION = "0.0.22"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 DATA_FILE = '../files/geodata_vectorized.npz'
 PLOT_DIR = 'plots/' + SIGNATURE
-BATCH_SIZE = 1024
+BATCH_SIZE = 512
 TRAIN_VALIDATE_SPLIT = 0.1
 LSTM_UNITS = 256
 DENSE_UNITS = 64
 REPEAT_HIDDEN = 1
 EPOCHS = 800
-OPTIMIZER = Adam(lr=1e-3)
+OPTIMIZER = Adam(lr=5e-3)
 
 loaded = np.load(DATA_FILE)
 raw_brt_vectors = loaded['brt_vectors']
@@ -123,7 +123,7 @@ mean = np.round(np.mean(error), 4)
 stddev = np.round(np.std(error), 4)
 plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(mean), transform=ax.transAxes)
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(stddev), transform=ax.transAxes)
-plt.xlabel('Error')
+plt.xlabel('Error in square meters')
 plt.ylabel('Frequency')
 plt.title('Intersection area error distribution')
 plt.xlim([-3 * stddev + mean, 3 * stddev + mean])
