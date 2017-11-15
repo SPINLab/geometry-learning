@@ -14,16 +14,16 @@ from topoml_util.GeoVectorizer import GeoVectorizer, ONE_HOT_LEN
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.11"
+SCRIPT_VERSION = "0.0.12"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 PLOT_DIR = './plots/' + TIMESTAMP + ' ' + SCRIPT_NAME
 DATA_FILE = '../files/geodata_vectorized.npz'
-BATCH_SIZE = 1024
+BATCH_SIZE = 512
 GAUSSIAN_MIXTURE_COMPONENTS = 1
 TRAIN_VALIDATE_SPLIT = 0.1
-LSTM_SIZE = 256
+LSTM_SIZE = 128
 DENSE_SIZE = 64
 REPEAT_HIDDEN = 2
 EPOCHS = 400
