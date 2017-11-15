@@ -96,7 +96,7 @@ for layer in range(REPEAT_HIDDEN):
     model = Dense(DENSE_UNITS, activation='relu')(model)
 
 model = LSTM(LSTM_UNITS, activation='relu')(model)  # Flatten
-model = Dense(2, activation='relu')(model)
+model = Dense(2)(model)
 model = Model(inputs=[brt_inputs, osm_inputs], outputs=model)
 model.compile(loss=univariate_gaussian_loss, optimizer=OPTIMIZER)
 model.summary()
