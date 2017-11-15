@@ -2,13 +2,15 @@ import os
 from datetime import datetime
 
 import numpy as np
+from matplotlib import pyplot as plt
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, Dense, concatenate, TimeDistributed, RepeatVector
 from keras.optimizers import Adam
+
 from topoml_util.GaussianMixtureLoss import GaussianMixtureLoss
-from topoml_util.GeoVectorizer import ONE_HOT_LEN
+from topoml_util.GeoVectorizer import GeoVectorizer, ONE_HOT_LEN
 from topoml_util.PyplotLogger import DecypherAll
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
@@ -98,6 +100,21 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
     callbacks=callbacks).history
+
+val_set_start = -round(data_points * TRAIN_VALIDATE_SPLIT)
+prediction = model.predict([brt_vectors[val_set_start:], osm_vectors[val_set_start:]])
+target_geoms = [GeoVectorizer().decypher(vector) for vector in intersection_vectors[val_set_start:]]
+pred_geoms = [GeoVectorizer(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS).decypher_gmm_geom(vector) for vector in prediction]
+error = [target.intersection(prediction).area for target, prediciton in zip(target_geoms, pred_geoms)]
+_, ax = plt.subplots()
+plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 4)), transform=ax.transAxes)
+plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)
+plt.xlabel('Error')
+plt.ylabel('Frequency')
+plt.title('Intersection area error distribution')
+plt.hist(error, 50, facecolor='g', normed=False, alpha=0.75)
+os.makedirs(str(PLOT_DIR), exist_ok=True)
+plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_error_distr.png')
 
 notify(TIMESTAMP, SCRIPT_NAME, 'validation loss of ' + str(history['val_loss'][-1]))
 print(SCRIPT_NAME, 'finished successfully')

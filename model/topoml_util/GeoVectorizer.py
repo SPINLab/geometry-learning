@@ -203,7 +203,8 @@ class GeoVectorizer:
     @staticmethod
     def decypher(vector):
         """
-        Decyphers a encoded 2D coordinate and one-hot vector back to a wkt geometry
+        Decyphers a encoded 2D coordinate and one-hot vector back to a wkt geometry - the inverse of the vectorize_wkt
+            method
         :param vector:
         :return: a \n delimited string of one or more well-known text geometries
         """
