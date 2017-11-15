@@ -2,7 +2,7 @@ import unittest
 import pandas
 import numpy as np
 
-from model.topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX
+from GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX
 from test_files import gmm_output
 
 TOPOLOGY_CSV = 'test_files/polygon_multipolygon.csv'

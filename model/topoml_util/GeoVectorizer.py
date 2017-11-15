@@ -1,4 +1,3 @@
-import shapely
 from shapely.wkt import loads
 from shapely import geometry
 import numpy as np
