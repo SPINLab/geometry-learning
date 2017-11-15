@@ -1,5 +1,6 @@
 import shapely
 from shapely.wkt import loads
+from shapely import geometry
 import numpy as np
 
 # TODO: refactor GEOMETRY_TYPES to use shapely.geometry.base.GEOMETRY_TYPE
@@ -203,14 +204,15 @@ class GeoVectorizer:
     @staticmethod
     def decypher(vector):
         """
-        Decyphers a encoded 2D coordinate and one-hot vector back to a wkt geometry - the inverse of the vectorize_wkt
-            method
-        :param vector:
-        :return: a \n delimited string of one or more well-known text geometries
+        Decyphers a encoded 2D coordinate and one-hot vector back to a wkt geometry -
+            the inverse of the vectorize_wkt method
+        :param vector: a length 13 vector with 2 coordinate positions, 8 geom type positions and 3 render positions
+        :return: a string of a well-known text geometry
         """
         geom_type = GEOMETRY_TYPES[np.argmax(vector[0][GEOM_TYPE_INDEX:RENDER_INDEX])]
         wkt = geom_type.upper() + wkt_start[geom_type]
 
+        # TODO: refactor to use actual filled geometry collections
         # If an empty geometrycollection:
         if geom_type == 'GeometryCollection':
             return wkt
@@ -274,12 +276,12 @@ class GeoVectorizer:
                 sample.append(sampled)
 
             sample = np.reshape(sample, ((index + 1) * sample_size, 2))  # reshape to 2d points
-            return shapely.geometry.MultiPoint(sample)
+            return geometry.MultiPoint(sample)
         else:  # the user wants a geometry back
             if geom_type == 'Polygon':
                 xy = [[component[likely, 0], component[likely, 1]]
                       for likely, component in zip(most_likely_components, components)]
-                geom = shapely.geometry.Polygon(xy)
+                geom = geometry.Polygon(xy)
             else:
                 raise ValueError('Decyphering geometries of type ' + geom_type + ' isn\'t supported yet')
             return geom
