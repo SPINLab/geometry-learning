@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.19"
+SCRIPT_VERSION = "0.0.20"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -92,6 +92,7 @@ model = Reshape((1, concat.shape[-1].value))(concat)
 
 for layer in range(REPEAT_HIDDEN):
     model = LSTM(LSTM_UNITS, activation='relu', return_sequences=True)(model)
+    model = LeakyReLU()(model)
     model = Dense(DENSE_UNITS, activation='relu')(model)
 
 model = LSTM(LSTM_UNITS, activation='relu')(model)  # Flatten
