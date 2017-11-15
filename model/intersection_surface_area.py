@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.16"
+SCRIPT_VERSION = "0.0.17"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -122,7 +122,7 @@ plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)
 plt.xlabel('Error')
 plt.ylabel('Frequency')
-plt.title('Normalized intersection area error distribution')
+plt.title('Intersection area error distribution')
 plt.hist(error, 50, facecolor='g', normed=False, alpha=0.75)
 os.makedirs(str(PLOT_DIR), exist_ok=True)
 plt.savefig(PLOT_DIR + '/plt_' + SIGNATURE + '_error_distr.png')
