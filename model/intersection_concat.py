@@ -11,11 +11,10 @@ from keras.optimizers import Adam
 
 from topoml_util.GaussianMixtureLoss import GaussianMixtureLoss
 from topoml_util.GeoVectorizer import GeoVectorizer, ONE_HOT_LEN
-from topoml_util.PyplotLogger import DecypherAll
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.10"
+SCRIPT_VERSION = "0.0.11"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -85,11 +84,6 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME, write_graph=False),
-    DecypherAll(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS,
-                plot_dir=PLOT_DIR,
-                input_slice=lambda x: x[:2],
-                target_slice=lambda x: x[2:3],
-                stdout=False),
     EarlyStopping(patience=40, min_delta=1)
 ]
 
