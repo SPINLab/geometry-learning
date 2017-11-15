@@ -99,8 +99,23 @@ class TestVectorizer(unittest.TestCase):
         decyphered = GeoVectorizer.decypher(target_vector)
         self.assertEqual(decyphered, target_wkt[0])
 
-    def test_decypher_gmm_geom(self):
+    def test_decypher_prediction(self):
+        self.maxDiff = None
+        max_points = GeoVectorizer.max_points(brt_wkt, osm_wkt)
+        target_vector = GeoVectorizer.vectorize_wkt(target_wkt[0], max_points)
+        decyphered = GeoVectorizer.decypher(target_vector)
+        self.assertEqual(decyphered, target_wkt[0])
+
+    def test_decypher_gmm_sample(self):
         pred = gmm_output.prediction
         sample_size = 10
         points = GeoVectorizer(gmm_size=5).decypher_gmm_geom(pred, sample_size=sample_size)
         self.assertEqual(len(points), 40)
+        self.assertEqual(points.geom_type, "MultiPoint")
+
+    def test_decypher_gmm_geom(self):
+        pred = gmm_output.prediction
+        geom = GeoVectorizer(gmm_size=5).decypher_gmm_geom(pred)
+        self.assertEqual(geom.wkt, "POLYGON ((0.000192008913 -0.00157661038, -0.000827540178 -0.00121512916, "
+                                   "-0.000584304798 -0.00181529298, 0.00231453031 -0.00123368669, 0.000192008913 "
+                                   "-0.00157661038))")

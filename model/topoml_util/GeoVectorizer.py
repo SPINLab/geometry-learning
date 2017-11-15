@@ -1,6 +1,8 @@
+import shapely
 from shapely.wkt import loads
 import numpy as np
 
+# TODO: refactor GEOMETRY_TYPES to use shapely.geometry.base.GEOMETRY_TYPE
 GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
                   "MultiPolygon", "Geometry"]
 X_INDEX = 0                             # the X coordinate position
@@ -225,45 +227,58 @@ class GeoVectorizer:
 
         return wkt + wkt_end[geom_type]
 
-    def decypher_gmm_geom(self, vector, sample_size=10, use_covariance=False):
+    def decypher_gmm_geom(self, vector, sample_size=None, use_covariance=False):
         """
         Decyphers a encoded 2d vector of bivariate gaussian mixture model component(s) parameters and one-hot vectors
-        back to a wkt geometry
+            back to a wkt geometry. Beware that you need to provide the number of gaussian mixture components in the
+            class constructor.
         :param vector: rank 2 input vector of sequences with parameters for a gaussian mixture model, two one-hot
             vectors for geometry type and 'pen state' or stop indicator, all as a concatenated sequence
-        :param sample_size: number of points to sample from each mixture component
+        :param sample_size: optional number of points to sample from each mixture component. Returns a MultiPoint geom.
         :param use_covariance: whether or not to apply the covariance matrix in sampling. Useful for monitoring the
                                 distribution of the data, but can create a very cloudy result
-        :return a list of max_points * sample size sampled 2d points
+        :return a shapely geometry of either:
+                    if sample_size > 0: max_points * sample size sampled 2d MultiPoint geometry
+                    if !sample_size: the geometry type and points indicated by the vector
         """
         one_hot_start = (self.gmm_size * 6)
         render_state_start = one_hot_start + GEOM_TYPE_LEN
         (max_points, _) = vector[:, 0:one_hot_start].shape
+
+        render_states = np.argmax(vector[:, render_state_start:], axis=1).tolist()
+        full_stop_index = render_states.index(2)  # first element with full stop bit
+        geom_type = GEOMETRY_TYPES[int(
+            np.median(
+                np.argmax(
+                    vector[:, one_hot_start:render_state_start], axis=1)[:full_stop_index]))]
         components = np.reshape(
-            vector[:, 0:one_hot_start],  # use only the gaussian components
-            (max_points, int(one_hot_start / 6), 6))   # reshape to a rank 3 to split the different components
+            vector[:full_stop_index, 0:one_hot_start],  # use only the gaussian components
+            (full_stop_index, int(one_hot_start / 6), 6))   # reshape to a rank 3 to split the different components
+        most_likely_components = np.argmax(components[:, :, 5], axis=1)  # highest-scoring component
 
-        most_likely = np.argmax(components[:, :, 5], axis=1)  # the highest-scoring component
+        if sample_size:  # the user wants a set of sampled points
+            sample = []
+            for index, highest in enumerate(most_likely_components):
+                [mean_x, mean_y, sigma_x, sigma_y, rho] = components[index, highest, 0:5]
+                [sigma_x, sigma_y] = np.abs([sigma_x, sigma_y])
+                rho = np.tanh(rho)
 
-        sample = []
-        for index, highest in enumerate(most_likely):
-            render_state = np.argmax(vector[index, render_state_start:])
-            if action_types[render_state] == 'full stop':
-                # print('Stop on node', index)
-                index -= 1  # Prevent errors on reshaping in case of no full stop encounter
-                break
+                # use of the covariance matrix is standard off, since it tends to cloud the output too much
+                covariance = [[sigma_x, rho], [rho, sigma_y]] if use_covariance else [[0, 0], [0, 0]]
+                sampled = np.random.multivariate_normal(
+                    mean=[mean_x, mean_y],
+                    cov=covariance,
+                    size=sample_size)
+                # sample.append(np.repeat([mean_x, mean_y], 10))
+                sample.append(sampled)
 
-            [mean_x, mean_y, sigma_x, sigma_y, rho] = components[index, highest, 0:5]
-            [sigma_x, sigma_y] = np.abs([sigma_x, sigma_y])
-            rho = np.tanh(rho)
-
-            # use of the covariance matrix is standard off, since it tends to cloud the output too much
-            covariance = [[sigma_x, rho], [rho, sigma_y]] if use_covariance else [[0, 0], [0, 0]]
-            sampled = np.random.multivariate_normal(
-                mean=[mean_x, mean_y],
-                cov=covariance,
-                size=sample_size)
-            # sample.append(np.repeat([mean_x, mean_y], 10))
-            sample.append(sampled)
-
-        return np.reshape(sample, ((index + 1) * sample_size, 2))  # reshape to 2d points
+            sample = np.reshape(sample, ((index + 1) * sample_size, 2))  # reshape to 2d points
+            return shapely.geometry.MultiPoint(sample)
+        else:  # the user wants a geometry back
+            if geom_type == 'Polygon':
+                xy = [[component[likely, 0], component[likely, 1]]
+                      for likely, component in zip(most_likely_components, components)]
+                geom = shapely.geometry.Polygon(xy)
+            else:
+                raise ValueError('Decyphering geometries of type ' + geom_type + ' isn\'t supported yet')
+            return geom
