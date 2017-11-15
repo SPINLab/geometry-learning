@@ -13,7 +13,7 @@ from topoml_util.gaussian_loss import univariate_gaussian_loss
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.18"
+SCRIPT_VERSION = "0.0.19"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -95,7 +95,7 @@ for layer in range(REPEAT_HIDDEN):
     model = Dense(DENSE_UNITS, activation='relu')(model)
 
 model = LSTM(LSTM_UNITS, activation='relu')(model)  # Flatten
-model = Dense(2)(model)
+model = Dense(2, activation='relu')(model)
 model = Model(inputs=[brt_inputs, osm_inputs], outputs=model)
 model.compile(loss=univariate_gaussian_loss, optimizer=OPTIMIZER)
 model.summary()
