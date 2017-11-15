@@ -83,7 +83,7 @@ model.summary()
 
 # Callbacks
 callbacks = [
-    TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME, write_graph=False),
+    TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
     EarlyStopping(patience=40, min_delta=1)
 ]
 
@@ -99,7 +99,7 @@ val_set_start = -round(data_points * TRAIN_VALIDATE_SPLIT)
 prediction = model.predict([brt_vectors[val_set_start:], osm_vectors[val_set_start:]])
 target_geoms = [GeoVectorizer().decypher(vector) for vector in intersection_vectors[val_set_start:]]
 pred_geoms = [GeoVectorizer(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS).decypher_gmm_geom(vector) for vector in prediction]
-error = [target.intersection(prediction).area for target, prediciton in zip(target_geoms, pred_geoms)]
+error = [target.symmetric_difference(prediction).area for target, prediciton in zip(target_geoms, pred_geoms)]
 _, ax = plt.subplots()
 plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 4)), transform=ax.transAxes)
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)

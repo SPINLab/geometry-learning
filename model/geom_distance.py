@@ -81,7 +81,7 @@ model.compile(
 model.summary()
 
 callbacks = [
-    TensorBoard(log_dir='./tensorboard_log/' + TIMESTAMP + ' ' + SCRIPT_NAME, write_graph=False),
+    TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
     DecypherAll(lambda x: str(x)),
     EarlyStopping(patience=40, min_delta=0.001)
 ]
@@ -100,7 +100,7 @@ error = prediction[:, 0] - raw_target_vectors[val_set_start:, 0]
 _, ax = plt.subplots()
 plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 4)), transform=ax.transAxes)
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)
-plt.xlabel('Error')
+plt.xlabel('Error in meters')
 plt.ylabel('Frequency')
 plt.title('Geometric distance error distribution in meters')
 plt.hist(error, 50, facecolor='g', normed=False, alpha=0.75)
