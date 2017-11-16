@@ -15,7 +15,7 @@ from topoml_util.GeoVectorizer import GeoVectorizer, ONE_HOT_LEN
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.13"
+SCRIPT_VERSION = "0.0.14"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -107,7 +107,7 @@ for vector in prediction:
         print("Creating empty geometry for error on", e)
         geom = wkt.loads("GEOMETRYCOLLECTION EMPTY")
     pred_geoms.append(geom)
-error = [target.symmetric_difference(prediction).area for target, prediciton in zip(target_geoms, pred_geoms)]
+error = [target.symmetric_difference(pred).area for target, pred in zip(target_geoms, pred_geoms)]
 _, ax = plt.subplots()
 plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 4)), transform=ax.transAxes)
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)
