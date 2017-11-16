@@ -15,7 +15,7 @@ from topoml_util.GeoVectorizer import GeoVectorizer, ONE_HOT_LEN
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.15"
+SCRIPT_VERSION = "0.0.16"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -28,7 +28,7 @@ LSTM_SIZE = 128
 DENSE_SIZE = 64
 REPEAT_HIDDEN = 2
 EPOCHS = 400
-OPTIMIZER = Adam(lr=1e-3)
+OPTIMIZER = Adam(lr=2e-3)
 
 loaded = np.load(DATA_FILE)
 raw_brt_vectors = loaded['brt_vectors']
@@ -98,7 +98,7 @@ history = model.fit(
 
 val_set_start = -round(data_points * TRAIN_VALIDATE_SPLIT)
 prediction = model.predict([brt_vectors[val_set_start:], osm_vectors[val_set_start:]])
-target_geoms = [GeoVectorizer().decypher(vector) for vector in intersection_vectors[val_set_start:]]
+target_geoms = [wkt.loads(GeoVectorizer().decypher(vector)) for vector in intersection_vectors[val_set_start:]]
 pred_geoms = []
 for vector in prediction:
     try:
