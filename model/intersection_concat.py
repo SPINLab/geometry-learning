@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 import numpy as np
+from shapely import wkt
 from matplotlib import pyplot as plt
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
@@ -14,7 +15,7 @@ from topoml_util.GeoVectorizer import GeoVectorizer, ONE_HOT_LEN
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.12"
+SCRIPT_VERSION = "0.0.13"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -24,10 +25,10 @@ BATCH_SIZE = 512
 GAUSSIAN_MIXTURE_COMPONENTS = 1
 TRAIN_VALIDATE_SPLIT = 0.1
 LSTM_SIZE = 128
-DENSE_SIZE = 64
+DENSE_SIZE = 32
 REPEAT_HIDDEN = 2
 EPOCHS = 400
-OPTIMIZER = Adam(lr=1e-3)
+OPTIMIZER = Adam(lr=5e-3)
 
 loaded = np.load(DATA_FILE)
 raw_brt_vectors = loaded['brt_vectors']
@@ -98,7 +99,14 @@ history = model.fit(
 val_set_start = -round(data_points * TRAIN_VALIDATE_SPLIT)
 prediction = model.predict([brt_vectors[val_set_start:], osm_vectors[val_set_start:]])
 target_geoms = [GeoVectorizer().decypher(vector) for vector in intersection_vectors[val_set_start:]]
-pred_geoms = [GeoVectorizer(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS).decypher_gmm_geom(vector) for vector in prediction]
+pred_geoms = []
+for vector in prediction:
+    try:
+        geom = GeoVectorizer(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS).decypher_gmm_geom(vector)
+    except Exception as e:
+        print("Creating empty geometry for error on", e)
+        geom = wkt.loads("GEOMETRYCOLLECTION EMPTY")
+    pred_geoms.append(geom)
 error = [target.symmetric_difference(prediction).area for target, prediciton in zip(target_geoms, pred_geoms)]
 _, ax = plt.subplots()
 plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 4)), transform=ax.transAxes)
