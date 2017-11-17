@@ -15,7 +15,7 @@ from topoml_util.GeoVectorizer import GeoVectorizer, ONE_HOT_LEN
 from topoml_util.geom_scaler import localized_normal, localized_mean
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = "0.0.17"
+SCRIPT_VERSION = "0.0.18"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -28,7 +28,7 @@ LSTM_SIZE = 128
 DENSE_SIZE = 64
 REPEAT_HIDDEN = 2
 EPOCHS = 400
-OPTIMIZER = Adam(lr=5e-4)
+OPTIMIZER = Adam(lr=1e-3)
 
 loaded = np.load(DATA_FILE)
 raw_brt_vectors = loaded['brt_vectors']
@@ -99,15 +99,23 @@ history = model.fit(
 val_set_start = -round(data_points * TRAIN_VALIDATE_SPLIT)
 prediction = model.predict([brt_vectors[val_set_start:], osm_vectors[val_set_start:]])
 target_geoms = [wkt.loads(GeoVectorizer().decypher(vector)) for vector in intersection_vectors[val_set_start:]]
+
 pred_geoms = []
 for vector in prediction:
-    try:
+    try:  # Needs error catching for malformed geometries
         geom = GeoVectorizer(gmm_size=GAUSSIAN_MIXTURE_COMPONENTS).decypher_gmm_geom(vector)
     except Exception as e:
-        print("Creating empty geometry for error on", e)
+        print("Warning: creating empty geometry for error on", e)
         geom = wkt.loads("GEOMETRYCOLLECTION EMPTY")
     pred_geoms.append(geom)
-error = [target.symmetric_difference(pred).area for target, pred in zip(target_geoms, pred_geoms)]
+
+error = []
+for target, pred in zip(target_geoms, pred_geoms):
+    try:  # Needs error catching for invalid (self-intersecting, etc) geometries
+        error.append(target.symmetric_difference(pred).area)
+    except Exception as e:
+        print("Warning: skipping invalid geometry for error on", e)
+
 _, ax = plt.subplots()
 plt.text(0.01, 0.94, r'prediction error $\mu: $' + str(np.round(np.mean(error), 4)), transform=ax.transAxes)
 plt.text(0.01, 0.88, r'prediction error $\sigma: $' + str(np.round(np.std(error), 4)), transform=ax.transAxes)
