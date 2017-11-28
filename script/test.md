@@ -1,1 +1,0 @@
-This is a test file for build server change list handling

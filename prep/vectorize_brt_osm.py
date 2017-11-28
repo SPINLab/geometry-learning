@@ -3,8 +3,8 @@ import pandas
 
 from model.topoml_util.GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX, STOP_INDEX
 
-TOPOLOGY_TRAINING_CSV = '../files/topology-training.csv'
-GEODATA_VECTORIZED = '../files/geodata_vectorized.npz'
+TOPOLOGY_TRAINING_CSV = '../files/brt_osm.csv'
+GEODATA_VECTORIZED = '../files/brt_osm_vectorized.npz'
 MAX_SEQUENCE_LEN = 300
 
 print('Reading data...')

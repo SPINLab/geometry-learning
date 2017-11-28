@@ -2,12 +2,24 @@
 A machine learning project for learning geospatial topology
 
 # Data preparation
+**TLDR;**
+
+Run
+```bash
+docker-compose up
+```
+from the repository root. It will prepare all data you need to run the models.
+
+## Neighborhoods data set
+The data for the neighborhoods 2017 is from CBS and downloaded from a Web Feature Service provided by [PDOK](https://pdok.nl). The ETL script is at `prep/get-neighborhoods.py`. The data is all open. The script runs for a minute or so, and will produce both a training set and a test set, with input geometries (for the deep neural net configuration), the number of inhabitants for the neighborhood as labels and other feature-engineered properties to make comparisons with non-deep learning algorithms.
+
+## Base Registration for Topography (BRT) and OpenStreetMap (OSM) data
 Note first that there are pre-built numpy archive files `geodata-vectorized.npz` under `files`, so you don't need to rebuild the training data. If you want to prepare the data yourself, or want to derive a different pipeline from it, I suggest you go for the dockerized version (if you value your time). The dockerized version uses a PostGIS database instance to implement an ETL process that does the heavy lifting. Afterwards it's mostly a question of converting to normalized numpy vectors that can be understood by machine learning frameworks and saving the data to numpy archives.
 
-## Numpy archive description
+### Numpy archive description
 The numpy archive `geodata-vectorized.npz` under `files` contains vectors deserialized from well-known text geometries, using the [shapely](https://pypi.python.org/pypi/Shapely) library. They are re-serialized as a 3D tensor as a combination of real-valued and one-hot components:
 
-|Script|Description|
+|Property|Description|
 |:------|:----|
 |input_geoms| A nested array of shape (?, ?, 16) - depending on the sequence length settings - of deserialized WKT polygons with the following encoding: `[:, :, 0:5]`:  The polygon point/node coordinates in lon/lat, `[:, :, 5:13]`: The geometry type, a one-hot encoded sequence of set {GeometryCollection, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, Geometry}, `[:, :, 13:]`:  A one-hot encoded sequence of actions in set {render, stop, full stop}
 |intersection|Geometries representing the intersection in WGS84 lon/lat, same geometry encoding as `input_geoms`
@@ -18,7 +30,7 @@ The numpy archive `geodata-vectorized.npz` under `files` contains vectors deseri
 |centroids|Two centroid points for BRT and OSM in WGS84 lon/lat
 |centroids_rd|Two centroid points for BRT and OSM in Netherlands RD meters
 
-## Docker
+### Docker
 Due to the cross-platform dependency issues installing python geospatial packages, the setup has been [Dockerized](https://www.docker.com/) to ensure cross-platform interoperability. This is the easiest way to use. 
 
 - See [instructions](https://docs.docker.com/engine/installation/#supported-platforms) on installing and running Docker on your platform.
