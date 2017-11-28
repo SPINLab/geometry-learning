@@ -54,7 +54,7 @@ output_geom = np.array([
 class TestVectorizer(unittest.TestCase):
     def test_max_points(self):
         max_points = GeoVectorizer.max_points(brt_wkt, osm_wkt)
-        self.assertEqual(max_points, 47)
+        self.assertEqual(max_points, 159)
 
     def test_interpolate(self):
         interpolated = GeoVectorizer.interpolate(input_geom, len(input_geom) * 2)
@@ -63,13 +63,42 @@ class TestVectorizer(unittest.TestCase):
             expected = list(output_geom[index])
             self.assertListEqual(result, expected, msg='Lists differ at index %i' % index)
 
-    def test_wkt_vectorize_one_wkt(self):
+    def test_vectorize_one_wkt(self):
         max_points = GeoVectorizer.max_points(brt_wkt, osm_wkt)
         vectorized = []
         target_set = SOURCE_DATA['intersection_wkt']
         for index in range(len(target_set)):
             vectorized.append(GeoVectorizer.vectorize_wkt(target_set[index], max_points))
         self.assertEqual(len(target_set), len(brt_wkt))
+
+    def test_vectorize_big_multipolygon(self):
+        with open('test_files/big_multipolygon_wkt.txt', 'r') as file:
+            wkt = file.read()
+            max_points = GeoVectorizer.max_points([wkt])
+            vectorized = GeoVectorizer.vectorize_wkt(wkt, max_points)
+            self.assertEqual(len(vectorized), max_points)
+
+    def test_vectorize_polygon_gt_max_points_error(self):
+        with open('test_files/big_multipolygon_wkt.txt', 'r') as file:
+            wkt = file.read()
+            max_points = 50
+            with self.assertRaises(ValueError) as ve:
+                GeoVectorizer.vectorize_wkt(wkt, max_points)
+            self.assertEqual("The number of points in the geometry exceeds", str(ve.exception)[0:44])
+
+    def test_simplify_polygon_gt_max_points(self):
+        with open('test_files/big_multipolygon_wkt.txt', 'r') as file:
+            wkt = file.read()
+            max_points = 70
+            vectorized = GeoVectorizer.vectorize_wkt(wkt, max_points, simplify=True)
+            self.assertEqual(len(vectorized), max_points)
+
+    def test_simplify_multipolygon_gt_max_points(self):
+        with open('test_files/multipart_multipolygon_wkt.txt', 'r') as file:
+            wkt = file.read()
+            max_points = 20
+            vectorized = GeoVectorizer.vectorize_wkt(wkt, max_points, simplify=True)
+            self.assertEqual(vectorized.shape, (max_points, GEO_VECTOR_LEN))
 
     def test_wkt_vectorize_two_wkt(self):
         vectorized = []
@@ -82,7 +111,7 @@ class TestVectorizer(unittest.TestCase):
         num_features = len(vectorized[0][0])
 
         self.assertEqual(num_records, 13)
-        self.assertEqual(num_points, 47)
+        self.assertEqual(num_points, 159)
         self.assertEqual(num_features, GEO_VECTOR_LEN)
 
         for record in vectorized:

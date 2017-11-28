@@ -1,20 +1,21 @@
 from shapely.wkt import loads
 from shapely import geometry
 import numpy as np
+import math
 
 # TODO: refactor GEOMETRY_TYPES to use shapely.geometry.base.GEOMETRY_TYPE
 GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
                   "MultiPolygon", "Geometry"]
-X_INDEX = 0                             # the X coordinate position
-Y_INDEX = 1                             # the Y coordinate position
-GEOM_TYPE_INDEX = 5                     # Start index of the geometry type
-GEOM_TYPE_LEN = 8                       # 8 positions in the one-hot encoding for the geometry type
+X_INDEX = 0  # the X coordinate position
+Y_INDEX = 1  # the Y coordinate position
+GEOM_TYPE_INDEX = 5  # Start index of the geometry type
+GEOM_TYPE_LEN = 8  # 8 positions in the one-hot encoding for the geometry type
 RENDER_INDEX = GEOM_TYPE_INDEX + GEOM_TYPE_LEN  # Render index start
-RENDER_LEN = 3                                  # Render one-hot vector length
-ONE_HOT_LEN = GEOM_TYPE_LEN + RENDER_LEN        # Length of the one-hot encoded part
-STOP_INDEX = RENDER_INDEX + 1           # Stop index for the first geometry. A second one follows
-FULL_STOP_INDEX = STOP_INDEX + 1        # Full stop index. No more points to follow
-GEO_VECTOR_LEN = FULL_STOP_INDEX + 1    # The length needed to describe the features of a geometry point
+RENDER_LEN = 3  # Render one-hot vector length
+ONE_HOT_LEN = GEOM_TYPE_LEN + RENDER_LEN  # Length of the one-hot encoded part
+STOP_INDEX = RENDER_INDEX + 1  # Stop index for the first geometry. A second one follows
+FULL_STOP_INDEX = STOP_INDEX + 1  # Full stop index. No more points to follow
+GEO_VECTOR_LEN = FULL_STOP_INDEX + 1  # The length needed to describe the features of a geometry point
 
 action_types = ["render", "stop", "full stop"]
 wkt_start = {
@@ -107,38 +108,92 @@ class GeoVectorizer:
         return number_of_points
 
     @staticmethod
-    def vectorize_wkt(wkt, number_of_points):
+    def vectorize_wkt(wkt, number_of_points, simplify=False):
+        """
+        Convert wkt geometry to numpy array of real values
+        :param wkt: the geometry as wkt string
+        :param number_of_points: the size of the output first dimension: the maximum number of points in the two
+                                    combined wkt points
+        :param simplify: optional, selecting reduction of points if wkt points exceeds max_points
+        :return vectors: a 2d numpy array as vectorized representation of the input geometry
+        """
         shape = loads(wkt)
-        vectors = np.zeros((number_of_points, GEO_VECTOR_LEN))
+        vector = np.zeros((number_of_points, GEO_VECTOR_LEN))
 
         if shape.geom_type == 'Polygon':
-            vectors = GeoVectorizer.vectorize_points(shape.exterior.coords, vectors,
-                                                     shape.geom_type, is_last=True)
+            if len(shape.exterior.coords) > number_of_points:
+                if not simplify:
+                    raise ValueError('The number of points in the geometry exceeds the max points in the output '
+                                     'specification, but the reduce_points parameter was set to False. Please set the '
+                                     'reduce_points parameter to True to reduce the number of points, or increase the '
+                                     'max points.')
+
+            vector = GeoVectorizer.vectorize_points(shape.exterior.coords, vector,
+                                                    shape.geom_type, is_last=True, simplify=simplify)
         elif shape.geom_type == 'MultiPolygon':
-            if len(shape.geoms) > 1:
-                raise ValueError("Don't know how to process multipart geometries with more than one part")
-            vectors = GeoVectorizer.vectorize_points(shape.geom[0].exterior.coords, vectors,
-                                                     shape.geom_type, is_last=True)
+            total_points = sum([len(geom.exterior.coords) for geom in shape.geoms])
+
+            if total_points > number_of_points:
+                if not simplify:
+                    raise ValueError('The number of points in the geometry exceeds the max points in the output '
+                                     'specification, but the reduce_points parameter was set to False. Please set the '
+                                     'reduce_points parameter to True to reduce the number of points, or increase the '
+                                     'max points.')
+
+            log_tolerance = -10  # Log scale
+            tolerance = math.pow(10, log_tolerance)
+
+            while total_points > number_of_points:
+                shape = shape.simplify(tolerance)
+                if shape.geom_type.startswith('Multi'):  # The geometry type can change due to simplification
+                    total_points = sum([len(geom.exterior.coords) for geom in shape.geoms])
+                else:
+                    total_points = len(shape.exterior.coords)
+                log_tolerance += 0.1
+                tolerance = math.pow(10, log_tolerance)
+
+            if shape.geom_type.startswith('Multi'):  # The geometry type can change due to simplification
+                vector = np.concatenate([GeoVectorizer.vectorize_points(
+                    points=geom.exterior.coords,
+                    vector=np.zeros((len(geom.exterior.coords), GEO_VECTOR_LEN)),
+                    geom_type=geom.geom_type
+                ) for geom in shape.geoms], axis=0)
+            else:
+                vector = GeoVectorizer.vectorize_points(
+                    points=shape.exterior.coords,
+                    vector=np.zeros((len(shape.exterior.coords), GEO_VECTOR_LEN)),
+                    geom_type=shape.geom_type
+                )
+
+            vector[total_points - 1, STOP_INDEX] = 0
+            vector = np.append(vector, np.zeros((number_of_points - total_points, GEO_VECTOR_LEN)), axis=0)
+            vector[total_points - 1:, FULL_STOP_INDEX] = 1  # Manually set full stop bits
+
+            return vector
+
         elif shape.geom_type == 'GeometryCollection':
-            if not len(shape.geoms) == 0:  # not GEOMETRYCOLLECTION EMPTY
+            if len(shape.geoms) > 0:  # not GEOMETRYCOLLECTION EMPTY
                 raise ValueError("Don't know how to process non-empty GeometryCollection type")
+
         elif shape.geom_type == 'Point':
-            vectors = GeoVectorizer.vectorize_points(shape.coords, vectors,
-                                                     shape.geom_type, is_last=True)
+            vector = GeoVectorizer.vectorize_points(shape.coords, vector,
+                                                    shape.geom_type, is_last=True, simplify=simplify)
         else:
             raise ValueError("Don't know how to get the number of points from geometry type %s" % (
                 shape.geom_type))
 
-        return vectors
+        return vector
 
+    # TODO: refactor to vectorize any number of wkts
     @staticmethod
-    def vectorize_two_wkts(wkt1, wkt2, number_of_points):
+    def vectorize_two_wkts(wkt1, wkt2, number_of_points, simplify=False):
         """
         Convert two wkt geometries to low-level feature engineered 2D array
         :param wkt1: the first geometry in wkt
         :param wkt2: the second geometry in wkt
         :param number_of_points: the size of the first dimension of the nested array: the maximum number of points in
                                  the two combined wkt points
+        :param simplify: optional, selecting douglas-peucker reduction of points if wkt points exceeds max_points
         :return vectors: a 2d array of vectorized representations of the input points
         """
         shape1 = loads(wkt1)
@@ -153,17 +208,19 @@ class GeoVectorizer:
             if len(shape2.geoms) > 1:
                 raise ValueError("Don't know how to process multipart geometries with more than one part")
 
-            vectors = GeoVectorizer.vectorize_points(points1, vectors, shape1.geom_type, offset=0)
+            vectors = GeoVectorizer.vectorize_points(points1, vectors, shape1.geom_type, offset=0,
+                                                     simplify=simplify)
             vectors = GeoVectorizer.vectorize_points(points2, vectors, shape2.geoms[0].geom_type, offset=len(points1),
-                                                     is_last=True)
+                                                     is_last=True, simplify=simplify)
         elif shape1.geom_type == 'Polygon' and shape2.geom_type == 'Polygon':
             # The vectorized shape1 will have ... elements:
             # [2:10] boolean: one-hot geometry type encoding
             points1 = [xy for xy in shape1.exterior.coords]  # Ignore any inner linear rings!
             points2 = [xy for xy in shape2.exterior.coords]  # Ignore any inner linear rings!
-            vectors = GeoVectorizer.vectorize_points(points1, vectors, shape1.geom_type, offset=0)
+            vectors = GeoVectorizer.vectorize_points(points1, vectors, shape1.geom_type, offset=0,
+                                                     simplify=simplify)
             vectors = GeoVectorizer.vectorize_points(points2, vectors, shape2.geom_type, offset=len(points1),
-                                                     is_last=True)
+                                                     is_last=True, simplify=simplify)
         else:
             raise ValueError("Don't know how to process geometry combinations of type %s and %s" % (
                 shape1.geom_type, shape2.geom_type))
@@ -171,34 +228,66 @@ class GeoVectorizer:
         return vectors
 
     @staticmethod
-    def vectorize_points(points, vectors, geom_type, offset=0, is_last=False):
+    def vectorize_points(points, vector, geom_type, offset=0, is_last=False, simplify=False):
         """
-        Fill an array of ML-vectors out of an array of points from a geometry to be used in a recurrent neural net.
+        Fill an array of vectors out of an array of points from a geometry
         :param points: the array of input points
-        :param vectors: a nested array of vectors, to be filled in as output of the function
+        :param vector: a 2D vector, to be filled in as output of the function
         :param geom_type: a geometry type string, one of GEOMETRY_TYPES
         :param offset: offset in the vector, to be used to fill in a second point in the vector.
         :param is_last: extra offset for the last point in a geometry, to indicate a full stop.
+        :param simplify: selecting douglas-peucker reduction of points if wkt points exceeds max_points
         :return vectors: a filled-in nested array of vectors.
         """
+
+        copy = vector.copy()
+
+        if len(points) > copy.shape[0]:
+            if not simplify:
+                raise ValueError('The number of points in the geometry exceeds the max points in the output '
+                                 'specification, but the reduce_points parameter was set to False. Please set the '
+                                 'reduce_points parameter to True to reduce the number of points, or increase the max '
+                                 'points.')
+            else:
+                points = GeoVectorizer.recursive_simplify(copy.shape[0], points)
+
         for point_index, point in enumerate(points):
             geom_type_one_hot = GEOMETRY_TYPES.index(geom_type) + GEOM_TYPE_INDEX  # offset from coordinate entries
             # [11:14] boolean: [render, end of first geometry, end of second geometry]
 
             position = point_index + offset
-            vectors[position][X_INDEX] = point[0]
-            vectors[position][Y_INDEX] = point[1]
-            vectors[position][geom_type_one_hot] = True
+            copy[position][X_INDEX] = point[0]
+            copy[position][Y_INDEX] = point[1]
+            copy[position][geom_type_one_hot] = True
 
             if point_index == len(points) - 1:
                 if is_last:
-                    vectors[position:, STOP_INDEX + 1] = True
+                    copy[position:, STOP_INDEX + 1] = True
                 else:
-                    vectors[position, STOP_INDEX] = True
+                    copy[position, STOP_INDEX] = True
             else:
-                vectors[position, RENDER_INDEX] = True
+                copy[position, RENDER_INDEX] = True
 
-        return vectors
+        return copy
+
+    @staticmethod
+    def recursive_simplify(max_points, points):
+        """
+        Search algorithm for reducing the number of points of a geometry
+        :param max_points:
+        :param points:
+        :return:
+        """
+        log_tolerance = -10  # Log scale
+        tolerance = math.pow(10, log_tolerance)
+        line = geometry.LineString(points).simplify(tolerance)
+        while len(line.coords) > max_points:
+            line = line.simplify(tolerance)
+            log_tolerance += 0.5
+            tolerance = math.pow(10, log_tolerance)
+            line = line.simplify(tolerance)
+        points = line.coords
+        return points
 
     @staticmethod
     def decypher(vector):
@@ -255,7 +344,7 @@ class GeoVectorizer:
                     vector[:, one_hot_start:render_state_start], axis=1)[:full_stop_index]))]
         components = np.reshape(
             vector[:full_stop_index, 0:one_hot_start],  # use only the gaussian components
-            (full_stop_index, int(one_hot_start / 6), 6))   # reshape to a rank 3 to split the different components
+            (full_stop_index, int(one_hot_start / 6), 6))  # reshape to a rank 3 to split the different components
         most_likely_components = np.argmax(components[:, :, 5], axis=1)  # highest-scoring component
 
         if sample_size:  # the user wants a set of sampled points
