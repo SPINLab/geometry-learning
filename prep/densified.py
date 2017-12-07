@@ -3,8 +3,8 @@ import numpy as np
 from topoml_util.GeoVectorizer import GeoVectorizer
 from topoml_util.geom_scaler import localized_mean, localized_normal
 
-DATA_FILE = '../files/geodata_vectorized.npz'
-TARGET_FILE = '../files/densified_vectorized.npz'
+DATA_FILE = '../files/brt_osm/brt_osm.npz'
+TARGET_FILE = '../files/brt_osm/densified_vectorized.npz'
 DENSIFIED = 100
 
 loaded = np.load(DATA_FILE)
