@@ -1,16 +1,16 @@
 import os
-from rasterio.features import rasterize
-from shapely import wkt
-from pandas import read_csv
 import numpy as np
-
 from model.topoml_util.GeoVectorizer import GeoVectorizer
+from pandas import read_csv
+from pyefd import elliptic_fourier_descriptors
+from shapely import wkt
 
 NEIGHBORHOODS_SOURCE = '../files/neighborhoods/neighborhoods.csv'
 NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_train.npz'
 NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_test.npz'
 SANE_NUMBER_OF_POINTS = 512
 TRAIN_TEST_SPLIT = 0.1
+FOURIER_DESCRIPTOR_ORDER = 20  # The axis 0 size
 
 if not os.path.isfile(NEIGHBORHOODS_SOURCE):
     raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % NEIGHBORHOODS_SOURCE)
@@ -18,11 +18,20 @@ if not os.path.isfile(NEIGHBORHOODS_SOURCE):
 with open(NEIGHBORHOODS_SOURCE) as file:
     df = read_csv(file)
 
-print('Creating geometry vectors...')
+df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for unknowns
+
+print('Creating neighborhood geometry vectors...')
 geoms = [GeoVectorizer.vectorize_wkt(wkt_string, SANE_NUMBER_OF_POINTS, simplify=True) for wkt_string in df.geom.values]
 
-print('Creating geometry fourier descriptors...')
-shapes = [wkt.loads(wkt_string).geoms[0] for wkt_string in df.geom.values]
+print('Creating neighborhood geometry fourier descriptors...')
+shapes = []
+for wkt_string in df.geom.values:
+    shape = wkt.loads(wkt_string)
+    # Out of the 13,300 neighborhoods there's about 300 multipolygon geometries.
+    # We're selecting the largest here, but it will throw off the accuracy a bit.
+    geometries = sorted(shape.geoms, key=lambda x: x.area)
+    shapes.append(geometries[-1])
+
 fourier_descriptors = []
 
 for index, shape in enumerate(shapes):
@@ -30,24 +39,38 @@ for index, shape in enumerate(shapes):
     while boundary.geom_type == "MultiLineString":
         boundary = boundary.geoms[0]
     try:
-        fourier_descriptors.append(np.fft.fft(boundary.coords))
+        # Set normalize to false to retain size information.
+        coeffs = elliptic_fourier_descriptors(boundary.coords, order=FOURIER_DESCRIPTOR_ORDER, normalize=False)
+        fourier_descriptors.append(coeffs)
     except Exception as e:
         print('Error %s on geom at csv line %i' % (e, index + 2))
+        raise e
 
-print('Saving to numpy archive...')
+print('Creating categories for neighborhood inhabitants')
+# This will create a roughly even (6610:6598) split as the number of inhabitants isn't distributed normally.
+median = np.median(df.aantal_inwoners.values)
+print('Median:', median, 'inhabitants')
+above_or_below_median = []
+for number in df.aantal_inwoners.values:
+    category = [1, 0] if number > median else [0, 1]
+    above_or_below_median.append(category)
+
+print('Saving to neighborhoods numpy train and test archives...')
 train_test_split_index = round(TRAIN_TEST_SPLIT * len(geoms))
 np.savez(
     NEIGHBORHOODS_TRAIN,
     input_geoms=geoms[:-train_test_split_index],
     inhabitants=df.aantal_inwoners[:-train_test_split_index],
-    fourier_descriptors=fourier_descriptors[:-train_test_split_index]
+    fourier_descriptors=fourier_descriptors[:-train_test_split_index],
+    above_or_below_median=above_or_below_median[:-train_test_split_index],
 )
 
 np.savez(
     NEIGHBORHOODS_TEST,
     input_geoms=geoms[-train_test_split_index:],
     inhabitants=df.aantal_inwoners[-train_test_split_index:],
-    fourier_descriptors=fourier_descriptors[-train_test_split_index:]
+    fourier_descriptors=fourier_descriptors[-train_test_split_index:],
+    above_or_below_median=above_or_below_median[-train_test_split_index:],
 )
 
 print('Done!')
