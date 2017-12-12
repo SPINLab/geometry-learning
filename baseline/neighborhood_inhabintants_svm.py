@@ -13,9 +13,9 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 
-num_cpus = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
+if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
+    num_cpus = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
 
-if __name__ == '__main__':  # this is
     loaded = np.load(DATA_FILE)
     fourier_descriptors = loaded['fourier_descriptors']
     above_or_below_median = loaded['above_or_below_median'][:, 0]
