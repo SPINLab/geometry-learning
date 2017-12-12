@@ -16,6 +16,16 @@ class TestFourierDescriptors(unittest.TestCase):
         square2 = [[0, 0], [0.5, 0], [1, 0], [200, 300], [0, 1], [0, 0]]
         descriptors1 = elliptic_fourier_descriptors(square1)
         descriptors2 = elliptic_fourier_descriptors(square2)
+        coeffs = np.append(descriptors1, descriptors2, axis=0)
+        try:
+            np.testing.assert_array_almost_equal(descriptors1, descriptors2)
+        except Exception as e:
+            self.assertEqual('Arrays are not almost equal to 6 decimals', e.args[0][1:42])
+
+    def test_normalized_descriptors(self):
+        square1 = [[0, 0], [1, 0], [1, 0.5], [1, 1], [0, 1], [0, 0]]
+        descriptors1 = elliptic_fourier_descriptors(square1, normalize=True)
+        descriptors2 = elliptic_fourier_descriptors(square1)
         try:
             np.testing.assert_array_almost_equal(descriptors1, descriptors2)
         except Exception as e:
