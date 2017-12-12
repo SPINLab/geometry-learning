@@ -107,6 +107,8 @@ ENV/
 /model/configs/*.py
 /script/cuda/
 /files/
+!/files/neighborhoods/
+/files/neighborhoods/neighborhoods.csv
 !/files/continuous_delivery/teamcity_logs/README.md
 !/files/continuous_delivery/teamcity_server_data/README.md
 !/files/continuous_delivery/docker-compose.yml

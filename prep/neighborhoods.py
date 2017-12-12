@@ -40,7 +40,12 @@ for index, shape in enumerate(shapes):
         boundary = boundary.geoms[0]
     try:
         # Set normalize to false to retain size information.
-        coeffs = elliptic_fourier_descriptors(boundary.coords, order=FOURIER_DESCRIPTOR_ORDER, normalize=False)
+        non_normalized_coeffs = elliptic_fourier_descriptors(
+            boundary.coords, order=FOURIER_DESCRIPTOR_ORDER, normalize=False)
+        normalized_coeffs = elliptic_fourier_descriptors(
+            boundary.coords, order=FOURIER_DESCRIPTOR_ORDER, normalize=True)
+        coeffs = np.append(non_normalized_coeffs, normalized_coeffs)  # without axis this will just create an array
+        coeffs = np.append(coeffs, [boundary.area, boundary.length, len(boundary.coords)])
         fourier_descriptors.append(coeffs)
     except Exception as e:
         print('Error %s on geom at csv line %i' % (e, index + 2))
@@ -57,7 +62,7 @@ for number in df.aantal_inwoners.values:
 
 print('Saving to neighborhoods numpy train and test archives...')
 train_test_split_index = round(TRAIN_TEST_SPLIT * len(geoms))
-np.savez(
+np.savez_compressed(
     NEIGHBORHOODS_TRAIN,
     input_geoms=geoms[:-train_test_split_index],
     inhabitants=df.aantal_inwoners[:-train_test_split_index],
@@ -65,7 +70,7 @@ np.savez(
     above_or_below_median=above_or_below_median[:-train_test_split_index],
 )
 
-np.savez(
+np.savez_compressed(
     NEIGHBORHOODS_TEST,
     input_geoms=geoms[-train_test_split_index:],
     inhabitants=df.aantal_inwoners[-train_test_split_index:],
