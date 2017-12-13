@@ -1,11 +1,10 @@
+import multiprocessing
 import os
-
 from datetime import datetime
 
-import multiprocessing
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 
 SCRIPT_VERSION = '0.0.2'
