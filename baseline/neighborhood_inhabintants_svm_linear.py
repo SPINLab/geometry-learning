@@ -26,8 +26,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     train_loaded = np.load(TRAINING_DATA_FILE)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
-    above_or_below_median = train_loaded['above_or_below_median'][:, 0]
-    above_or_below_median = np.reshape(above_or_below_median, (above_or_below_median.shape[0]))
+    train_above_or_below_median = train_loaded['above_or_below_median'][:, 0]
+    train_above_or_below_median = np.reshape(train_above_or_below_median, (train_above_or_below_median.shape[0]))
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -42,21 +42,22 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % num_cpus)
-    grid.fit(X=train_fourier_descriptors, y=above_or_below_median)
+    grid.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
 
     print("The best parameters are %s with a score of %0.2f"
           % (grid.best_params_, grid.best_score_))
+
+    clf = SVC(kernel='linear', C=grid.best_params_['C'], verbose=True)
+    clf.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
 
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_above_or_below_median = test_loaded['above_or_below_median'][:, 0]
-    test_above_or_below_median = np.reshape(test_above_or_below_median, (test_above_or_below_median.shape[0]))
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
+    test_above_or_below_median = np.reshape(test_above_or_below_median, (test_above_or_below_median.shape[0]))
 
-    clf = SVC(kernel='linear', C=grid.best_params_['C'], verbose=True)
-    clf.fit(X=train_fourier_descriptors, y=above_or_below_median)
     predictions = clf.predict(test_fourier_descriptors)
 
     correct = 0

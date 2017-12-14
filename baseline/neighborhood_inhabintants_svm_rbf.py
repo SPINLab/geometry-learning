@@ -55,6 +55,9 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print("The best parameters are %s with a score of %0.2f"
           % (grid.best_params_, grid.best_score_))
 
+    clf = SVC(kernel='rbf', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'], verbose=True)
+    clf.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
+
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
@@ -63,8 +66,6 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_above_or_below_median = np.reshape(test_above_or_below_median, (test_above_or_below_median.shape[0]))
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
-    clf = SVC(kernel='rbf', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'], verbose=True)
-    clf.fit(X=test_fourier_descriptors, y=test_above_or_below_median)
     predictions = clf.predict(test_fourier_descriptors)
 
     correct = 0
