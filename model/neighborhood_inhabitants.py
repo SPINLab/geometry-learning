@@ -9,6 +9,7 @@ from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten
 from model.topoml_util.geom_scaler import localized_mean, localized_normal
 from keras.optimizers import Adam
+from slack_send import notify
 
 SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
@@ -68,3 +69,6 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
     callbacks=callbacks).history
+
+notify(TIMESTAMP, SCRIPT_NAME, 'accuracy of ' + str(history['accuracy'][-1]))
+print(SCRIPT_NAME, 'finished successfully')
