@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 from model.topoml_util.GeoVectorizer import GeoVectorizer
 from pandas import read_csv
 from pyefd import elliptic_fourier_descriptors
@@ -59,6 +60,13 @@ above_or_below_median = []
 for number in df.aantal_inwoners.values:
     category = [1, 0] if number > median else [0, 1]
     above_or_below_median.append(category)
+
+# Scatterplot of area versus inhabitants
+areas = [shape.area for shape in shapes]
+plt.scatter(areas, df.aantal_inwoners.values, s=0.1, alpha=0.5)
+plt.xlim(0, 5e-3)
+plt.ylim(0, 10000)
+plt.savefig('neighborhood_area_inhabitants_scatter.png')
 
 print('Saving to neighborhoods numpy train and test archives...')
 train_test_split_index = round(TRAIN_TEST_SPLIT * len(geoms))

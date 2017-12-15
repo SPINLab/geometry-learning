@@ -114,3 +114,6 @@ ENV/
 !/files/continuous_delivery/
 !/files/neighborhoods/neighborhoods_train.npz
 !/files/neighborhoods/neighborhoods_test.npz
+*.csv
+!/model/topoml_util/test_files/example.csv
+!/model/topoml_util/test_files/polygon_multipolygon.csv

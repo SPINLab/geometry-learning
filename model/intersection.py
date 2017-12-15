@@ -20,6 +20,7 @@ from topoml_util.geom_scaler import localized_normal, localized_mean
 SCRIPT_VERSION = "0.0.2"
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
+SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 PLOT_DIR = './plots/' + TIMESTAMP + ' ' + SCRIPT_NAME
 DATA_FILE = '../files/brt_osm/brt_osm.npz'
 BATCH_SIZE = 1024
@@ -30,9 +31,6 @@ LSTM_SIZE = 128
 DENSE_SIZE = 64
 EPOCHS = 400
 OPTIMIZER = Adam(lr=1e-4, clipnorm=1.)
-
-# Archive the configuration
-copyfile(__file__, 'configs/' + TIMESTAMP + ' ' + SCRIPT_NAME)
 
 loaded = np.load(DATA_FILE)
 raw_training_vectors = loaded['input_geoms']
