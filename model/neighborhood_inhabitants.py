@@ -11,12 +11,12 @@ from model.topoml_util.geom_scaler import localized_mean, localized_normal
 from keras.optimizers import Adam
 from slack_send import notify
 
-SCRIPT_VERSION = '0.0.2'
+SCRIPT_VERSION = '0.0.3'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
-BATCH_SIZE = 1024
+BATCH_SIZE = 64
 GAUSSIAN_MIXTURE_COMPONENTS = 1
 TRAIN_VALIDATE_SPLIT = 0.1
 REPEAT_DEEP_ARCH = 0
