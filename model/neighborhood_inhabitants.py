@@ -7,7 +7,7 @@ from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten
-from model.topoml_util.geom_scaler import localized_mean, localized_normal
+from topoml_util.geom_scaler import localized_mean, localized_normal
 from keras.optimizers import Adam
 from slack_send import notify
 
