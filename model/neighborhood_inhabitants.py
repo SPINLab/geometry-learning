@@ -1,5 +1,4 @@
 import os
-
 from datetime import datetime
 
 import numpy as np
@@ -7,9 +6,10 @@ from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten
-from topoml_util.geom_scaler import localized_mean, localized_normal
 from keras.optimizers import Adam
-from slack_send import notify
+
+from topoml_util.geom_scaler import localized_mean, localized_normal
+from topoml_util.slack_send import notify
 
 SCRIPT_VERSION = '0.0.3'
 SCRIPT_NAME = os.path.basename(__file__)
