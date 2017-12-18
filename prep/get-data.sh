@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo "importing data... this will take a while, depending on your internet connection speed"
+echo "importing data... this will take a while depending on your internet connection speed"
 set -ex
 mkdir -p /data/files
 cd /data/files
@@ -14,19 +14,22 @@ curl -o openstreetmap/netherlands-latest-free.shp.zip http://download.geofabrik.
 # Get neighborhoods
 curl -X GET \
   -o neighborhoods/neighborhoods.csv \
-  'https://geodata.nationaalgeoregister.nl/wijkenbuurten2017/wfs?request=GetFeature&service=WFS&version=2.0.0&typeName=cbs_buurten_2017&outputFormat=csv&srsName=EPSG%3A4326&PropertyName=aantal_inwoners%2Cgeom' \
-  -H 'cache-control: no-cache'
+  'https://geodata.nationaalgeoregister.nl/wijkenbuurten2017/wfs?request=GetFeature&service=WFS&version=2.0.0&typeName=cbs_buurten_2017&outputFormat=csv&srsName=EPSG%3A4326&PropertyName=aantal_inwoners%2Cgeom'
 
 # Get BAG buildings
-woonfunctie
-winkelfunctie
-bijeenkomstfunctie
-onderwijsfunctie
-gezondheidsfunctie
-kantoorfunctie
-industriefuntie
-sportfunctie
-logiesfunctie
+types=( woonfunctie winkelfunctie bijeenkomstfunctie onderwijsfunctie gezondheidszorgfunctie kantoorfunctie industriefunctie sportfunctie logiesfunctie )
+pages=( 0 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000 18000 19000 20000 21000 22000 )
+
+for type in "${types[@]}"
+do
+  touch buildings/buildings-${type}.csv
+  for page in "${pages[@]}"
+  do
+    url="https://geodata.nationaalgeoregister.nl/bag/wfs?request=GetFeature&service=WFS&version=2.0.0&typeName=pand&outputFormat=csv&srsName=EPSG%3A4326&PropertyName=geometrie%2Cgebruiksdoel&startIndex="${page}"&cql_filter=(gebruiksdoel%3D'${type}')"
+    echo ${url}
+    curl -X GET ${url} | grep -v gebruiksdoel >> buildings/buildings-${type}.csv
+  done
+done
 
 # Inflate
 unzip -o base_registration_topography/TOP10NL_25W.zip
