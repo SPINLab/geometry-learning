@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# Set proper time zone
+sudo apt-get install -y chrony
+echo 'server 169.245.169.123 prefer iburst' | sudo tee -a /etc/chrony/chrony.conf
+sudo /etc/init.d/chrony restart
+sudo timedatectl set-timezone "Europe/Amsterdam"
+
 set -e
 git config --global user.name reinvantveer
 git config --global user.email 'rein.van.t.veer@geodan.nl'
