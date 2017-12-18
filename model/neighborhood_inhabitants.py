@@ -11,19 +11,22 @@ from keras.optimizers import Adam
 from topoml_util.geom_scaler import localized_mean, localized_normal
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
-BATCH_SIZE = 64
-GAUSSIAN_MIXTURE_COMPONENTS = 1
-TRAIN_VALIDATE_SPLIT = 0.1
-REPEAT_DEEP_ARCH = 0
-LSTM_SIZE = 128
-DENSE_SIZE = 64
-EPOCHS = 400
-OPTIMIZER = Adam(lr=1e-4, clipnorm=1.)
+
+# Hyperparameters
+BATCH_SIZE = os.getenv('BATCH_SIZE', 64)
+TRAIN_VALIDATE_SPLIT = os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)
+REPEAT_DEEP_ARCH = os.getenv('REPEAT_DEEP_ARCH', 0)
+LSTM_SIZE = os.getenv('LSTM_SIZE', 128)
+DENSE_SIZE = os.getenv('DENSE_SIZE', 64)
+EPOCHS = os.getenv('EPOCHS', 400)
+LEARNING_RATE = os.getenv('LEARNING_RATE', 1e-3)
+
+OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['input_geoms']
@@ -59,7 +62,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=40, min_delta=1)
+    EarlyStopping(patience=40, min_delta=0.01)
 ]
 
 history = model.fit(
@@ -69,6 +72,24 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
     callbacks=callbacks).history
+
+# Run on unseen test data
+TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
+test_loaded = np.load(TEST_DATA_FILE)
+test_geoms = test_loaded['input_geoms']
+test_above_or_below_median = test_loaded['above_or_below_median']
+
+# Normalize
+means = localized_mean(test_geoms)
+test_geoms = localized_normal(test_geoms, means, variance)  # re-use variance from training
+test_pred = model.predict(test_geoms)
+
+correct = 0
+for prediction, expected in zip(test_pred, test_above_or_below_median):
+    if prediction == expected:
+        correct += 1
+
+accuracy = correct / len(test_pred)
 
 notify(TIMESTAMP, SCRIPT_NAME, 'accuracy of ' + str(history['accuracy'][-1]))
 print(SCRIPT_NAME, 'finished successfully')
