@@ -24,7 +24,7 @@ REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 400))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-3))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
@@ -90,6 +90,22 @@ for prediction, expected in zip(test_pred, test_above_or_below_median):
         correct += 1
 
 accuracy = correct / len(test_pred)
+message = 'test accuracy of {0} with ' \
+          'batch size {1} ' \
+          'train/validate split {2} ' \
+          'repeat deep arch {3} ' \
+          'lstm size {4} ' \
+          'epochs {5} ' \
+          'learning rate {6}'\
+    .format(
+        str(accuracy),
+        BATCH_SIZE,
+        TRAIN_VALIDATE_SPLIT,
+        REPEAT_DEEP_ARCH,
+        LSTM_SIZE,
+        DENSE_SIZE,
+        EPOCHS,
+        LEARNING_RATE)
 
-notify(TIMESTAMP, SCRIPT_NAME, 'test accuracy of ' + str(accuracy))
+notify(SIGNATURE, message)
 print(SCRIPT_NAME, 'finished successfully')

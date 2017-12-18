@@ -11,11 +11,22 @@ curl -o base_registration_topography/TOP10NL_34O.zip https://geodata.nationaalge
 # Get the OpenStreetMap data
 curl -o openstreetmap/netherlands-latest-free.shp.zip http://download.geofabrik.de/europe/netherlands-latest-free.shp.zip
 
-# Get
+# Get neighborhoods
 curl -X GET \
   -o neighborhoods/neighborhoods.csv \
   'https://geodata.nationaalgeoregister.nl/wijkenbuurten2017/wfs?request=GetFeature&service=WFS&version=2.0.0&typeName=cbs_buurten_2017&outputFormat=csv&srsName=EPSG%3A4326&PropertyName=aantal_inwoners%2Cgeom' \
   -H 'cache-control: no-cache'
+
+# Get BAG buildings
+woonfunctie
+winkelfunctie
+bijeenkomstfunctie
+onderwijsfunctie
+gezondheidsfunctie
+kantoorfunctie
+industriefuntie
+sportfunctie
+logiesfunctie
 
 # Inflate
 unzip -o base_registration_topography/TOP10NL_25W.zip

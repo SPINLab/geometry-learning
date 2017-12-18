@@ -3,7 +3,8 @@ from subprocess import run, PIPE
 import os
 from sklearn.model_selection import ParameterGrid
 
-hyperparams = {
+SCRIPT_VERSION = '0.0.1'
+HYPERPARAMS = {
     'BATCH_SIZE': [32, 64, 256, 512],
     'REPEAT_DEEP_ARCH': [0, 2, 4],
     'DENSE_SIZE': [16, 64, 256],
@@ -11,7 +12,7 @@ hyperparams = {
     'LEARNING_RATE': [1e-4, 1e-3, 1e-2]
 }
 
-grid = list(ParameterGrid(hyperparams))
+grid = list(ParameterGrid(HYPERPARAMS))
 
 for configuration in grid:
     envs = []
