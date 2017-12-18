@@ -1,4 +1,4 @@
-from subprocess import run
+from subprocess import run, PIPE
 
 from sklearn.model_selection import ParameterGrid
 
@@ -13,5 +13,5 @@ hyperparams = {
 grid = list(ParameterGrid(hyperparams))
 
 for configuration in grid:
-    envs = ' '.join(['{}={}'.format(key, str(value)) for key, value in configuration.items()])
-    run('{} python3 neighborhood_inhabitants.py'.format(envs))
+    envs = ['{}={}'.format(key, str(value)) for key, value in configuration.items()]
+    run([*envs, 'python3', 'neighborhood_inhabitants.py'], stdout=PIPE)
