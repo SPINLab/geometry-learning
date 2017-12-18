@@ -26,6 +26,24 @@ DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 400))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 
+message = 'running {0} with ' \
+          'batch size {1} ' \
+          'train/validate split {2} ' \
+          'repeat deep arch {3} ' \
+          'lstm size {4} ' \
+          'epochs {5} ' \
+          'learning rate {6}' \
+    .format(
+        SIGNATURE,
+        BATCH_SIZE,
+        TRAIN_VALIDATE_SPLIT,
+        REPEAT_DEEP_ARCH,
+        LSTM_SIZE,
+        DENSE_SIZE,
+        EPOCHS,
+        LEARNING_RATE)
+print(message)
+
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
