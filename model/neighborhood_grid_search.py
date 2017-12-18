@@ -3,7 +3,7 @@ from subprocess import run, PIPE
 import os
 from sklearn.model_selection import ParameterGrid
 
-SCRIPT_VERSION = '0.0.2'
+SCRIPT_VERSION = '0.0.3'
 HYPERPARAMS = {
     'BATCH_SIZE': [32, 64, 128],
     'REPEAT_DEEP_ARCH': [0, 2, 4],
