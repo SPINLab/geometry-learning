@@ -18,13 +18,13 @@ SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 
 # Hyperparameters
-BATCH_SIZE = os.getenv('BATCH_SIZE', 64)
-TRAIN_VALIDATE_SPLIT = os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)
-REPEAT_DEEP_ARCH = os.getenv('REPEAT_DEEP_ARCH', 0)
-LSTM_SIZE = os.getenv('LSTM_SIZE', 128)
-DENSE_SIZE = os.getenv('DENSE_SIZE', 64)
-EPOCHS = os.getenv('EPOCHS', 400)
-LEARNING_RATE = os.getenv('LEARNING_RATE', 1e-3)
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 64))
+TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
+REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
+DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
+EPOCHS = int(os.getenv('EPOCHS', 400))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-3))
 
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
