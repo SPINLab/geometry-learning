@@ -86,7 +86,7 @@ test_pred = model.predict(test_geoms)
 
 correct = 0
 for prediction, expected in zip(test_pred, test_above_or_below_median):
-    if prediction == expected:
+    if all([pred == exp for pred, exp in zip(prediction, expected)]):
         correct += 1
 
 accuracy = correct / len(test_pred)
