@@ -17,5 +17,5 @@ grid = list(ParameterGrid(HYPERPARAMS))
 for configuration in grid:
     envs = []
     for key, value in configuration.items():
-        os.environ[key] = '"{}"'.format(value)
+        os.environ[key] = str(value)
     run(['python3', 'neighborhood_inhabitants.py'], stdout=PIPE)
