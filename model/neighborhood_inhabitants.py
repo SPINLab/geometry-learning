@@ -91,5 +91,5 @@ for prediction, expected in zip(test_pred, test_above_or_below_median):
 
 accuracy = correct / len(test_pred)
 
-notify(TIMESTAMP, SCRIPT_NAME, 'accuracy of ' + str(history['accuracy'][-1]))
+notify(TIMESTAMP, SCRIPT_NAME, 'test accuracy of ' + str(accuracy))
 print(SCRIPT_NAME, 'finished successfully')
