@@ -123,7 +123,7 @@ message = 'test accuracy of {0} with ' \
         REPEAT_DEEP_ARCH,
         LSTM_SIZE,
         DENSE_SIZE,
-        EPOCHS,
+        len(history['val_loss']),
         LEARNING_RATE)
 
 notify(SIGNATURE, message)
