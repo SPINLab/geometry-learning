@@ -11,7 +11,7 @@ from keras.optimizers import Adam
 from topoml_util.geom_scaler import localized_mean, localized_normal
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.4'
+SCRIPT_VERSION = '0.0.5'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -21,10 +21,10 @@ TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 64))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 64))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
 EPOCHS = int(os.getenv('EPOCHS', 400))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 5e-4))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 
 message = 'running {0} with ' \
           'batch size {1} ' \
@@ -104,7 +104,7 @@ test_pred = model.predict(test_geoms)
 
 correct = 0
 for prediction, expected in zip(test_pred, test_above_or_below_median):
-    if all([pred == exp for pred, exp in zip(prediction, expected)]):
+    if np.argmax(prediction) == np.argmax(expected):
         correct += 1
 
 accuracy = correct / len(test_pred)
@@ -113,8 +113,9 @@ message = 'test accuracy of {0} with ' \
           'train/validate split {2} ' \
           'repeat deep arch {3} ' \
           'lstm size {4} ' \
-          'epochs {5} ' \
-          'learning rate {6}'\
+          'dense size {5} ' \
+          'epochs {6} ' \
+          'learning rate {7}'\
     .format(
         str(accuracy),
         BATCH_SIZE,
