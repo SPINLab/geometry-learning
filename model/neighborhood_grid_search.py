@@ -17,6 +17,7 @@ grid = list(ParameterGrid(HYPERPARAMS))
 
 for configuration in grid:
     envs = []
+    # Set environment variables (this allows you to do hyperparam searches from any scripting environment)
     for key, value in configuration.items():
         os.environ[key] = str(value)
-    run(['python3', 'neighborhood_inhabitants.py'], stdout=PIPE)
+    os.system('neighborhood_inhabitants.py')
