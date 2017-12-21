@@ -7,6 +7,7 @@ from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten
 from keras.optimizers import Adam
+from sklearn.preprocessing import StandardScaler
 
 from topoml_util.geom_scaler import localized_mean, localized_normal
 from topoml_util.slack_send import notify
@@ -18,7 +19,7 @@ SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 64))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 32))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
@@ -31,8 +32,9 @@ message = 'running {0} with ' \
           'train/validate split {2} ' \
           'repeat deep arch {3} ' \
           'lstm size {4} ' \
-          'epochs {5} ' \
-          'learning rate {6}' \
+          'dense size {5} ' \
+          'epochs {6} ' \
+          'learning rate {7}' \
     .format(
         SIGNATURE,
         BATCH_SIZE,
@@ -51,9 +53,11 @@ train_geoms = train_loaded['input_geoms']
 train_above_or_below_median = train_loaded['above_or_below_median']
 
 # Normalize
+
 means = localized_mean(train_geoms)
-variance = np.var(train_geoms[..., 0:2])
-train_geoms = localized_normal(train_geoms, means, variance)
+train_geoms = localized_normal(train_geoms, means, 1)
+scaler = StandardScaler().fit(train_geoms)
+train_geoms = scaler.transform(train_geoms)
 
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
@@ -99,7 +103,8 @@ test_above_or_below_median = test_loaded['above_or_below_median']
 
 # Normalize
 means = localized_mean(test_geoms)
-test_geoms = localized_normal(test_geoms, means, variance)  # re-use variance from training
+test_geoms = localized_normal(test_geoms, means, 1)
+test_geoms = scaler.transform(test_geoms) # re-use variance from training
 test_pred = model.predict(test_geoms)
 
 correct = 0
