@@ -80,7 +80,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=40, min_delta=0.01)
+    EarlyStopping(patience=10, min_delta=0.01)
 ]
 
 history = model.fit(

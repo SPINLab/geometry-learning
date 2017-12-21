@@ -5,10 +5,11 @@ from sklearn.model_selection import ParameterGrid
 
 SCRIPT_VERSION = '0.0.3'
 HYPERPARAMS = {
-    'BATCH_SIZE': [32, 64, 128],
-    'REPEAT_DEEP_ARCH': [0, 2, 4],
-    'DENSE_SIZE': [16, 64, 256],
-    'LSTM_SIZE': [64, 128, 256],
+    'BATCH_SIZE': [8, 16],
+    'REPEAT_DEEP_ARCH': [0],
+    'DENSE_SIZE': [16, 64],
+    'LSTM_SIZE': [64, 128],
+    'EPOCHS': [10, 20],
     'LEARNING_RATE': [1e-4, 1e-3, 1e-2]
 }
 
