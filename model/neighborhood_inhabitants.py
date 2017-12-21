@@ -62,7 +62,7 @@ output_seq_length = train_above_or_below_median.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(geom_max_points, activation='relu', return_sequences=True)(inputs)
+model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
     model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
