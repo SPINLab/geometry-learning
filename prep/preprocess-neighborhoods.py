@@ -1,17 +1,18 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from model.topoml_util.GeoVectorizer import GeoVectorizer
+from topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
+from topoml_util.GeoVectorizer import GeoVectorizer
 from pandas import read_csv
-from pyefd import elliptic_fourier_descriptors
 from shapely import wkt
+from shapely.geometry import Point
 
 NEIGHBORHOODS_SOURCE = '../files/neighborhoods/neighborhoods.csv'
 NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_train.npz'
 NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_test.npz'
 SANE_NUMBER_OF_POINTS = 512
 TRAIN_TEST_SPLIT = 0.1
-FOURIER_DESCRIPTOR_ORDER = 20  # The axis 0 size
+FOURIER_DESCRIPTOR_ORDER = 16  # The axis 0 size
 
 if not os.path.isfile(NEIGHBORHOODS_SOURCE):
     raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % NEIGHBORHOODS_SOURCE)
@@ -28,29 +29,12 @@ print('Creating neighborhood geometry fourier descriptors...')
 shapes = []
 for wkt_string in df.geom.values:
     shape = wkt.loads(wkt_string)
-    # Out of the 13,300 neighborhoods there's about 300 multipolygon geometries.
+    # Out of the 13,300 neighborhoods there's about 300 multipart multipolygon geometries.
     # We're selecting the largest here, but it will throw off the accuracy a bit.
     geometries = sorted(shape.geoms, key=lambda x: x.area)
     shapes.append(geometries[-1])
 
-fourier_descriptors = []
-
-for index, shape in enumerate(shapes):
-    boundary = shape.boundary
-    while boundary.geom_type == "MultiLineString":
-        boundary = boundary.geoms[0]
-    try:
-        # Set normalize to false to retain size information.
-        non_normalized_coeffs = elliptic_fourier_descriptors(
-            boundary.coords, order=FOURIER_DESCRIPTOR_ORDER, normalize=False)
-        normalized_coeffs = elliptic_fourier_descriptors(
-            boundary.coords, order=FOURIER_DESCRIPTOR_ORDER, normalize=True)
-        coeffs = np.append(non_normalized_coeffs, normalized_coeffs)  # without axis this will just create an array
-        coeffs = np.append(coeffs, [boundary.area, boundary.length, len(boundary.coords)])
-        fourier_descriptors.append(coeffs)
-    except Exception as e:
-        print('Error %s on geom at csv line %i' % (e, index + 2))
-        raise e
+fourier_descriptors = geom_fourier_descriptors(shapes, FOURIER_DESCRIPTOR_ORDER)
 
 print('Creating categories for neighborhood inhabitants')
 # This will create a roughly even (6610:6598) split as the number of inhabitants isn't distributed normally.
