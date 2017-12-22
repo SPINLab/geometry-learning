@@ -1,8 +1,6 @@
-from subprocess import run, PIPE
-
 import os
 from sklearn.model_selection import ParameterGrid
-from slack_send import notify
+from model.topoml_util.slack_send import notify
 
 SCRIPT_VERSION = '0.0.4'
 
