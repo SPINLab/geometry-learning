@@ -1,11 +1,11 @@
 import os
-import numpy as np
+
 import matplotlib.pyplot as plt
-from topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
-from topoml_util.GeoVectorizer import GeoVectorizer
+import numpy as np
+from model.topoml_util.GeoVectorizer import GeoVectorizer
+from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
 from pandas import read_csv
 from shapely import wkt
-from shapely.geometry import Point
 
 NEIGHBORHOODS_SOURCE = '../files/neighborhoods/neighborhoods.csv'
 NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_train.npz'
