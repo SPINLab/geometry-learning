@@ -23,7 +23,7 @@ pages=( 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 140
 for type in "${types[@]}"
 do
   url="https://geodata.nationaalgeoregister.nl/bag/wfs?request=GetFeature&service=WFS&version=2.0.0&typeName=pand&outputFormat=csv&srsName=EPSG%3A4326&PropertyName=geometrie%2Cgebruiksdoel&cql_filter=(gebruiksdoel%3D'${type}')"
-  curl -X GET ${url} | grep 'gebruiksdoel\|pand' > buildings/buildings-${type}.csv
+  curl -X GET ${url} | grep -e gebruiksdoel -e pand > buildings/buildings-${type}.csv
   for page in "${pages[@]}"
   do
     url="https://geodata.nationaalgeoregister.nl/bag/wfs?request=GetFeature&service=WFS&version=2.0.0&typeName=pand&outputFormat=csv&srsName=EPSG%3A4326&PropertyName=geometrie%2Cgebruiksdoel&startIndex="${page}"&cql_filter=(gebruiksdoel%3D'${type}')"
