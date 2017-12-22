@@ -1,6 +1,6 @@
 import os
 from sklearn.model_selection import ParameterGrid
-from model.topoml_util.slack_send import notify
+from topoml_util.slack_send import notify
 
 SCRIPT_VERSION = '0.0.4'
 
