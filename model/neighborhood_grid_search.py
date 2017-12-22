@@ -19,7 +19,7 @@ for configuration in grid:
     # Set environment variables (this allows you to do hyperparam searches from any scripting environment)
     for key, value in configuration.items():
         os.environ[key] = str(value)
-    os.system('neighborhood_inhabitants.py')
+    os.system('python neighborhood_inhabitants.py')
 
 notify('Neighborhood inhabitants grid search', 'no errors')
 print('Neighborhood inhabitants grid search', 'finished successfully')
