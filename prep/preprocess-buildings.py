@@ -18,8 +18,9 @@ import numpy as np
 SANE_NUMBER_OF_POINTS = 64
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 16  # The axis 0 size
-TRAIN_DATA_FILE = '../files/buildings/buildings-train.npz'
+TRAIN_DATA_FILE = '../files/buildings/buildings-train-'
 TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
+NUMBER_OF_FILES = 6
 
 building_types = [
     'bijeenkomstfunctie',
@@ -83,22 +84,40 @@ for builing_type in building_types:
 
     fourier_descriptors = geom_fourier_descriptors(shapes, FOURIER_DESCRIPTOR_ORDER)
     train_test_split_index = round(TRAIN_TEST_SPLIT * len(geoms))
-    training_data['geoms'].append(geoms[:-train_test_split_index])
-    training_data['fourier_descriptors'].append(fourier_descriptors[:-train_test_split_index])
 
     # Labels
     type_int = [building_types.index(building_type) for building_type in df.gebruiksdoel]
+
+    training_data['geoms'].append(geoms[:-train_test_split_index])
+    training_data['fourier_descriptors'].append(fourier_descriptors[:-train_test_split_index])
     training_data['building_type'].append(type_int[:-train_test_split_index])
+
+    test_data['geoms'].append(geoms[-train_test_split_index:])
+    test_data['fourier_descriptors'].append(fourier_descriptors[-train_test_split_index:])
+    test_data['building_type'].append(type_int[-train_test_split_index:])
 
 print('Saving training and test data files...')
 
-np.savez_compressed(
-    TRAIN_DATA_FILE,
-    GEOMS=training_data['geoms'],
-    FOURIER_DESCRIPTORS=training_data['fourier_descriptors'],
-    BUILDING_TYPE=training_data['building_type'],
-)
+part_size = round(len(training_data['geoms']) / NUMBER_OF_FILES)
 
+# Create git-sized chunks
+for part in range(NUMBER_OF_FILES):
+    start_index = part_size * part
+    stop_index = part_size * (part + 1)
+    section = {
+        'geoms': training_data['geoms'][start_index:stop_index],
+        'fourier_descriptors': training_data['fourier_descriptors'][start_index:stop_index],
+        'building_type': training_data['building_type'][start_index:stop_index]
+    }
+
+    np.savez_compressed(
+        TRAIN_DATA_FILE + str(part),
+        GEOMS=section['geoms'],
+        FOURIER_DESCRIPTORS=section['fourier_descriptors'],
+        BUILDING_TYPE=section['building_type'],
+    )
+
+# Test data is small enough to put in one archive
 np.savez_compressed(
     TEST_DATA_FILE,
     GEOMS=test_data['geoms'],
