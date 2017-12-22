@@ -23,6 +23,7 @@ def geom_fourier_descriptors(shapes, order):
                 boundary.coords, order=order, normalize=True)
 
             # TODO: create centroid distance fourier descriptors
+            # See https://doi-org.vu-nl.idm.oclc.org/10.1016/j.image.2009.04.001
             # coords = np.array(boundary.coords)
             # centroid_distances = [boundary.centroid.distance(Point(point)) for point in coords]
             # centroid_fourier_descriptors = elliptic_fourier_descriptors(centroid_distances, normalize=True)
