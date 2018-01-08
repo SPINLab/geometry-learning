@@ -2,11 +2,12 @@
 # 7832 buildings for health care
 # 23000 industrial buildings
 # 21014 office buildings
-# 23000 building for staying overnight
+# 23000 building for lodging
 # 10717 educational buildings
-# 6916 buildings for physical exercise
+# 6916 buildings for sports facilities
 # 23000 shopping buildings
 # 23000 buildings for habitation
+
 import os
 
 from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
@@ -23,15 +24,15 @@ TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
 NUMBER_OF_FILES = 6
 
 building_types = [
-    'bijeenkomstfunctie',
-    'gezondheidszorgfunctie',
-    'industriefunctie',
-    'kantoorfunctie',
-    'logiesfunctie',
-    'onderwijsfunctie',
-    'sportfunctie',
-    'winkelfunctie',
-    'woonfunctie',
+    'bijeenkomstfunctie',  # gatherings
+    'gezondheidszorgfunctie',  # health care
+    'industriefunctie',  # industrial
+    'kantoorfunctie',  # office
+    'logiesfunctie',  # lodging
+    'onderwijsfunctie',  # educational
+    'sportfunctie',  # sports
+    'winkelfunctie',  # shopping
+    'woonfunctie',  # habitation
 ]
 
 training_data = {
