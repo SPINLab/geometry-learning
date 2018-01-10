@@ -18,14 +18,14 @@ from sklearn.preprocessing import StandardScaler
 SCRIPT_VERSION = '0.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FOLDER = '../files/buildings/'
+DATA_FOLDER = '../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
     training_files = []
-    for file in os.listdir(TRAINING_DATA_FOLDER):
+    for file in os.listdir(DATA_FOLDER):
         if file.startswith(FILENAME_PREFIX) and file.endswith('.npz'):
             training_files.append(file)
 
@@ -33,7 +33,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_building_type = np.array([])
 
     for index, file in enumerate(training_files):  # load and concatenate the training files
-        train_loaded = np.load(TRAINING_DATA_FOLDER + file)
+        train_loaded = np.load(DATA_FOLDER + file)
 
         if index == 0:
             train_fourier_descriptors = train_loaded['fourier_descriptors']

@@ -1,13 +1,11 @@
+import multiprocessing
 import os
-
 from datetime import datetime
 
-import multiprocessing
 import numpy as np
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer
-from sklearn import tree
+from sklearn.preprocessing import StandardScaler
 
 # This script executes the task of estimating the number of inhabitants of a neighborhood to be under or over the
 # median of all neighborhoods, based solely on the geometry for that neighborhood. The data for this script can be
@@ -21,7 +19,7 @@ SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
-NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
+NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 N_NEIGHBORS = 10
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
