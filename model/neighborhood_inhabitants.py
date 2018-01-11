@@ -27,13 +27,13 @@ EPOCHS = int(os.getenv('EPOCHS', 400))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 
 message = 'running {0} with ' \
-          'batch size {1} ' \
-          'train/validate split {2} ' \
-          'repeat deep arch {3} ' \
-          'lstm size {4} ' \
-          'dense size {5} ' \
-          'epochs {6} ' \
-          'learning rate {7}' \
+          'batch size: {1} ' \
+          'train/validate split: {2} ' \
+          'repeat deep: {3} ' \
+          'lstm size: {4} ' \
+          'dense size: {5} ' \
+          'epochs: {6} ' \
+          'learning rate: {7}' \
     .format(
         SIGNATURE,
         BATCH_SIZE,
