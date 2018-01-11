@@ -5,12 +5,12 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '0.0.4'
 
 HYPERPARAMS = {
-    'BATCH_SIZE': [8, 16],
-    'REPEAT_DEEP_ARCH': [0, 1],
+    'BATCH_SIZE': [16],
+    'REPEAT_DEEP_ARCH': [1],
     'LSTM_SIZE': [64, 128],
-    'DENSE_SIZE': [16, 64],
+    'DENSE_SIZE': [32],
     'EPOCHS': [20],
-    'LEARNING_RATE': [1e-4, 3e-4, 1e-3]
+    'LEARNING_RATE': [1e-4]
 }
 grid = list(ParameterGrid(HYPERPARAMS))
 
