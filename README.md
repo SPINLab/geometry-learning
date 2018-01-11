@@ -1,20 +1,29 @@
 # Topology Learning
-A machine learning project for learning geospatial topology
+A machine learning project for geospatial vector geometries. This project explores the performance (measured in accuracy) of deep learning models versus shallow learning algorithms on a set of tasks involving mostly polygon geo vector shapes. The shallow models use engineered features of signatures from shapes mostly from signal processing. The deep models use the (normalized) geometries directly by float-encoding. The library that does the vector encoding for the deep learning also contains a method for decoding geometries if you are into sequence-to-sequence models.
+
+The repository contains the necessary code and data for three different experiments:
+- predict the number of inhabitants from a neighborhood geometry
+- predict the building type from a building geometry
+- predict the archaeological feature type from a feature geometry
 
 # Data preparation
 **TLDR;**
+All data necessary to run the scripts on neighborhoods, building types, and archaeological features is enclosed in the repository itself.  
 
-Run
+If you want to re-create the data, run:
 ```bash
 docker-compose up
 ```
-from the repository root. It will prepare all data you need to run the models.
+from the repository root, this requires that you install docker engine and docker compose. It will prepare all data you need to run the models.
 
 ## Neighborhoods data set
-The data for the neighborhoods 2017 is from CBS and downloaded from a Web Feature Service provided by [PDOK](https://pdok.nl). Catalog info on the dataset is [here](http://nationaalgeoregister.nl/geonetwork/srv/dut/catalog.search#/metadata/26103042-50a1-4ee5-9c5b-857a2f8b7680). The ETL script is at `prep/get-neighborhoods.py`. The data is all open. The script runs for a minute or so, and will produce both a training set and a test set, with input geometries (for the deep neural net configuration), the number of inhabitants for the neighborhood as labels and other feature-engineered properties to make comparisons with non-deep learning algorithms.
+The data for the neighborhoods 2017 is from the Dutch Central Bureau for Statistics ([CBS](https://www.cbs.nl/))and downloaded from a Web Feature Service distributed by [PDOK](https://pdok.nl). Catalog info on the data set is [here](http://nationaalgeoregister.nl/geonetwork/srv/dut/catalog.search#/metadata/26103042-50a1-4ee5-9c5b-857a2f8b7680). The ETL script is at `prep/get-neighborhoods.py`. The data is all open. The script runs for a minute or so, and will produce both a training set and a test set, with input geometries (for the deep neural net configuration), the number of inhabitants for the neighborhood as labels and other feature-engineered properties to make comparisons with non-deep learning algorithms.
+
+## Buildings data set
+The data for the buildings experiment is provided by the [Dutch national Cadastre](https://www.kadaster.nl), also distributed by a [PDOK](https://pdok.nl) Web Feature Service. It uses a pre-configured spatial data set that already links functions to building, functions that are normally connected to functional sections within buildings - a building can have multiple functions of course. The catalog info on the data set is [here](http://nationaalgeoregister.nl/geonetwork/srv/dut/catalog.search#/metadata/1c0dcc64-91aa-4d44-a9e3-54355556f5e7?tab=relations).
 
 ## Base Registration for Topography (BRT) and OpenStreetMap (OSM) data
-Note first that there are pre-built numpy archive files `geodata-vectorized.npz` under `files`, so you don't need to rebuild the training data. If you want to prepare the data yourself, or want to derive a different pipeline from it, I suggest you go for the dockerized version (if you value your time). The dockerized version uses a PostGIS database instance to implement an ETL process that does the heavy lifting. Afterwards it's mostly a question of converting to normalized numpy vectors that can be understood by machine learning frameworks and saving the data to numpy archives.
+Note first that there are pre-built numpy archive files under `files`, so you don't need to rebuild the training and test data. If you want to prepare the data yourself, or want to derive a different pipeline from it, I suggest you go for the dockerized version (if you value your time). The dockerized version uses a PostGIS database instance to implement an ETL process that does the heavy lifting. Afterwards it's mostly a question of converting to normalized numpy vectors that can be understood by machine learning frameworks and saving the data to numpy archives.
 
 ### Numpy archive description
 The numpy archive `geodata-vectorized.npz` under `files` contains vectors deserialized from well-known text geometries, using the [shapely](https://pypi.python.org/pypi/Shapely) library. They are re-serialized as a 3D tensor as a combination of real-valued and one-hot components:
