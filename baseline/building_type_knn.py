@@ -50,6 +50,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf = KNeighborsClassifier(n_neighbors=N_NEIGHBORS)
 
     print('Fitting data to model...')
+    print('Using %i threads' % NUM_CPUS)
     scores = cross_val_score(clf, train_fourier_descriptors, train_building_type, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
     clf.fit(train_fourier_descriptors, train_building_type)
