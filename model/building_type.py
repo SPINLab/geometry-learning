@@ -83,7 +83,7 @@ inputs = Input(shape=(geom_max_points, geom_vector_len))
 model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=0.1)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
+    model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=0.1)(model)
 
 model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 model = Flatten()(model)
