@@ -18,9 +18,16 @@ sudo apt-get install -y libgeos-dev python3-tk  # reinstall python3?
 
 # Machine learning dependencies
 sudo pip3 install --upgrade keras  # check ~/.keras/keras.json for correct settings!
-# Install magenta requirement cuda 8.0 v6 for tf 1.2
+# Install magenta requirement cuda 8.0 v6 for tf 1.2 - 1.4
 # From https://gitlab.com/nvidia/cuda/blob/c5e8c8d7a9fd444c4e45573f36cbeb8f4e10f71c/8.0/runtime/cudnn6/Dockerfile
 # And https://stackoverflow.com/questions/41991101/importerror-libcudnn-when-running-a-tensorflow-program
+
+# wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
+# sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+# sudo dpkg -i cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
+# sudo apt-get update
+# sudo apt-get install cuda-8-0
+
 cd ~
 wget http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
 tar xvzf cudnn-8.0-linux-x64-v6.0.tgz
