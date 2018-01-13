@@ -27,6 +27,7 @@ sudo pip3 install --upgrade keras  # check ~/.keras/keras.json for correct setti
 # sudo dpkg -i cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
 # sudo apt-get update
 # sudo apt-get install cuda-8-0
+# sudo apt-get install libcupti-dev
 
 cd ~
 wget http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
