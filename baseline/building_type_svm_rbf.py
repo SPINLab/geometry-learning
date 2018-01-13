@@ -5,6 +5,8 @@ from datetime import datetime
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from topoml_util.slack_send import notify
 
 # This script executes the task of estimating the number of inhabitants of a neighborhood to be under or over the
 # median of all neighborhoods, based solely on the geometry for that neighborhood. The data for this script can be
@@ -13,9 +15,8 @@ from sklearn.preprocessing import StandardScaler
 
 # The script itself will run for about two hours depending on your hardware, if you have at least a recent i7 or
 # comparable
-from sklearn.svm import SVC
 
-SCRIPT_VERSION = '0.0.1'
+SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = '../files/buildings/'
@@ -83,3 +84,14 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     accuracy = correct / len(predictions)
     print('Test accuracy: %0.2f' % accuracy)
+    message = 'test accuracy of {0} with ' \
+              'C: {1} ' \
+              'gamma: {2} ' \
+        .format(
+            str(accuracy),
+            grid.best_params_['C'],
+            grid.best_params_['gamma'],
+            )
+
+    notify(SCRIPT_NAME, message)
+    print(SCRIPT_NAME, 'finished successfully')
