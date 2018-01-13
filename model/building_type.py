@@ -24,12 +24,13 @@ FILENAME_PREFIX = 'buildings-train'
 # Hyperparameters
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 256))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
-REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
+REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 2))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
 EPOCHS = int(os.getenv('EPOCHS', 400))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 OPTIMIZER = Adam(lr=LEARNING_RATE)
+GEOM_SCALE = 500
 
 message = 'running {0} with ' \
           'batch size: {1} ' \
@@ -67,7 +68,7 @@ for file in os.listdir(DATA_FOLDER):
 # Normalize
 means = localized_mean(train_geoms)
 std_dev = np.std(train_geoms[..., 0:2])
-train_geoms = localized_normal(train_geoms, means, 1000)
+train_geoms = localized_normal(train_geoms, means, GEOM_SCALE)
 
 # Map building types to one-hot vectors
 train_targets = np.zeros((len(train_building_type), train_building_type.max() + 1))
@@ -118,7 +119,7 @@ test_building_types = test_loaded['building_type']
 
 # Normalize
 means = localized_mean(test_geoms)
-test_geoms = localized_normal(test_geoms, means, 1000)  # re-use variance from training
+test_geoms = localized_normal(test_geoms, means, GEOM_SCALE)  # re-use variance from training
 test_pred = model.predict(test_geoms)
 
 # Map test targets to one-hot vectors
