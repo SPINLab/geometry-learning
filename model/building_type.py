@@ -82,10 +82,10 @@ output_seq_length = train_targets.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(LSTM_SIZE, activation='relu')(inputs)
+model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
+    model = LSTM(LSTM_SIZE, activation='relu')(model)
 
 # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 # model = LSTM(LSTM_SIZE, activation='relu', recurrent_dropout=0.1)(model)
