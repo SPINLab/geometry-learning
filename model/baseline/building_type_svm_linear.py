@@ -16,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from model.topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.2'
+SCRIPT_VERSION = '0.0.3'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = '../../files/buildings/'
