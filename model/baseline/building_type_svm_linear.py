@@ -16,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from model.topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = '../../files/buildings/'
@@ -83,13 +83,6 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     accuracy = correct / len(predictions)
     print('Test accuracy: %0.2f' % accuracy)
 
-    message = 'test accuracy of {0} with ' \
-              'C: {1} ' \
-              'gamma: {2} ' \
-        .format(
-            str(accuracy),
-            grid.best_params_['C'],
-            grid.best_params_['gamma'],
-        )
+    message = 'test accuracy of {0} with C: {1} '.format(str(accuracy), grid.best_params_['C'])
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully')
