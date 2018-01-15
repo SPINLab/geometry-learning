@@ -16,7 +16,7 @@ setup(name='Topology learning',
           'scipy',
           'keras',
           'numpy',
-          'shapely'
+          'shapely',
+          'tensorflow-gpu'
       ],
       )
-
