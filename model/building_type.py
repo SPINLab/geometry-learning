@@ -15,7 +15,7 @@ from keras.optimizers import Adam
 from topoml_util.slack_send import notify
 from topoml_util.geom_scaler import localized_mean, localized_normal
 
-SCRIPT_VERSION = '0.0.9'
+SCRIPT_VERSION = '0.0.10'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -26,11 +26,11 @@ FILENAME_PREFIX = 'buildings-train'
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 128))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 400))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-3))
-GEOM_SCALE = int(os.getenv('GEOM_SCALE', 500))
+GEOM_SCALE = int(os.getenv('GEOM_SCALE'))  # No default, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 message = 'running {0} with ' \
@@ -68,7 +68,7 @@ for file in os.listdir(DATA_FOLDER):
 
 # Normalize
 means = localized_mean(train_geoms)
-GEOM_SCALE = np.var(train_geoms[..., 0:2])
+GEOM_SCALE = GEOM_SCALE or np.var(train_geoms[..., 0:2])
 train_geoms = localized_normal(train_geoms, means, GEOM_SCALE)
 
 # Map building types to one-hot vectors
@@ -102,7 +102,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=10, min_delta=0.01)
+    EarlyStopping(patience=20, min_delta=0.01)
 ]
 
 history = model.fit(
