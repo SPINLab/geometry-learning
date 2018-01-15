@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from topoml_util.slack_send import notify
+from model.topoml_util.slack_send import notify
 
 # This script executes the task of estimating the number of inhabitants of a neighborhood to be under or over the
 # median of all neighborhoods, based solely on the geometry for that neighborhood. The data for this script can be
@@ -19,7 +19,7 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-DATA_FOLDER = '../files/buildings/'
+DATA_FOLDER = '../../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 
