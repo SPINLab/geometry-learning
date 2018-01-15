@@ -22,21 +22,28 @@ sudo pip3 install --upgrade keras  # check ~/.keras/keras.json for correct setti
 # From https://gitlab.com/nvidia/cuda/blob/c5e8c8d7a9fd444c4e45573f36cbeb8f4e10f71c/8.0/runtime/cudnn6/Dockerfile
 # And https://stackoverflow.com/questions/41991101/importerror-libcudnn-when-running-a-tensorflow-program
 
-# wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
-# sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
-# sudo dpkg -i cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
-# sudo apt-get update
-# sudo apt-get install cuda-8-0
-# sudo apt-get install libcupti-dev
+# cuda toolkit, see also https://developer.nvidia.com/cuda-toolkit-archive
+wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
+sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+sudo dpkg -i cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
+sudo apt-get update
+sudo apt-get install -y cuda-8-0 libcupti-dev
 
 cd ~
 wget http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
 tar xvzf cudnn-8.0-linux-x64-v6.0.tgz
 sudo cp -P cuda/include/cudnn.h /usr/local/cuda/include
-sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
+sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64/
 sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
-sudo ldconfig
 
+# set environment variables
+echo export PATH=/usr/local/cuda/bin:\$PATH >> ~/.profile
+echo export LD_LIBRARY_PATH=/usr/local/cuda/lib64:\$LD_LIBRARY_PATH >> ~/.profile
+echo export CUDA_HOME=/usr/local/cuda >> ~/.profile
+# echo export CUDA_VISIBLE_DEVICES=0
+source ~/.profile
+
+# GUI and remote access
 sudo apt-get install -y lxde
 # sudo rm /home/ubuntu/.Xauthority
 sudo startlxde
