@@ -9,13 +9,19 @@ comparable
 
 import multiprocessing
 import os
+import sys
 from datetime import datetime
 
 import numpy as np
 from sklearn import tree
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
-from model.topoml_util.slack_send import notify
+
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+from topoml_util.slack_send import notify
 
 SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
