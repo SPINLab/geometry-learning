@@ -79,6 +79,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     accuracy = correct / len(predictions)
     print('Test accuracy: %0.2f' % accuracy)
+
     message = 'test accuracy of {0}'.format(str(accuracy))
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully')
