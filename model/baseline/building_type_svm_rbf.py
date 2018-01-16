@@ -7,20 +7,26 @@ The script itself will run for about two hours depending on your hardware, if yo
 comparable
 """
 
-import multiprocessing
 import os
+import sys
+import multiprocessing
 from datetime import datetime
 
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from model.topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+from topoml_util.slack_send import notify
+
+SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-DATA_FOLDER = '../../files/buildings/'
+DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 
