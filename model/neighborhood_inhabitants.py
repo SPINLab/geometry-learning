@@ -66,7 +66,7 @@ model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
     model = LSTM(LSTM_SIZE, activation='relu')(model)
-    model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+    # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
 model = Dense(output_seq_length, activation='softmax')(model)
