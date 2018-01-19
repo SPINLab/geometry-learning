@@ -11,7 +11,7 @@ from keras.optimizers import Adam
 from topoml_util.geom_scaler import localized_mean, localized_normal
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.7'
+SCRIPT_VERSION = '0.0.8'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -65,7 +65,7 @@ inputs = Input(shape=(geom_max_points, geom_vector_len))
 model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(model)
+    model = LSTM(LSTM_SIZE, activation='relu')(model)
     model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
