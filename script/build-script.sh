@@ -12,6 +12,7 @@ CHANGED_MODEL_FILES="$(cat $1 | \
   grep -e model -e baseline | \
   grep .py | \
   grep -v topoml_util | \
+  grep -v baseline | \
   grep -v png \
   )"
 echo ${CHANGED_MODEL_FILES}
