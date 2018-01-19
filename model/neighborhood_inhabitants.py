@@ -53,8 +53,8 @@ train_above_or_below_median = train_loaded['above_or_below_median']
 
 # Normalize
 means = localized_mean(train_geoms)
-std_dev = np.std(train_geoms[..., 0:2])
-train_geoms = localized_normal(train_geoms, means, std_dev)
+geom_scale = np.var(train_geoms[..., 0:2])
+train_geoms = localized_normal(train_geoms, means, geom_scale)
 
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
@@ -100,7 +100,7 @@ test_above_or_below_median = test_loaded['above_or_below_median']
 
 # Normalize
 means = localized_mean(test_geoms)
-test_geoms = localized_normal(test_geoms, means, std_dev)  # re-use variance from training
+test_geoms = localized_normal(test_geoms, means, geom_scale)  # re-use variance from training
 test_pred = model.predict(test_geoms)
 
 correct = 0
