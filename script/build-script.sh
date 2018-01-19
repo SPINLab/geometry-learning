@@ -9,7 +9,7 @@ cat $1
 # TeamCity style
 CHANGED_MODEL_FILES="$(cat $1 | \
   cut -d \: -f 1 | \
-  grep -e model -e baseline | \
+  grep -e model | \
   grep .py | \
   grep -v topoml_util | \
   grep -v baseline | \
