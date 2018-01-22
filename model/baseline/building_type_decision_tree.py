@@ -63,7 +63,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors, train_building_type)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'buildings-test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_building_type = np.asarray(test_loaded['building_type'], dtype=int)
@@ -78,7 +78,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             correct += 1
 
     accuracy = correct / len(predictions)
-    print('Test accuracy: %0.2f' % accuracy)
+    print('Test accuracy: %0.3f' % accuracy)
 
     message = 'test accuracy of {0}'.format(str(accuracy))
     notify(SCRIPT_NAME, message)
