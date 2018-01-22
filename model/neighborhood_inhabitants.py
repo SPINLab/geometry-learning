@@ -5,7 +5,7 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, TimeDistributed, Dense
+from keras.layers import LSTM, TimeDistributed, Dense, Flatten
 from keras.optimizers import Adam
 
 from topoml_util.geom_scaler import localized_mean, localized_normal
@@ -24,7 +24,7 @@ REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 192))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 400))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-3))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 
 message = 'running {0} with ' \
           'batch size: {1} ' \
@@ -66,9 +66,9 @@ model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
     model = LSTM(LSTM_SIZE, activation='relu')(model)
-    # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+    model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
-model = Dense(DENSE_SIZE, activation='relu')(model)
+model = Flatten()(model)
 model = Dense(output_seq_length, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
