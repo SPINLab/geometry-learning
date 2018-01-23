@@ -26,7 +26,7 @@ FILENAME_PREFIX = 'buildings-train'
 # Hyperparameters
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 256))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
-REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
+REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 400))
@@ -88,7 +88,7 @@ model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_drop
 
 for layer in range(REPEAT_DEEP_ARCH):
     model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=0.1)(model)
-    # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+    model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
 model = Flatten()(model)
