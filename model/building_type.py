@@ -30,7 +30,7 @@ REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 400))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-3))
 GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 PATIENCE = 400
