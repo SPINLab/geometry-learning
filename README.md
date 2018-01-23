@@ -22,6 +22,24 @@ The data for the neighborhoods 2017 is from the Dutch Central Bureau for Statist
 ## Buildings data set
 The data for the buildings experiment is provided by the [Dutch national Cadastre](https://www.kadaster.nl), also distributed by a [PDOK](https://pdok.nl) Web Feature Service. It uses a pre-configured spatial data set that already links functions to building, functions that are normally connected to functional sections within buildings - a building can have multiple functions of course. The catalog info on the data set is [here](http://nationaalgeoregister.nl/geonetwork/srv/dut/catalog.search#/metadata/1c0dcc64-91aa-4d44-a9e3-54355556f5e7?tab=relations).
 
+## Archaeological features data set
+The archaeological features data set is tailored to solve the task of predicting the feature type (classification) based on geometries alone. The data is all collected and owned by ADC ArcheoProjecten and deposited at Data Archiving and Networked Services (DANS) in the EASY system:
+
+Project | ID | No. of features | has definitions
+--- | --- | --- | ---
+ENKN_09   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:26721 | 11058 | Yes
+VENO13_08 | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:26804 | 5101  | Yes (joined)
+MONF_09   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:28372 | 5603  | Yes (joined)
+VEEE_07   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:29574 | 5243  | Yes
+GOUA_08   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:34403 | 5306  | Yes
+VENO_02   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:37522 | 5207  | Yes
+KATK_08   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:44368 | 3165  | Yes (joined)
+WIJD_07   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:49763 | 12131 | Yes (joined)
+OOST_10   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:51929 | 17251 | Yes (joined)
+VEGL_10   | https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:53545 | 4271  | Yes (joined)
+| | | 
+TOTAL | | 74336
+
 ## Base Registration for Topography (BRT) and OpenStreetMap (OSM) data
 Note first that there are pre-built numpy archive files under `files`, so you don't need to rebuild the training and test data. If you want to prepare the data yourself, or want to derive a different pipeline from it, I suggest you go for the dockerized version (if you value your time). The dockerized version uses a PostGIS database instance to implement an ETL process that does the heavy lifting. Afterwards it's mostly a question of converting to normalized numpy vectors that can be understood by machine learning frameworks and saving the data to numpy archives.
 
