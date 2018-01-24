@@ -54,7 +54,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    C_range = [1e-3, 1e-2, 1e-1, 1e0, 1e1]
+    C_range = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]
     param_grid = dict(C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
@@ -64,17 +64,18 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(X=train_fourier_descriptors, y=train_building_type)
+    grid.fit(X=train_fourier_descriptors[::10], y=train_building_type[::10])
 
     print("The best parameters are %s with a score of %0.2f"
           % (grid.best_params_, grid.best_score_))
 
+    print('Training model on best parameters...')
     clf = SVC(kernel='linear', C=grid.best_params_['C'], verbose=True)
     clf.fit(X=train_fourier_descriptors, y=train_building_type)
 
     # Run predictions on unseen test data to verify generalization
     print('Run on test data...')
-    TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'buildings-test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_building_type = np.asarray(test_loaded['building_type'], dtype=int)
@@ -88,7 +89,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             correct += 1
 
     accuracy = correct / len(predictions)
-    print('Test accuracy: %0.2f' % accuracy)
+    print('Test accuracy: %0.3f' % accuracy)
 
     message = 'test accuracy of {0} with C: {1} '.format(str(accuracy), grid.best_params_['C'])
     notify(SCRIPT_NAME, message)

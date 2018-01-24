@@ -28,7 +28,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_above_or_below_median = train_loaded['above_or_below_median'][:, 0]
     train_above_or_below_median = np.reshape(train_above_or_below_median, (train_above_or_below_median.shape[0]))
 
-    # Copy-paste from http://scikit-learn.org/stable/auto_examples/svm/plot_rbf_parameters.html#sphx-glr-auto-examples
+    # Adapted from http://scikit-learn.org/stable/auto_examples/svm/plot_rbf_parameters.html#sphx-glr-auto-examples
     # -svm-plot-rbf-parameters-py
 
     # plot distribution of features
@@ -38,9 +38,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     scaler = MinMaxScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
-    # C_range = np.logspace(-2, 10, 13)
-    C_range = [1e-3, 1e-2, 1e-1, 1e0, 1e1]
-    gamma_range = np.logspace(-9, 3, 13)
+    C_range = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]
+    gamma_range = np.logspace(-3, 3, 7)
     param_grid = dict(gamma=gamma_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
@@ -55,6 +54,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print("The best parameters are %s with a score of %0.2f"
           % (grid.best_params_, grid.best_score_))
 
+    print('Training model on best parameters...')
     clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'],
               verbose=True)
     clf.fit(X=train_fourier_descriptors, y=train_above_or_below_median)

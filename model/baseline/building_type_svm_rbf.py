@@ -71,6 +71,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print("The best parameters are %s with a score of %0.2f"
           % (grid.best_params_, grid.best_score_))
 
+    print('Training model on best parameters...')
     clf = SVC(kernel='rbf', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'], verbose=True)
     clf.fit(X=train_fourier_descriptors, y=train_building_type)
 
@@ -90,7 +91,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             correct += 1
 
     accuracy = correct / len(predictions)
-    print('Test accuracy: %0.2f' % accuracy)
+    print('Test accuracy: %0.3f' % accuracy)
 
     message = 'test accuracy of {0} with ' \
               'C: {1} ' \
