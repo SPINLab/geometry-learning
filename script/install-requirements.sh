@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# This is not a fully automated install - it can't be run from docker for instance because the CUDA installation requires user input
+
 # Set proper time zone
 sudo apt-get install -y chrony
 echo 'server 169.245.169.123 prefer iburst' | sudo tee -a /etc/chrony/chrony.conf
@@ -22,13 +24,20 @@ sudo pip3 install --upgrade keras  # check ~/.keras/keras.json for correct setti
 # From https://gitlab.com/nvidia/cuda/blob/c5e8c8d7a9fd444c4e45573f36cbeb8f4e10f71c/8.0/runtime/cudnn6/Dockerfile
 # And https://stackoverflow.com/questions/41991101/importerror-libcudnn-when-running-a-tensorflow-program
 
-# cuda toolkit, see also https://developer.nvidia.com/cuda-toolkit-archive
-wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
-sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
-sudo dpkg -i cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
+# Updated drivers
+sudo add-apt-repository ppa:graphics-drivers/ppa
 sudo apt-get update
-sudo apt-get install -y cuda-8-0 libcupti-dev
+sudo ubuntu-install
 
+# cuda toolkit, see also https://developer.nvidia.com/cuda-toolkit-archive
+wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
+chmod +x cuda_8.0.61_375.26_linux-run
+sudo ./cuda_8.0.61_375.26_linux-run
+# Install driver
+# n
+sudo apt-get install -y libcupti-dev
+
+# Install cudnn
 cd ~
 wget http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
 tar xvzf cudnn-8.0-linux-x64-v6.0.tgz
@@ -37,11 +46,10 @@ sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64/
 sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
 
 # set environment variables
-echo export PATH=/usr/local/cuda/bin:\$PATH >> ~/.profile
-echo export LD_LIBRARY_PATH=/usr/local/cuda/lib64:\$LD_LIBRARY_PATH >> ~/.profile
-echo export CUDA_HOME=/usr/local/cuda >> ~/.profile
-# echo export CUDA_VISIBLE_DEVICES=0
-source ~/.profile
+echo PATH=/usr/local/cuda/bin${PATH:+:${PATH}} >> ~/.bashrc
+echo LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/nvidia-*${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} >> ~/.bashrc
+echo CUDA_HOME=/usr/local/cuda >> ~/.bashrc
+source ~/.bashrc
 
 # GUI and remote access
 sudo apt-get install -y lxde
