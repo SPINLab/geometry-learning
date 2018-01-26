@@ -34,7 +34,7 @@ LEARNING_RATE = float(os.getenv('LEARNING_RATE', 3e-4))
 GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 PATIENCE = 40
-RECURRENT_DROPOUT = 0.2
+RECURRENT_DROPOUT = 0.05
 
 message = 'running {0} with ' \
           'batch size: {1} ' \
