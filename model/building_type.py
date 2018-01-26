@@ -34,6 +34,7 @@ LEARNING_RATE = float(os.getenv('LEARNING_RATE', 3e-4))
 GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 PATIENCE = 40
+RECURRENT_DROPOUT = 0.2
 
 message = 'running {0} with ' \
           'batch size: {1} ' \
@@ -84,10 +85,10 @@ output_seq_length = train_targets.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=0.1)(inputs)
+model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=0.1)(model)
+    model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
     # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
