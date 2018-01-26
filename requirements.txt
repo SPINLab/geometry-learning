@@ -1,0 +1,8 @@
+Keras==2.1.2
+numpy==1.14.0
+pandas==0.22.0
+scikit-learn==0.19.1
+scipy==1.0.0
+Shapely==1.6.3
+slackclient==1.1.0
+tensorflow-gpu==1.4.1
