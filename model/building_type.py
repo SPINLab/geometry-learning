@@ -10,7 +10,7 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, TimeDistributed, Dense, Flatten
+from keras.layers import LSTM, Dense, Flatten
 from keras.optimizers import Adam
 
 from topoml_util.geom_scaler import localized_mean, localized_normal
@@ -24,7 +24,7 @@ DATA_FOLDER = '../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 512))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 384))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
