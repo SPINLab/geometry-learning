@@ -18,13 +18,15 @@ SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 32))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 128))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
-REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
+REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 192))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 400))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
+PATIENCE = 40
+RECURRENT_DROPOUT = 0.05
 
 message = 'running {0} with ' \
           'batch size: {1} ' \
@@ -62,10 +64,10 @@ output_seq_length = train_above_or_below_median.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=0.1)(inputs)
+model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
 
 for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, return_sequences=True, activation='relu', recurrent_dropout=0.1)(model)
+    model = LSTM(LSTM_SIZE, return_sequences=True, activation='relu', recurrent_dropout=RECURRENT_DROPOUT)(model)
     # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
@@ -82,7 +84,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=20, min_delta=0.01)
+    EarlyStopping(patience=PATIENCE, min_delta=0.001)
 ]
 
 history = model.fit(
