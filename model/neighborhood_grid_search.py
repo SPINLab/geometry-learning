@@ -5,9 +5,9 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '0.0.5'
 
 HYPERPARAMS = {
-    'BATCH_SIZE': [32, 64],
-    'REPEAT_DEEP_ARCH': [0, 1],
-    'LSTM_SIZE': [128, 256],
+    'BATCH_SIZE': [128],
+    'REPEAT_DEEP_ARCH': [1],
+    'LSTM_SIZE': [256],
     'DENSE_SIZE': [64],
     'EPOCHS': [20],
     'LEARNING_RATE': [1e-4]

@@ -11,31 +11,37 @@ from keras.optimizers import Adam
 from topoml_util.geom_scaler import localized_mean, localized_normal
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.11'
+SCRIPT_VERSION = '0.0.15'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 32))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 384))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 192))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
-EPOCHS = int(os.getenv('EPOCHS', 400))
+EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
+GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
+OPTIMIZER = Adam(lr=LEARNING_RATE)
+PATIENCE = 40
+RECURRENT_DROPOUT = 0.05
 
 message = 'running {0} with ' \
-          'batch size: {1} ' \
-          'train/validate split: {2} ' \
-          'repeat deep: {3} ' \
-          'lstm size: {4} ' \
-          'dense size: {5} ' \
-          'epochs: {6} ' \
-          'learning rate: {7}' \
+          'version: {1} ' \
+          'batch size: {2} ' \
+          'train/validate split: {3} ' \
+          'repeat deep: {4} ' \
+          'lstm size: {5} ' \
+          'dense size: {6} ' \
+          'epochs: {7} ' \
+          'learning rate: {8}' \
     .format(
         SIGNATURE,
+        SCRIPT_VERSION,
         BATCH_SIZE,
         TRAIN_VALIDATE_SPLIT,
         REPEAT_DEEP_ARCH,
@@ -44,8 +50,6 @@ message = 'running {0} with ' \
         EPOCHS,
         LEARNING_RATE)
 print(message)
-
-OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['input_geoms']
@@ -62,11 +66,11 @@ output_seq_length = train_above_or_below_median.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=0.1)(inputs)
+model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
+model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, return_sequences=True, activation='relu', recurrent_dropout=0.1)(model)
-    # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+    model = LSTM(LSTM_SIZE, return_sequences=True, activation='relu', recurrent_dropout=RECURRENT_DROPOUT)(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
 model = Flatten()(model)
@@ -82,7 +86,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=20, min_delta=0.01)
+    EarlyStopping(patience=PATIENCE, min_delta=0.001)
 ]
 
 history = model.fit(
@@ -111,15 +115,17 @@ for prediction, expected in zip(test_pred, test_above_or_below_median):
 
 accuracy = correct / len(test_pred)
 message = 'test accuracy of {0} with ' \
-          'batch size {1} ' \
-          'train/validate split {2} ' \
-          'repeat deep arch {3} ' \
-          'lstm size {4} ' \
-          'dense size {5} ' \
-          'epochs {6} ' \
-          'learning rate {7}'\
+          'version: {1} ' \
+          'batch size {2} ' \
+          'train/validate split {3} ' \
+          'repeat deep arch {4} ' \
+          'lstm size {5} ' \
+          'dense size {6} ' \
+          'epochs {7} ' \
+          'learning rate {8}'\
     .format(
         str(accuracy),
+        SCRIPT_VERSION,
         BATCH_SIZE,
         TRAIN_VALIDATE_SPLIT,
         REPEAT_DEEP_ARCH,

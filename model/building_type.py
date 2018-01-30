@@ -10,13 +10,13 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, TimeDistributed, Dense, Flatten
+from keras.layers import LSTM, Dense, Flatten
 from keras.optimizers import Adam
 
 from topoml_util.geom_scaler import localized_mean, localized_normal
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.1.20'
+SCRIPT_VERSION = '0.1.23'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -24,17 +24,17 @@ DATA_FOLDER = '../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 256))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 384))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
-REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
+REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
-EPOCHS = int(os.getenv('EPOCHS', 100))
+EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 3e-4))
 GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 PATIENCE = 40
-RECURRENT_DROPOUT = 0.2
+RECURRENT_DROPOUT = 0.05
 
 message = 'running {0} with ' \
           'batch size: {1} ' \

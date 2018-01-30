@@ -47,8 +47,8 @@ test_data = {
     'building_type': [],
 }
 
-for builing_type in building_types:
-    path = '../files/buildings/buildings-' + builing_type + '.csv'
+for function_type in building_types:
+    path = '../files/buildings/buildings-' + function_type + '.csv'
     print('Processing', path)
 
     if not os.path.isfile(path):

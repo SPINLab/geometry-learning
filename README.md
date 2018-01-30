@@ -8,7 +8,10 @@ The repository contains the necessary code and data for three different experime
 
 # Data preparation
 **TLDR;**
-All data necessary to run the scripts on neighborhoods, building types, and archaeological features is enclosed in the repository itself.  
+All data necessary to run the scripts on neighborhoods, building types, and archaeological features is enclosed in the repository itself.
+
+To run the training in the repository, install the dependencies using
+`pip3 install -r requirements.txt` from the repo root.
 
 If you want to re-create the data, run:
 ```bash
