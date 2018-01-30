@@ -11,18 +11,18 @@ from keras.optimizers import Adam
 from topoml_util.geom_scaler import localized_mean, localized_normal
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.14'
+SCRIPT_VERSION = '0.0.15'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 64))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 256))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
-DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
+DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
