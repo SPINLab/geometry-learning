@@ -7,3 +7,4 @@ Shapely==1.6.3
 slackclient==1.1.0
 tensorflow-gpu==1.4.1
 matplotlib==2.1.2
+pyefd==1.0
