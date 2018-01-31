@@ -27,28 +27,45 @@ sudo pip3 install --upgrade keras  # check ~/.keras/keras.json for correct setti
 # Updated drivers
 sudo add-apt-repository ppa:graphics-drivers/ppa
 sudo apt-get update
-sudo ubuntu-install
+
+#Install the recommended driver (currently nvidia-390)
+sudo ubuntu-drivers autoinstall
 
 # cuda toolkit, see also https://developer.nvidia.com/cuda-toolkit-archive
-wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
-chmod +x cuda_8.0.61_375.26_linux-run
-sudo ./cuda_8.0.61_375.26_linux-run
-# Install driver
-# n
+wget -O cuda_8_linux.run https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
+sudo chmod +x cuda_8_linux.run
+ech./cuda_8_linux.run
+#Do you accept the previously read EULA?
+#accept
+#Install NVIDIA Accelerated Graphics Driver for Linux-x86_64 367.48?
+#n (we installed drivers previously)
+#Install the CUDA 8.0 Toolkit?
+#y
+#Enter Toolkit Location:
+#/usr/local/cuda-8.0 (enter)
+#Do you wish to run the installation with ‚sudo’?
+#y
+#Do you want to install a symbolic link at /usr/local/cuda?
+#y
+#Install the CUDA 8.0 Samples?
+#y
+#Enter CUDA Samples Location:
+#enter
+
 sudo apt-get install -y libcupti-dev
 
 # Install cudnn
 cd ~
 wget http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
 tar xvzf cudnn-8.0-linux-x64-v6.0.tgz
-sudo cp -P cuda/include/cudnn.h /usr/local/cuda/include
-sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64/
-sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
+sudo cp -P cuda/include/cudnn.h /usr/local/cuda-8.0/include
+sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
+sudo chmod a+r /usr/local/cuda-8.0/include/cudnn.h /usr/local/cuda-8.0/lib64/libcudnn*
 
 # set environment variables
-echo PATH=/usr/local/cuda/bin${PATH:+:${PATH}} >> ~/.bashrc
-echo LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/nvidia-*${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} >> ~/.bashrc
-echo CUDA_HOME=/usr/local/cuda >> ~/.bashrc
+echo PATH=/usr/local/cuda-8.0/bin${PATH:+:${PATH}} >> ~/.bashrc
+echo LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:/usr/lib/nvidia-*${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} >> ~/.bashrc
+echo CUDA_HOME=/usr/local/cuda-8.0 >> ~/.bashrc
 source ~/.bashrc
 
 # GUI and remote access
