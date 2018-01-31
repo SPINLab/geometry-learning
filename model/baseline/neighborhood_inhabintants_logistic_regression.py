@@ -50,7 +50,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         param_grid=param_grid, cv=cv)
     grid.fit(train_fourier_descriptors, train_above_or_below_median)
 
-    print("The best parameters are %s with a score of %0.2f"
+    print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     clf = LogisticRegression(C=grid.best_params_['C'])
@@ -76,7 +76,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             correct += 1
 
     accuracy = correct / len(predictions)
-    print('Test accuracy: %0.2f' % accuracy)
+    print('Test accuracy: %0.3f' % accuracy)
 
     message = 'test accuracy of {0} with C: {1} '.format(str(accuracy), grid.best_params_['C'])
     notify(SCRIPT_NAME, message)
