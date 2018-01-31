@@ -56,7 +56,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
     # Grid search
-    C_range = [1e-3, 1e-2, 1e-1, 1e0, 1e1]
+    C_range = [1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]
     param_grid = dict(C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
