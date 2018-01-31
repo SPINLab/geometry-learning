@@ -27,7 +27,7 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
+TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -45,7 +45,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors, train_above_or_below_median)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
+    TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_above_or_below_median = np.asarray(test_loaded['above_or_below_median'], dtype=int)
