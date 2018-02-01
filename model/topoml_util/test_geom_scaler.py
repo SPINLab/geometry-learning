@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
-from topoml_util.GeoVectorizer import FULL_STOP_INDEX
 
+from topoml_util import geom_scaler
+from topoml_util.GeoVectorizer import FULL_STOP_INDEX
 from topoml_util.geom_scaler import localized_normal, localized_mean
 
 input_geom = np.array([[
@@ -32,8 +33,23 @@ dummy_geom = np.array([[
 means = localized_mean(input_geom)
 scaled = localized_normal(input_geom, means)
 
+train_loaded = np.load('test_files/test_geoms.npz')
+train_geoms = train_loaded['input_geoms']
+
 
 class TestGeomScaler(unittest.TestCase):
+    def test_auto_scaling(self):
+        means = localized_mean(train_geoms)
+        print('test geoms:', len(train_geoms))
+        print('max coord value', np.max(train_geoms[..., :2]))
+        print('min coord value', np.min(train_geoms[..., :2]))
+        scale = geom_scaler.scale(train_geoms)
+        print('scale:', scale)
+        normalized_geoms = geom_scaler.transform(train_geoms, scale)
+        print('max normalized coord value', np.max(normalized_geoms[..., :2]))
+        print('min normalized coord value', np.min(normalized_geoms[..., :2]))
+        self.assertLess(np.std(normalized_geoms[..., :2]), 1)
+
     def test_scaling(self):
         self.assertAlmostEqual(scaled[0, 0, 0], -0.4763)
         self.assertAlmostEqual(scaled[0, 0, 1], 0.3646)
