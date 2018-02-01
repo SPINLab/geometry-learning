@@ -67,7 +67,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Using %i threads for grid search' % NUM_CPUS)
     grid.fit(X=train_fourier_descriptors[::10], y=train_building_type[::10])
 
-    print("The best parameters are %s with a score of %0.2f"
+    print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
