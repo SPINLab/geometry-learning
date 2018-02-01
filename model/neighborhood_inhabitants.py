@@ -24,10 +24,10 @@ REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 3e-4))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = 40
 RECURRENT_DROPOUT = 0.1
-GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
+GEOM_SCALE = int(os.getenv('GEOM_SCALE', 1e-2))  # If default 0: overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 message = 'running {0} with ' \
@@ -56,7 +56,11 @@ train_geoms = train_loaded['input_geoms']
 train_above_or_below_median = train_loaded['above_or_below_median']
 
 # Normalize
-geom_scale = geom_scaler.scale(train_geoms)  # GEOM_SCALE or
+# means = geom_scaler.localized_mean(train_geoms)
+# geom_scale = GEOM_SCALE or np.var(train_geoms[..., 0:2])
+# train_geoms = geom_scaler.localized_normal(train_geoms, means, geom_scale)
+
+geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 
 # Shape determination
