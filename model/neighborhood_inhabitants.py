@@ -27,7 +27,7 @@ EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 2e-4))
 PATIENCE = 40
 RECURRENT_DROPOUT = 0.05
-GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
+GEOM_SCALE = int(os.getenv('GEOM_SCALE', 100))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 message = 'running {0} with ' \
@@ -57,7 +57,7 @@ train_above_or_below_median = train_loaded['above_or_below_median']
 
 # Normalize
 means = localized_mean(train_geoms)
-geom_scale = np.var(train_geoms[..., 0:2])
+geom_scale = GEOM_SCALE or np.var(train_geoms[..., 0:2])
 train_geoms = localized_normal(train_geoms, means, geom_scale)
 
 # Shape determination
