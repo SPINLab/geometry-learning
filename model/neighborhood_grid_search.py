@@ -6,11 +6,11 @@ SCRIPT_VERSION = '0.0.7'
 
 HYPERPARAMS = {
     # 'BATCH_SIZE': [512],
-    # 'REPEAT_DEEP_ARCH': [0],
+    'REPEAT_DEEP_ARCH': [0, 1],
     # 'LSTM_SIZE': [256],
     # 'DENSE_SIZE': [64],
     # 'EPOCHS': [200],
-    # 'LEARNING_RATE': [1e-4],
+    'LEARNING_RATE': [1e-3, 3e-4, 1e-4],
     'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3]
 }
 grid = list(ParameterGrid(HYPERPARAMS))
