@@ -53,6 +53,7 @@ dense size: {6}
 epochs: {7} 
 learning rate: {8}
 geometry scale: {9}
+recurrent dropout: {10}
 '''.format(
     SIGNATURE,
     SCRIPT_VERSION,
@@ -63,7 +64,9 @@ geometry scale: {9}
     DENSE_SIZE,
     EPOCHS,
     LEARNING_RATE,
-    geom_scale)
+    geom_scale,
+    RECURRENT_DROPOUT,
+)
 print(message)
 
 # Shape determination
@@ -130,6 +133,7 @@ dense size {6} '
 epochs {7} '
 learning rate {8}
 geometry scale {9}
+recurrent dropout {10}
 '''.format(
     str(accuracy),
     SCRIPT_VERSION,
@@ -140,7 +144,9 @@ geometry scale {9}
     DENSE_SIZE,
     len(history['val_loss']),
     LEARNING_RATE,
-    geom_scale)
+    geom_scale,
+    RECURRENT_DROPOUT,
+)
 
 notify(SIGNATURE, message)
 print(SCRIPT_NAME, 'finished successfully')
