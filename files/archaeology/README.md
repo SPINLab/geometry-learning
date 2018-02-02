@@ -13,4 +13,4 @@ WIJD_07   |  Dijkstra, J. (ADC ArcheoProjecten) (2012): Wijk bij Duurstede Veili
 OOST_10   |  Roessingh, W. (ADC ArcheoProjecten); Blom, E. (ADC ArcheoProjecten) (2012): Oosterhout Vrachelen De Contreie Vrachelen 4 Opgraving. DANS. https://doi.org/10.17026/dans-25d-fpe5 | 17251 | Yes (joined)
 VEGL_10   |  ADC ArcheoProjecten; Van der Veken, B. (ADC ArcheoProjecten); Blom, E. (ADC ArcheoProjecten) (2012): Veghel Scheiffelaar II Opgraving. DANS. https://doi.org/10.17026/dans-z93-7zbe | 4271  | Yes (joined)
 | | | 
-TOTAL | | 74336
+TOTAL | | 74358
