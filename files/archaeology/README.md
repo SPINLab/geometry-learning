@@ -8,7 +8,7 @@ MONF_09   |  ADC ArcheoProjecten; Veken, B. van der; Prangsma, N.M.; (2011): Mon
 VEEE_07   |  ADC ArcheoProjecten; Dijkstra, J.; Zuidhoff, F.S.; (2011): Veere Rijksweg N57 Proefsleuven Begeleiding Opgraving. DANS. https://doi.org/10.17026/dans-xyc-re2w | 5243  | Yes
 GOUA_08   |  ADC ArcheoProjecten; Dijkstra, J.; Houkes, M.C. ; Ostkamp, S. ; (2010): Gouda Bolwerk Opgraving en Begeleiding. DANS. https://doi.org/10.17026/dans-xzm-x29h  | 5306  | Yes
 VENO_02   |  ADC ArcheoProjecten; Velde, H. van de; Ostkamp, S.; Veldman, H.A.P.; Wyns, S.; (2002): Venlo Maasboulevard. DANS. https://doi.org/10.17026/dans-x84-msac | 5207  | Yes
-KATK_08   |  ADC ArcheoProjecten; Velde, H.M. van der; (2011): Katwijk Zanderij Westerbaan Opgraving. DANS. https://doi.org/10.17026/dans-znz-r2ba   | Yes (joined)
+KATK_08   |  ADC ArcheoProjecten; Velde, H.M. van der; (2011): Katwijk Zanderij Westerbaan Opgraving. DANS. https://doi.org/10.17026/dans-znz-r2ba | 3187 | Yes (joined)
 WIJD_07   |  Dijkstra, J. (ADC ArcheoProjecten) (2012): Wijk bij Duurstede Veilingterrein DO Opgraving. DANS. https://doi.org/10.17026/dans-x8d-qmae | 12131 | Yes (joined)
 OOST_10   |  Roessingh, W. (ADC ArcheoProjecten); Blom, E. (ADC ArcheoProjecten) (2012): Oosterhout Vrachelen De Contreie Vrachelen 4 Opgraving. DANS. https://doi.org/10.17026/dans-25d-fpe5 | 17251 | Yes (joined)
 VEGL_10   |  ADC ArcheoProjecten; Van der Veken, B. (ADC ArcheoProjecten); Blom, E. (ADC ArcheoProjecten) (2012): Veghel Scheiffelaar II Opgraving. DANS. https://doi.org/10.17026/dans-z93-7zbe | 4271  | Yes (joined)
