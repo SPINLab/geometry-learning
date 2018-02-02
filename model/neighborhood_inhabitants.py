@@ -27,7 +27,7 @@ EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = 40
 RECURRENT_DROPOUT = 0.1
-GEOM_SCALE = int(os.getenv('GEOM_SCALE'))  # If no default or 0: overridden when data is known
+GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
