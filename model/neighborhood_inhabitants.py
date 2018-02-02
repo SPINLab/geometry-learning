@@ -20,36 +20,15 @@ TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 # Hyperparameters
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 512))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
-REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
+REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = 40
 RECURRENT_DROPOUT = 0.1
-GEOM_SCALE = int(os.getenv('GEOM_SCALE', 1e-2))  # If default 0: overridden when data is known
+GEOM_SCALE = int(os.getenv('GEOM_SCALE'))  # If no default or 0: overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
-
-message = 'running {0} with ' \
-          'version: {1} ' \
-          'batch size: {2} ' \
-          'train/validate split: {3} ' \
-          'repeat deep: {4} ' \
-          'lstm size: {5} ' \
-          'dense size: {6} ' \
-          'epochs: {7} ' \
-          'learning rate: {8}' \
-    .format(
-        SIGNATURE,
-        SCRIPT_VERSION,
-        BATCH_SIZE,
-        TRAIN_VALIDATE_SPLIT,
-        REPEAT_DEEP_ARCH,
-        LSTM_SIZE,
-        DENSE_SIZE,
-        EPOCHS,
-        LEARNING_RATE)
-print(message)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['input_geoms']
@@ -62,6 +41,30 @@ train_above_or_below_median = train_loaded['above_or_below_median']
 
 geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
+
+message = '''
+running {0} with 
+version: {1}
+batch size: {2} 
+train/validate split: {3} 
+repeat deep: {4} 
+lstm size: {5} 
+dense size: {6} 
+epochs: {7} 
+learning rate: {8}
+geometry scale: {9}
+'''.format(
+    SIGNATURE,
+    SCRIPT_VERSION,
+    BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT,
+    REPEAT_DEEP_ARCH,
+    LSTM_SIZE,
+    DENSE_SIZE,
+    EPOCHS,
+    LEARNING_RATE,
+    geom_scale)
+print(message)
 
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
@@ -116,25 +119,28 @@ for prediction, expected in zip(test_pred, test_above_or_below_median):
         correct += 1
 
 accuracy = correct / len(test_pred)
-message = 'test accuracy of {0} with ' \
-          'version: {1} ' \
-          'batch size {2} ' \
-          'train/validate split {3} ' \
-          'repeat deep arch {4} ' \
-          'lstm size {5} ' \
-          'dense size {6} ' \
-          'epochs {7} ' \
-          'learning rate {8}'\
-    .format(
-        str(accuracy),
-        SCRIPT_VERSION,
-        BATCH_SIZE,
-        TRAIN_VALIDATE_SPLIT,
-        REPEAT_DEEP_ARCH,
-        LSTM_SIZE,
-        DENSE_SIZE,
-        len(history['val_loss']),
-        LEARNING_RATE)
+message = '''
+test accuracy of {0} with '
+version: {1} '
+batch size {2} '
+train/validate split {3} '
+repeat deep arch {4} '
+lstm size {5} '
+dense size {6} '
+epochs {7} '
+learning rate {8}
+geometry scale {9}
+'''.format(
+    str(accuracy),
+    SCRIPT_VERSION,
+    BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT,
+    REPEAT_DEEP_ARCH,
+    LSTM_SIZE,
+    DENSE_SIZE,
+    len(history['val_loss']),
+    LEARNING_RATE,
+    geom_scale)
 
 notify(SIGNATURE, message)
 print(SCRIPT_NAME, 'finished successfully')
