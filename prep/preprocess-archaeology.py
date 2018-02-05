@@ -1,8 +1,8 @@
 import os
 
 import collections
-from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors, create_geom_fourier_descriptor
-from model.topoml_util.GeoVectorizer import GeoVectorizer
+from topoml_util.geom_fourier_descriptors import geom_fourier_descriptors, create_geom_fourier_descriptor
+from topoml_util.GeoVectorizer import GeoVectorizer
 from pandas import read_csv
 from shapely import wkt
 import numpy as np
