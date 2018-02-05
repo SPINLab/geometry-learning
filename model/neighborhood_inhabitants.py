@@ -11,14 +11,14 @@ from keras.optimizers import Adam
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.29'
+SCRIPT_VERSION = '0.0.30'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 512))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 1024))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
@@ -26,7 +26,7 @@ DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = 40
-RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.05))
+RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.0))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
