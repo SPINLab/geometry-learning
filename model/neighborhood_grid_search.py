@@ -2,7 +2,7 @@ import os
 from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.7'
+SCRIPT_VERSION = '0.0.8'
 
 HYPERPARAMS = {
     # 'BATCH_SIZE': [512],
