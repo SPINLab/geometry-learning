@@ -11,7 +11,7 @@ from keras.optimizers import Adam
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.31'
+SCRIPT_VERSION = '0.0.32'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -26,7 +26,7 @@ DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = 40
-RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.2))
+RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.1))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
@@ -75,11 +75,11 @@ output_seq_length = train_above_or_below_median.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(LSTM_SIZE, activation='relu', return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
+model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
 model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, return_sequences=True, activation='relu', recurrent_dropout=RECURRENT_DROPOUT)(model)
+    model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
 model = Flatten()(model)
