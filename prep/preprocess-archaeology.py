@@ -10,8 +10,8 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from topoml_util.GeoVectorizer import GeoVectorizer
-from topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
+from model.topoml_util.GeoVectorizer import GeoVectorizer
+from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 
 SOURCE = '../files/archaeology/combined_arch_feat.csv'
 TRAIN_DATA_FILE = '../files/archaeology/archaeo_features_train.npz'
