@@ -82,21 +82,39 @@ print('data points:', len(feature_types), 'over', len(dict(class_distr)), 'class
 print('class distribution:', class_distr)
 
 # Split and save data
-train_test_split_index = round(TRAIN_TEST_SPLIT * len(feature_types))
+n_parts = int(1 / TRAIN_TEST_SPLIT)
+
+wkt_vectors_parts = []
+fourier_descriptors_parts = []
+feature_types_parts = []
 
 training_data = {
-    'geoms': wkt_vectors[:-train_test_split_index],
-    'fourier_descriptors': fourier_descriptors[:-train_test_split_index],
-    'feature_type': feature_types[:-train_test_split_index],
+    'geoms': [],
+    'fourier_descriptors': [],
+    'feature_type': [],
     'feature_type_index': included_classes,
 }
 
 test_data = {
-    'geoms': wkt_vectors[-train_test_split_index:],
-    'fourier_descriptors': fourier_descriptors[-train_test_split_index:],
-    'feature_type': feature_types[-train_test_split_index:],
-    'feature_type_index': included_classes,
+    'geoms': [],
+    'fourier_descriptors': [],
+    'feature_type': [],
+    'feature_type_index': [],
 }
+
+for part in range(n_parts):
+    if part == 0:
+        test_data['geoms'] = wkt_vectors[part::n_parts]
+        test_data['fourier_descriptors'] = fourier_descriptors[part::n_parts]
+        test_data['feature_type'] = feature_types[part::n_parts]
+    elif part == 1:  # fill first part
+        training_data['geoms'] = wkt_vectors[part::n_parts]
+        training_data['fourier_descriptors'] = fourier_descriptors[part::n_parts]
+        training_data['feature_type'] = feature_types[part::n_parts]
+    else:  # append the rest
+        np.append(training_data['geoms'], wkt_vectors[part::n_parts], axis=0)
+        np.append(training_data['fourier_descriptors'], fourier_descriptors[part::n_parts], axis=0)
+        np.append(training_data['feature_type'], feature_types[part::n_parts], axis=0)
 
 print('Saving training and test data files...')
 
