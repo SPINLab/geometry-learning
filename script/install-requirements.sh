@@ -63,9 +63,9 @@ sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
 sudo chmod a+r /usr/local/cuda-8.0/include/cudnn.h /usr/local/cuda-8.0/lib64/libcudnn*
 
 # set environment variables
-echo PATH=/usr/local/cuda-8.0/bin${PATH:+:${PATH}} >> ~/.bashrc
-echo LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:/usr/lib/nvidia-*${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} >> ~/.bashrc
-echo CUDA_HOME=/usr/local/cuda-8.0 >> ~/.bashrc
+echo export PATH=/usr/local/cuda-8.0/bin${PATH:+:${PATH}} >> ~/.bashrc
+echo export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64/:/usr/lib/nvidia-384${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} >> ~/.bashrc
+echo export CUDA_HOME=/usr/local/cuda-8.0 >> ~/.bashrc
 source ~/.bashrc
 
 # GUI and remote access
