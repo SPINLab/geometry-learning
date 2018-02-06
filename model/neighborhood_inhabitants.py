@@ -123,14 +123,14 @@ for prediction, expected in zip(test_pred, test_above_or_below_median):
 
 accuracy = correct / len(test_pred)
 message = '''
-test accuracy of {0} with '
-version: {1} '
-batch size {2} '
-train/validate split {3} '
-repeat deep arch {4} '
-lstm size {5} '
-dense size {6} '
-epochs {7} '
+test accuracy of {0} with 
+version: {1} 
+batch size {2} 
+train/validate split {3} 
+repeat deep arch {4} 
+lstm size {5} 
+dense size {6} 
+epochs {7} 
 learning rate {8}
 geometry scale {9}
 recurrent dropout {10}
