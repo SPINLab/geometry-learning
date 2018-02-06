@@ -105,7 +105,7 @@ test_data = {
     'geoms': [],
     'fourier_descriptors': [],
     'feature_type': [],
-    'feature_type_index': [],
+    'feature_type_index': included_classes,
 }
 
 for part in range(n_parts):
@@ -118,9 +118,9 @@ for part in range(n_parts):
         training_data['fourier_descriptors'] = fourier_descriptors[part::n_parts]
         training_data['feature_type'] = feature_types[part::n_parts]
     else:  # append the rest
-        np.append(training_data['geoms'], wkt_vectors[part::n_parts], axis=0)
-        np.append(training_data['fourier_descriptors'], fourier_descriptors[part::n_parts], axis=0)
-        np.append(training_data['feature_type'], feature_types[part::n_parts], axis=0)
+        training_data['geoms'] = np.append(training_data['geoms'], wkt_vectors[part::n_parts], axis=0)
+        training_data['fourier_descriptors'] = np.append(training_data['fourier_descriptors'], fourier_descriptors[part::n_parts], axis=0)
+        training_data['feature_type'] = np.append(training_data['feature_type'], feature_types[part::n_parts], axis=0)
 
 print('Saving training and test data files...')
 
@@ -129,6 +129,7 @@ np.savez_compressed(
     geoms=training_data['geoms'],
     fourier_descriptors=training_data['fourier_descriptors'],
     feature_type=training_data['feature_type'],
+    feature_type_index=training_data['feature_type_index'],
 )
 
 # Test data is small enough to put in one archive
@@ -137,6 +138,7 @@ np.savez_compressed(
     geoms=test_data['geoms'],
     fourier_descriptors=test_data['fourier_descriptors'],
     feature_type=test_data['feature_type'],
+    feature_type_index=test_data['feature_type_index'],
 )
 
 print('Done!')
