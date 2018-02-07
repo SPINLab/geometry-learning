@@ -47,14 +47,14 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(X=train_fourier_descriptors[::10], y=train_feature_type[::10])
+    grid.fit(X=train_fourier_descriptors[::5], y=train_feature_type[::5])
 
     print("The best parameters are %s with a score of %0.2f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
     clf = SVC(kernel='linear', C=grid.best_params_['C'], max_iter=int(1e7), verbose=True)
-    clf.fit(X=train_fourier_descriptors[::10], y=train_feature_type[::10])
+    clf.fit(X=train_fourier_descriptors, y=train_feature_type)
 
     # Run predictions on unseen test data to verify generalization
     print('Run on test data...')
