@@ -13,10 +13,10 @@ from keras.engine import Model
 from keras.layers import LSTM, Dense, Flatten
 from keras.optimizers import Adam
 
-from topoml_util.geom_scaler import localized_mean, localized_normal
+from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.26'
+SCRIPT_VERSION = '0.2.27'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -31,7 +31,7 @@ LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 3e-4))
-GEOM_SCALE = int(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
+GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 PATIENCE = 40
 RECURRENT_DROPOUT = 0.05
@@ -70,9 +70,8 @@ for file in os.listdir(DATA_FOLDER):
             train_building_type = train_loaded['building_type']
 
 # Normalize
-means = localized_mean(train_geoms)
-GEOM_SCALE = GEOM_SCALE or np.var(train_geoms[..., 0:2])
-train_geoms = localized_normal(train_geoms, means, GEOM_SCALE)
+GEOM_SCALE = GEOM_SCALE or geom_scaler.scale(train_geoms)
+train_geoms = geom_scaler.transform(train_geoms, GEOM_SCALE)
 
 # Map building types to one-hot vectors
 train_targets = np.zeros((len(train_building_type), train_building_type.max() + 1))
@@ -123,8 +122,7 @@ test_geoms = test_loaded['geoms']
 test_building_types = test_loaded['building_type']
 
 # Normalize
-means = localized_mean(test_geoms)
-test_geoms = localized_normal(test_geoms, means, GEOM_SCALE)  # re-use variance from training
+test_geoms = geom_scaler.transform(test_geoms, GEOM_SCALE)  # re-use variance from training
 test_pred = model.predict(test_geoms)
 
 # Map test targets to one-hot vectors
