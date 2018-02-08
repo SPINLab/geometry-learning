@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -36,12 +36,13 @@ train_geoms = train_loaded['geoms']
 train_feature_type = train_loaded['feature_type']
 
 # Normalize
-# means = geom_scaler.localized_mean(train_geoms)
-# geom_scale = GEOM_SCALE or np.var(train_geoms[..., 0:2])
-# train_geoms = geom_scaler.localized_normal(train_geoms, means, geom_scale)
-
 geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
+
+# Map types to one-hot vectors
+train_targets = np.zeros((len(train_feature_type), train_feature_type.max() + 1))
+for index, feature_type in enumerate(train_feature_type):
+    train_targets[index, feature_type] = 1
 
 message = '''
 running {0} with 
@@ -69,7 +70,7 @@ print(message)
 
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
-output_seq_length = train_feature_type.shape[-1]
+output_seq_length = train_targets.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
@@ -98,7 +99,7 @@ callbacks = [
 
 history = model.fit(
     x=train_geoms,
-    y=train_feature_type,
+    y=train_targets,
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
