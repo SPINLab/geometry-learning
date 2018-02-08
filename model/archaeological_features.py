@@ -7,11 +7,12 @@ from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten
 from keras.optimizers import Adam
+from sklearn.metrics import accuracy_score
 
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.1'
+SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -25,8 +26,8 @@ LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
-PATIENCE = 40
-RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.1))
+PATIENCE = int(os.getenv('PATIENCE', 16))
+RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.05))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
 
@@ -44,16 +45,12 @@ train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 
 message = '''
 running {0} with 
-version: {1}
-batch size: {2} 
-train/validate split: {3} 
-repeat deep: {4} 
-lstm size: {5} 
-dense size: {6} 
-epochs: {7} 
-learning rate: {8}
-geometry scale: {9}
-recurrent dropout: {10}
+version: {1}                batch size: {2} 
+train/validate split: {3}   repeat deep: {4} 
+lstm size: {5}              dense size: {6} 
+epochs: {7}                 learning rate: {8}
+geometry scale: {9}         recurrent dropout: {10}
+patience {11}
 '''.format(
     SIGNATURE,
     SCRIPT_VERSION,
@@ -66,6 +63,7 @@ recurrent dropout: {10}
     LEARNING_RATE,
     geom_scale,
     RECURRENT_DROPOUT,
+    PATIENCE,
 )
 print(message)
 
@@ -95,7 +93,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    # EarlyStopping(patience=PATIENCE, min_delta=0.001),
+    EarlyStopping(patience=PATIENCE, min_delta=0.001),
 ]
 
 history = model.fit(
@@ -111,29 +109,18 @@ TEST_DATA_FILE = '../files/archaeology/archaeo_features_test.npz'
 test_loaded = np.load(TEST_DATA_FILE)
 test_geoms = test_loaded['geoms']
 test_feature_type = test_loaded['feature_type']
-
-# Normalize
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
+
 test_pred = model.predict(test_geoms)
-
-correct = 0
-for prediction, expected in zip(test_pred, test_feature_type):
-    if np.argmax(prediction) == np.argmax(expected):
-        correct += 1
-
-accuracy = correct / len(test_pred)
+accuracy = accuracy_score(test_feature_type, test_pred)
 message = '''
 test accuracy of {0} with 
-version: {1} 
-batch size {2} 
-train/validate split {3} 
-repeat deep arch {4} 
-lstm size {5} 
-dense size {6} 
-epochs {7} 
-learning rate {8}
-geometry scale {9}
-recurrent dropout {10}
+version: {1}                batch size {2} 
+train/validate split {3}    repeat deep arch {4} 
+lstm size {5}               dense size {6} 
+epochs {7}                  learning rate {8}
+geometry scale {9}          recurrent dropout {10}
+patience {11}
 '''.format(
     str(accuracy),
     SCRIPT_VERSION,
@@ -146,6 +133,7 @@ recurrent dropout {10}
     LEARNING_RATE,
     geom_scale,
     RECURRENT_DROPOUT,
+    PATIENCE,
 )
 
 notify(SIGNATURE, message)
