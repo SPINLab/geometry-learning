@@ -17,7 +17,7 @@ from sklearn.metrics import accuracy_score
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.28'
+SCRIPT_VERSION = '0.2.29'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -37,24 +37,6 @@ OPTIMIZER = Adam(lr=LEARNING_RATE)
 PATIENCE = 40
 RECURRENT_DROPOUT = 0.05
 
-message = 'running {0} with ' \
-          'batch size: {1} ' \
-          'train/validate split: {2} ' \
-          'repeat deep: {3} ' \
-          'lstm size: {4} ' \
-          'dense size: {5} ' \
-          'epochs: {6} ' \
-          'learning rate: {7}' \
-    .format(
-        SIGNATURE,
-        BATCH_SIZE,
-        TRAIN_VALIDATE_SPLIT,
-        REPEAT_DEEP_ARCH,
-        LSTM_SIZE,
-        DENSE_SIZE,
-        EPOCHS,
-        LEARNING_RATE)
-print(message)
 
 # Load training data
 train_geoms = []
@@ -71,8 +53,27 @@ for file in os.listdir(DATA_FOLDER):
             train_building_type = train_loaded['building_type']
 
 # Normalize
-GEOM_SCALE = GEOM_SCALE or geom_scaler.scale(train_geoms)
-train_geoms = geom_scaler.transform(train_geoms, GEOM_SCALE)
+geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
+train_geoms = geom_scaler.transform(train_geoms, geom_scale)
+
+message = '''
+running {0} with 
+version: {1}                batch size: {2} 
+train/validate split: {3}   repeat deep: {4} 
+lstm size: {5}              dense size: {6} 
+epochs: {7}                 learning rate: {8}
+geometry scale: {:f}        recurrent dropout: {10}
+patience {11}
+'''.format(
+    SIGNATURE,
+    SCRIPT_VERSION, BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
+    LSTM_SIZE, DENSE_SIZE,
+    EPOCHS, LEARNING_RATE,
+    geom_scale, RECURRENT_DROPOUT,
+    PATIENCE,
+)
+print(message)
 
 # Map building types to one-hot vectors
 train_targets = np.zeros((len(train_building_type), train_building_type.max() + 1))
@@ -127,23 +128,29 @@ test_geoms = geom_scaler.transform(test_geoms, GEOM_SCALE)  # re-use variance fr
 
 test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
 accuracy = accuracy_score(test_building_types, test_pred)
-message = 'test accuracy of {0} with ' \
-          'batch size: {1} ' \
-          'train/validate split: {2} ' \
-          'repeat deep: {3} ' \
-          'lstm size: {4} ' \
-          'dense size: {5} ' \
-          'epochs: {6} ' \
-          'learning rate: {7}' \
-    .format(
-        str(accuracy),
-        BATCH_SIZE,
-        TRAIN_VALIDATE_SPLIT,
-        REPEAT_DEEP_ARCH,
-        LSTM_SIZE,
-        DENSE_SIZE,
-        len(history['val_loss']),
-        LEARNING_RATE)
+message = '''
+test accuracy of {:f} with 
+version: {1}                    batch size {2} 
+train/validate split {3}        repeat deep arch {4} 
+lstm size {5}                   dense size {6} 
+epochs {7}                      learning rate {8}
+geometry scale {:f}             recurrent dropout {10}
+patience {11}
+'''.format(
+    accuracy,
+    SCRIPT_VERSION,
+    BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT,
+    REPEAT_DEEP_ARCH,
+    LSTM_SIZE,
+    DENSE_SIZE,
+    len(history['val_loss']),
+    LEARNING_RATE,
+    geom_scale,
+    RECURRENT_DROPOUT,
+    PATIENCE,
+)
+
 
 notify(SIGNATURE, message)
 print(SCRIPT_NAME, 'finished successfully')
