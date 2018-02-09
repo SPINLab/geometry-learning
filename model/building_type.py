@@ -17,7 +17,7 @@ from sklearn.metrics import accuracy_score
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.29'
+SCRIPT_VERSION = '0.2.30'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -57,13 +57,13 @@ geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 
 message = '''
-running {0} with 
-version: {1}                batch size: {2} 
-train/validate split: {3}   repeat deep: {4} 
-lstm size: {5}              dense size: {6} 
-epochs: {7}                 learning rate: {8}
-geometry scale: {:f}        recurrent dropout: {10}
-patience {11}
+running {} with 
+version: {}                batch size: {} 
+train/validate split: {}   repeat deep: {} 
+lstm size: {}              dense size: {} 
+epochs: {}                 learning rate: {}
+geometry scale: {:f}     recurrent dropout: {}
+patience {}
 '''.format(
     SIGNATURE,
     SCRIPT_VERSION, BATCH_SIZE,
@@ -130,12 +130,12 @@ test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
 accuracy = accuracy_score(test_building_types, test_pred)
 message = '''
 test accuracy of {:f} with 
-version: {1}                    batch size {2} 
-train/validate split {3}        repeat deep arch {4} 
-lstm size {5}                   dense size {6} 
-epochs {7}                      learning rate {8}
-geometry scale {:f}             recurrent dropout {10}
-patience {11}
+version: {}                    batch size {} 
+train/validate split {}        repeat deep arch {} 
+lstm size {}                   dense size {} 
+epochs {}                      learning rate {}
+geometry scale {:f}            recurrent dropout {}
+patience {}
 '''.format(
     accuracy,
     SCRIPT_VERSION,
