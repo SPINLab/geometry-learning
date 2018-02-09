@@ -10,14 +10,14 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, Flatten
+from keras.layers import LSTM, Dense, Flatten, TimeDistributed
 from keras.optimizers import Adam
 from sklearn.metrics import accuracy_score
 
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.30'
+SCRIPT_VERSION = '0.2.31'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -31,12 +31,11 @@ REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 200))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 3e-4))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE)
-PATIENCE = 40
+PATIENCE = int(os.getenv('PATIENCE', 16))
 RECURRENT_DROPOUT = 0.05
-
 
 # Load training data
 train_geoms = []
@@ -62,7 +61,7 @@ version: {}                batch size: {}
 train/validate split: {}   repeat deep: {} 
 lstm size: {}              dense size: {} 
 epochs: {}                 learning rate: {}
-geometry scale: {:f}     recurrent dropout: {}
+geometry scale: {:f}       recurrent dropout: {}
 patience {}
 '''.format(
     SIGNATURE,
@@ -87,10 +86,10 @@ output_seq_length = train_targets.shape[-1]
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
 model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
+model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 for layer in range(REPEAT_DEEP_ARCH):
     model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
-    # model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
 model = Flatten()(model)
