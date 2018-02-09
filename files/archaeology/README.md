@@ -1,4 +1,7 @@
 # Archaeological feature data
+Data in this folder is (c) ADC ArcheoProjecten, redistributed under [CC-BY-SA 4.0 license](http://creativecommons.org/licenses/by-sa/4.0/) by kind permission of ADC ArcheoProjecten.
+
+Data from the following projects was used: 
 
 Project | Reference | No. of features | has definitions
 --- | --- | --- | ---
