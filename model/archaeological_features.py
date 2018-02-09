@@ -45,25 +45,20 @@ for index, feature_type in enumerate(train_feature_type):
     train_targets[index, feature_type] = 1
 
 message = '''
-running {0} with 
-version: {1}                batch size: {2} 
-train/validate split: {3}   repeat deep: {4} 
-lstm size: {5}              dense size: {6} 
-epochs: {7}                 learning rate: {8}
-geometry scale: {9}         recurrent dropout: {10}
-patience {11}
+running {} with 
+version: {}                batch size: {} 
+train/validate split: {}   repeat deep: {} 
+lstm size: {}              dense size: {} 
+epochs: {}                 learning rate: {}
+geometry scale: {:f}        recurrent dropout: {}
+patience {}
 '''.format(
     SIGNATURE,
-    SCRIPT_VERSION,
-    BATCH_SIZE,
-    TRAIN_VALIDATE_SPLIT,
-    REPEAT_DEEP_ARCH,
-    LSTM_SIZE,
-    DENSE_SIZE,
-    EPOCHS,
-    LEARNING_RATE,
-    geom_scale,
-    RECURRENT_DROPOUT,
+    SCRIPT_VERSION, BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
+    LSTM_SIZE, DENSE_SIZE,
+    EPOCHS, LEARNING_RATE,
+    geom_scale, RECURRENT_DROPOUT,
     PATIENCE,
 )
 print(message)
@@ -115,25 +110,20 @@ test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance fr
 test_pred = [np.argmax(classes) for classes in model.predict(test_geoms)]
 accuracy = accuracy_score(test_feature_type, test_pred)
 message = '''
-test accuracy of {0} with 
-version: {1}                batch size {2} 
-train/validate split {3}    repeat deep arch {4} 
-lstm size {5}               dense size {6} 
-epochs {7}                  learning rate {8}
-geometry scale {9}          recurrent dropout {10}
-patience {11}
+test accuracy of {:f} with 
+version: {}                    batch size {} 
+train/validate split {}        repeat deep arch {} 
+lstm size {}                   dense size {} 
+epochs {}                      learning rate {}
+geometry scale {:f}             recurrent dropout {}
+patience {}
 '''.format(
-    str(accuracy),
-    SCRIPT_VERSION,
-    BATCH_SIZE,
-    TRAIN_VALIDATE_SPLIT,
-    REPEAT_DEEP_ARCH,
-    LSTM_SIZE,
-    DENSE_SIZE,
-    len(history['val_loss']),
-    LEARNING_RATE,
-    geom_scale,
-    RECURRENT_DROPOUT,
+    accuracy,
+    SCRIPT_VERSION, BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
+    LSTM_SIZE, DENSE_SIZE,
+    len(history['val_loss']), LEARNING_RATE,
+    geom_scale, RECURRENT_DROPOUT,
     PATIENCE,
 )
 
