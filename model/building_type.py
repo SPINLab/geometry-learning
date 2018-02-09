@@ -12,11 +12,12 @@ from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, Dense, Flatten
 from keras.optimizers import Adam
+from sklearn.metrics import accuracy_score
 
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.27'
+SCRIPT_VERSION = '0.2.28'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -24,7 +25,7 @@ DATA_FOLDER = '../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 384))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 1024))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
@@ -104,7 +105,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    # EarlyStopping(patience=PATIENCE, min_delta=0.001)
+    EarlyStopping(patience=PATIENCE, min_delta=0.001)
 ]
 
 history = model.fit(
@@ -123,19 +124,9 @@ test_building_types = test_loaded['building_type']
 
 # Normalize
 test_geoms = geom_scaler.transform(test_geoms, GEOM_SCALE)  # re-use variance from training
-test_pred = model.predict(test_geoms)
 
-# Map test targets to one-hot vectors
-test_targets = np.zeros((len(test_building_types), test_building_types.max() + 1))
-for index, building_type in enumerate(test_building_types):
-    test_targets[index, building_type] = 1
-
-correct = 0
-for prediction, expected in zip(test_pred, test_targets):
-    if np.argmax(prediction) == np.argmax(expected):
-        correct += 1
-
-accuracy = correct / len(test_pred)
+test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
+accuracy = accuracy_score(test_building_types, test_pred)
 message = 'test accuracy of {0} with ' \
           'batch size: {1} ' \
           'train/validate split: {2} ' \
