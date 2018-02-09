@@ -17,7 +17,7 @@ from sklearn.metrics import accuracy_score
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.31'
+SCRIPT_VERSION = '0.2.32'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -121,9 +121,7 @@ TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
 test_loaded = np.load(TEST_DATA_FILE)
 test_geoms = test_loaded['geoms']
 test_building_types = test_loaded['building_type']
-
-# Normalize
-test_geoms = geom_scaler.transform(test_geoms, GEOM_SCALE)  # re-use variance from training
+test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use scale from training
 
 test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
 accuracy = accuracy_score(test_building_types, test_pred)
@@ -137,19 +135,13 @@ geometry scale {:f}            recurrent dropout {}
 patience {}
 '''.format(
     accuracy,
-    SCRIPT_VERSION,
-    BATCH_SIZE,
-    TRAIN_VALIDATE_SPLIT,
-    REPEAT_DEEP_ARCH,
-    LSTM_SIZE,
-    DENSE_SIZE,
-    len(history['val_loss']),
-    LEARNING_RATE,
-    geom_scale,
-    RECURRENT_DROPOUT,
+    SCRIPT_VERSION, BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
+    LSTM_SIZE, DENSE_SIZE,
+    len(history['val_loss']), LEARNING_RATE,
+    geom_scale, RECURRENT_DROPOUT,
     PATIENCE,
 )
 
-
 notify(SIGNATURE, message)
-print(SCRIPT_NAME, 'finished successfully')
+print(SCRIPT_NAME, 'finished successfully with', message)
