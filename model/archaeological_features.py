@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.5'
+SCRIPT_VERSION = '0.0.6'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -112,18 +112,8 @@ test_geoms = test_loaded['geoms']
 test_feature_type = test_loaded['feature_type']
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
 
-# Map test targets to one-hot vectors
-test_targets = np.zeros((len(test_feature_type), test_feature_type.max() + 1))
-for index, feature_type in enumerate(test_feature_type):
-    test_targets[index, feature_type] = 1
-
-test_pred = model.predict(test_geoms)
-correct = 0
-for prediction, expected in zip(test_pred, test_targets):
-    if np.argmax(prediction) == np.argmax(expected):
-        correct += 1
-
-accuracy = correct / len(test_pred)
+test_pred = [np.argmax(classes) for classes in model.predict(test_geoms)]
+accuracy = accuracy_score(test_feature_type, test_pred)
 message = '''
 test accuracy of {0} with 
 version: {1}                batch size {2} 
