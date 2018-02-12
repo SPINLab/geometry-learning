@@ -7,17 +7,19 @@ import os
 from datetime import datetime
 
 import numpy as np
+import sys
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, Dense, Flatten, TimeDistributed
 from keras.optimizers import Adam
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.32'
+SCRIPT_VERSION = '0.2.33'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -39,21 +41,34 @@ RECURRENT_DROPOUT = 0.05
 
 # Load training data
 train_geoms = []
-train_building_type = []
+train_labels = []
 
 for file in os.listdir(DATA_FOLDER):
     if file.startswith(FILENAME_PREFIX) and file.endswith('.npz'):
         train_loaded = np.load(DATA_FOLDER + file)
         if len(train_geoms):
             train_geoms = np.append(train_geoms, train_loaded['geoms'], axis=0)
-            train_building_type = np.append(train_building_type, train_loaded['building_type'], axis=0)
+            train_labels = np.append(train_labels, train_loaded['building_type'], axis=0)
         else:
             train_geoms = train_loaded['geoms']
-            train_building_type = train_loaded['building_type']
+            train_labels = train_loaded['building_type']
+
+# Determine final test mode or standard
+if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
+    print('Training in final test mode')
+    TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
+    test_loaded = np.load(TEST_DATA_FILE)
+    test_geoms = test_loaded['geoms']
+    test_labels = test_loaded['building_type']
+else:
+    print('Training in standard validation mode')
+    # Split the training data in random seen/unseen sets
+    train_geoms, test_geoms, train_labels, test_labels = train_test_split(train_geoms, train_labels, test_size=0.1)
 
 # Normalize
 geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
+test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use scale from training
 
 message = '''
 running {} with 
@@ -75,8 +90,8 @@ patience {}
 print(message)
 
 # Map building types to one-hot vectors
-train_targets = np.zeros((len(train_building_type), train_building_type.max() + 1))
-for index, building_type in enumerate(train_building_type):
+train_targets = np.zeros((len(train_labels), train_labels.max() + 1))
+for index, building_type in enumerate(train_labels):
     train_targets[index, building_type] = 1
 
 # Shape determination
@@ -117,14 +132,8 @@ history = model.fit(
     callbacks=callbacks).history
 
 # Run on unseen test data
-TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
-test_loaded = np.load(TEST_DATA_FILE)
-test_geoms = test_loaded['geoms']
-test_building_types = test_loaded['building_type']
-test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use scale from training
-
 test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
-accuracy = accuracy_score(test_building_types, test_pred)
+accuracy = accuracy_score(test_labels, test_pred)
 message = '''
 test accuracy of {:f} with 
 version: {}                    batch size {} 

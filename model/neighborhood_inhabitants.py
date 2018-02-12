@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.0'
+SCRIPT_VERSION = '1.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -36,26 +36,24 @@ OPTIMIZER = Adam(lr=LEARNING_RATE)
 # Load and normalize data
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['input_geoms']
-train_above_or_below_median = train_loaded['above_or_below_median']
+train_labels = train_loaded['above_or_below_median']
 
 # Determine final test mode or standard
-if sys.argv[1] in ['-t', '--test']:
+if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     print('Training in final test mode')
     TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_geoms = test_loaded['input_geoms']
-    test_above_or_below_median = test_loaded['above_or_below_median'][:, 0]
+    test_labels = test_loaded['above_or_below_median'][:, 0]
 else:
     print('Training in standard validation mode')
     # Split the training data in random seen/unseen sets
-    train_geoms, test_geoms, train_above_or_below_median, test_above_or_below_median = train_test_split(
-        train_geoms, train_above_or_below_median, test_size=0.1)
+    train_geoms, test_geoms, train_labels, test_labels = train_test_split(train_geoms, train_labels, test_size=0.1)
 
 # Normalize
 geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
-
 
 message = '''
 running {} with 
@@ -78,7 +76,7 @@ print(message)
 
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
-output_size = train_above_or_below_median.shape[-1]
+output_size = train_labels.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
@@ -107,7 +105,7 @@ callbacks = [
 
 history = model.fit(
     x=train_geoms,
-    y=train_above_or_below_median,
+    y=train_labels,
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_split=TRAIN_VALIDATE_SPLIT,
@@ -115,7 +113,7 @@ history = model.fit(
 
 # Run on unseen test data
 test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
-accuracy = accuracy_score(test_above_or_below_median, test_pred)
+accuracy = accuracy_score(test_labels, test_pred)
 message = '''
 test accuracy of {:f} with 
 version: {}                batch size {} 
