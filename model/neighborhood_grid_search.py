@@ -30,6 +30,7 @@ for configuration in grid:
     for _ in range(N_TIMES):
         r_code = os.system('python3 neighborhood_inhabitants.py')
         if not r_code == 0:
+            print('Neighborhood inhabitants grid search exited with error')
             notify('Neighborhood inhabitants grid search', 'with error')
             sys.exit(1)
 

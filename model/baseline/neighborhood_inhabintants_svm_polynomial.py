@@ -24,7 +24,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_train.npz'
@@ -60,7 +60,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Using %i threads for grid search' % num_cpus)
     grid.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
 
-    print("The best parameters are %s with a score of %0.2f"
+    print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
