@@ -2,17 +2,19 @@ import os
 from datetime import datetime
 
 import numpy as np
+import sys
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten
 from keras.optimizers import Adam
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.6'
+SCRIPT_VERSION = '0.1.6'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -33,15 +35,28 @@ OPTIMIZER = Adam(lr=LEARNING_RATE)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['geoms']
-train_feature_type = train_loaded['feature_type']
+train_labels = train_loaded['feature_type']
+
+# Determine final test mode or standard
+if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
+    print('Training in final test mode')
+    TEST_DATA_FILE = '../files/archaeology/archaeo_features_test.npz'
+    test_loaded = np.load(TEST_DATA_FILE)
+    test_geoms = test_loaded['geoms']
+    test_labels = test_loaded['feature_type']
+else:
+    print('Training in standard validation mode')
+    # Split the training data in random seen/unseen sets
+    train_geoms, test_geoms, train_labels, test_labels = train_test_split(train_geoms, train_labels, test_size=0.1)
 
 # Normalize
 geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
+test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
 
 # Map types to one-hot vectors
-train_targets = np.zeros((len(train_feature_type), train_feature_type.max() + 1))
-for index, feature_type in enumerate(train_feature_type):
+train_targets = np.zeros((len(train_labels), train_labels.max() + 1))
+for index, feature_type in enumerate(train_labels):
     train_targets[index, feature_type] = 1
 
 message = '''
@@ -101,14 +116,9 @@ history = model.fit(
     callbacks=callbacks).history
 
 # Run on unseen test data
-TEST_DATA_FILE = '../files/archaeology/archaeo_features_test.npz'
-test_loaded = np.load(TEST_DATA_FILE)
-test_geoms = test_loaded['geoms']
-test_feature_type = test_loaded['feature_type']
-test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
-
 test_pred = [np.argmax(classes) for classes in model.predict(test_geoms)]
-accuracy = accuracy_score(test_feature_type, test_pred)
+accuracy = accuracy_score(test_labels, test_pred)
+
 message = '''
 test accuracy of {:f} with 
 version: {}                    batch size {} 
