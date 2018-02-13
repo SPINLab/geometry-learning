@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
 import sys
@@ -14,11 +15,12 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.1.6'
+SCRIPT_VERSION = '0.1.7'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/archaeology/archaeo_features_train.npz'
+SCRIPT_START = time()
 
 # Hyperparameters
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 1024))
@@ -31,7 +33,7 @@ LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = int(os.getenv('PATIENCE', 16))
 RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.05))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
-OPTIMIZER = Adam(lr=LEARNING_RATE)
+OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1.)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['geoms']
@@ -45,7 +47,7 @@ if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['feature_type']
 else:
-    print('Training in standard validation mode')
+    print('Training in standard training mode')
     # Split the training data in random seen/unseen sets
     train_geoms, test_geoms, train_labels, test_labels = train_test_split(train_geoms, train_labels, test_size=0.1)
 
@@ -104,7 +106,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=PATIENCE, min_delta=0.001),
+    # EarlyStopping(patience=PATIENCE, min_delta=0.001),
 ]
 
 history = model.fit(
@@ -119,16 +121,17 @@ history = model.fit(
 test_pred = [np.argmax(classes) for classes in model.predict(test_geoms)]
 accuracy = accuracy_score(test_labels, test_pred)
 
+runtime = time() - SCRIPT_START
 message = '''
-test accuracy of {:f} with 
+test accuracy of {:f}          in {} with 
 version: {}                    batch size {} 
 train/validate split {}        repeat deep arch {} 
 lstm size {}                   dense size {} 
 epochs {}                      learning rate {}
-geometry scale {:f}             recurrent dropout {}
+geometry scale {:f}            recurrent dropout {}
 patience {}
 '''.format(
-    accuracy,
+    accuracy, timedelta(seconds=runtime),
     SCRIPT_VERSION, BATCH_SIZE,
     TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
     LSTM_SIZE, DENSE_SIZE,
@@ -138,4 +141,4 @@ patience {}
 )
 
 notify(SIGNATURE, message)
-print(SCRIPT_NAME, 'finished successfully')
+print(SCRIPT_NAME, 'finished successfully in', timedelta(seconds=runtime))
