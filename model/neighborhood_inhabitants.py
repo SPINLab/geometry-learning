@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
 import sys
@@ -14,14 +15,15 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.1'
+SCRIPT_VERSION = '1.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
+SCRIPT_START = time()
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 384))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 1024))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
@@ -44,9 +46,9 @@ if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_geoms = test_loaded['input_geoms']
-    test_labels = test_loaded['above_or_below_median'][:, 0]
+    test_labels = test_loaded['above_or_below_median']
 else:
-    print('Training in standard validation mode')
+    print('Training in standard training mode')
     # Split the training data in random seen/unseen sets
     train_geoms, test_geoms, train_labels, test_labels = train_test_split(train_geoms, train_labels, test_size=0.1)
 
@@ -61,7 +63,7 @@ version: {}                batch size: {}
 train/validate split: {}   repeat deep: {} 
 lstm size: {}              dense size: {} 
 epochs: {}                 learning rate: {}
-geometry scale: {:f}       recurrent dropout: {}
+geometry scale: {:.3E}     recurrent dropout: {}
 patience {}
 '''.format(
     SIGNATURE,
@@ -113,23 +115,27 @@ history = model.fit(
 
 # Run on unseen test data
 test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
+test_labels = [np.argmax(label) for label in test_labels]
 accuracy = accuracy_score(test_labels, test_pred)
+
+runtime = time() - SCRIPT_START
 message = '''
-test accuracy of {:f} with 
+test accuracy of {:f} in {} with 
 version: {}                batch size {} 
 train/validate split {}    repeat deep arch {} 
 lstm size {}               dense size {} 
 epochs {}                  learning rate {}
-geometry scale {:f}        recurrent dropout {}
+geometry scale {:.3E}        recurrent dropout {}
 patience {}
 '''.format(
-    accuracy,          SCRIPT_VERSION,
-    BATCH_SIZE,             TRAIN_VALIDATE_SPLIT,
-    REPEAT_DEEP_ARCH,       LSTM_SIZE,
-    DENSE_SIZE,             len(history['val_loss']),
-    LEARNING_RATE,          geom_scale,
-    RECURRENT_DROPOUT,      PATIENCE,
+    accuracy, timedelta(seconds=runtime),
+    SCRIPT_VERSION, BATCH_SIZE,
+    TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
+    LSTM_SIZE, DENSE_SIZE,
+    len(history['val_loss']), LEARNING_RATE,
+    geom_scale, RECURRENT_DROPOUT,
+    PATIENCE,
 )
 
 notify(SIGNATURE, message)
-print(SCRIPT_NAME, 'finished successfully')
+print(SCRIPT_NAME, 'finished successfully with', message)
