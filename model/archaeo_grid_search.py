@@ -4,7 +4,7 @@ import sys
 from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.1'
+SCRIPT_VERSION = '0.0.2'
 N_TIMES = 10
 
 HYPERPARAMS = {
@@ -16,7 +16,7 @@ HYPERPARAMS = {
     # 'LEARNING_RATE': [1e-3, 3e-4, 1e-4],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
     # 'RECURRENT_DROPOUT': [0.0, 0.05, 0.1],
-    'PATIENCE': [8, 16, 24, 32, 40],
+    # 'PATIENCE': [8, 16, 24, 32, 40],
 }
 grid = list(ParameterGrid(HYPERPARAMS))
 
@@ -30,9 +30,9 @@ for configuration in grid:
     for _ in range(N_TIMES):
         r_code = os.system('python3 archaeological_features.py')
         if not r_code == 0:
-            print('Building type grid search exited with error')
-            notify('Building type grid search', 'with error')
+            print('Archaeology feature type grid search exited with error')
+            notify('Archaeology feature type grid search', 'with error')
             sys.exit(1)
 
-notify('Building type grid search', 'no errors')
-print('Building type grid search', 'finished successfully')
+notify('Archaeology feature type grid search', 'no errors')
+print('Archaeology feature type grid search', 'finished successfully')
