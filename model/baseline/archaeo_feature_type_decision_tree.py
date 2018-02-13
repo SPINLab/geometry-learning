@@ -10,10 +10,12 @@ comparable.
 import multiprocessing
 import os
 import sys
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
 from sklearn import tree
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
@@ -23,11 +25,12 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.1'
+SCRIPT_VERSION = '0.1.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/archaeology/archaeo_features_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
@@ -54,16 +57,11 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors)
-
-    correct = 0
-    for prediction, expected in zip(predictions, test_feature_type):
-        if prediction == expected:
-            correct += 1
-
-    accuracy = correct / len(predictions)
+    accuracy = accuracy_score(test_feature_type, predictions)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0}'.format(str(accuracy))
+    runtime = time() - SCRIPT_START
+    message = 'test accuracy of {} in {}'.format(str(accuracy), timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully in {0}'.format(timedelta(seconds=runtime)))
 
