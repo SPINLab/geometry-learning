@@ -26,7 +26,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.2'
+SCRIPT_VERSION = '0.0.3'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/archaeology/archaeo_features_train.npz'
@@ -50,7 +50,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(train_fourier_descriptors[::3], train_feature_type[::3])
+    grid.fit(train_fourier_descriptors, train_feature_type)
 
     print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
