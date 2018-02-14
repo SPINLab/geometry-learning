@@ -28,7 +28,7 @@ TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
-EPOCHS = int(os.getenv('EPOCHS', 200))
+EPOCHS = int(os.getenv('EPOCHS', 400))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = int(os.getenv('PATIENCE', 16))
 RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.05))
@@ -66,8 +66,8 @@ running {} with
 version: {}                batch size: {} 
 train/validate split: {}   repeat deep: {} 
 lstm size: {}              dense size: {} 
-epochs: {}                 learning rate: {}
-geometry scale: {:f}        recurrent dropout: {}
+epochs: {}                 learning rate: {:.3E}
+geometry scale: {:.3E}     recurrent dropout: {}
 patience {}
 '''.format(
     SIGNATURE,
@@ -127,8 +127,8 @@ test accuracy of {:f}          in {} with
 version: {}                    batch size {} 
 train/validate split {}        repeat deep arch {} 
 lstm size {}                   dense size {} 
-epochs {}                      learning rate {}
-geometry scale {:f}            recurrent dropout {}
+epochs {}                      learning rate {:.3E}
+geometry scale {:.3E}          recurrent dropout {}
 patience {}
 '''.format(
     accuracy, timedelta(seconds=runtime),
@@ -141,4 +141,4 @@ patience {}
 )
 
 notify(SIGNATURE, message)
-print(SCRIPT_NAME, 'finished successfully in', timedelta(seconds=runtime))
+print(SCRIPT_NAME, 'finished successfully with', message)
