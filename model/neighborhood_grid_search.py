@@ -5,7 +5,7 @@ from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
 SCRIPT_VERSION = '0.1.9'
-N_TIMES = 10
+N_TIMES = 6
 
 HYPERPARAMS = {
     # 'BATCH_SIZE': [512],
@@ -16,7 +16,7 @@ HYPERPARAMS = {
     # 'LEARNING_RATE': [1e-3, 3e-4, 1e-4],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
     # 'RECURRENT_DROPOUT': [0.0, 0.05, 0.1],
-    'PATIENCE': [0, 1, 4, 8, 16, 32],
+    # 'PATIENCE': [0, 1, 4, 8, 16, 32],
 }
 grid = list(ParameterGrid(HYPERPARAMS))
 
