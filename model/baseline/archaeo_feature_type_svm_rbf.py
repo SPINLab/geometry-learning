@@ -25,7 +25,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.2'
+SCRIPT_VERSION = '0.0.3'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/archaeology/archaeo_features_train.npz'
@@ -76,7 +76,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Test accuracy: %0.3f' % accuracy)
 
     runtime = time() - SCRIPT_START
-    message = 'test accuracy of {0} with C: {} gamma: {} in {}'.format(
+    message = 'test accuracy of {} with C: {} gamma: {} in {}'.format(
         str(accuracy), grid.best_params_['C'], grid.best_params_['gamma'], timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully with', message)
