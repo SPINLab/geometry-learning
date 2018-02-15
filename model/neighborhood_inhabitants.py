@@ -9,13 +9,14 @@ from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten
 from keras.optimizers import Adam
+from keras.regularizers import L1L2
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.3'
+SCRIPT_VERSION = '1.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -82,7 +83,12 @@ output_size = train_labels.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
+model = LSTM(LSTM_SIZE,
+             return_sequences=True,
+             # as tried in
+             # https://machinelearningmastery.com/use-weight-regularization-lstm-networks-time-series-forecasting/
+             kernel_regularizer=L1L2(l1=0.01, l2=0.01),
+             recurrent_dropout=RECURRENT_DROPOUT)(inputs)
 model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 for layer in range(REPEAT_DEEP_ARCH):
