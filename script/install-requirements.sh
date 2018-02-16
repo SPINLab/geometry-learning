@@ -11,6 +11,13 @@ set -e
 git config --global user.name reinvantveer
 git config --global user.email 'rein.van.t.veer@geodan.nl'
 
+# ownCloud client
+wget http://download.opensuse.org/repositories/isv:ownCloud:desktop/Ubuntu_16.04/Release.key
+sudo apt-key add - < Release.key
+sudo sh -c "echo 'deb http://download.opensuse.org/repositories/isv:/ownCloud:/desktop/Ubuntu_16.04/ /' > /etc/apt/sources.list.d/owncloud-client.list"
+sudo apt-get update
+sudo apt-get install owncloud-client
+
 # Geospatial dependencies
 sudo add-apt-repository ppa:ubuntugis/ppa
 sudo apt-get update
