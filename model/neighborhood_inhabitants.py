@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.4'
+SCRIPT_VERSION = '1.0.5'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -27,7 +27,7 @@ SCRIPT_START = time()
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 1024))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
 EPOCHS = int(os.getenv('EPOCHS', 100))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
@@ -85,9 +85,7 @@ output_size = train_labels.shape[-1]
 inputs = Input(shape=(geom_max_points, geom_vector_len))
 model = LSTM(LSTM_SIZE,
              return_sequences=True,
-             # as tried in
-             # https://machinelearningmastery.com/use-weight-regularization-lstm-networks-time-series-forecasting/
-             kernel_regularizer=L1L2(l1=0.01, l2=0.01),
+             # kernel_regularizer=L1L2(l1=0.01, l2=0.01),
              recurrent_dropout=RECURRENT_DROPOUT)(inputs)
 model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
