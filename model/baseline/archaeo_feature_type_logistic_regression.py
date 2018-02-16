@@ -10,10 +10,13 @@ comparable
 
 import multiprocessing
 import os
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
 import sys
+
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
@@ -30,11 +33,12 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/archaeology/archaeo_features_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     train_loaded = np.load(TRAINING_DATA_FILE)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
-    train_above_or_below_median = train_loaded['feature_type']
+    train_feature_type = train_loaded['feature_type']
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -47,7 +51,10 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         LogisticRegression(verbose=True),
         n_jobs=NUM_CPUS,
         param_grid=param_grid, cv=cv)
-    grid.fit(train_fourier_descriptors, train_above_or_below_median)
+
+    print('Performing grid search on model...')
+    print('Using %i threads for grid search' % NUM_CPUS)
+    grid.fit(train_fourier_descriptors, train_feature_type)
 
     print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
@@ -55,28 +62,24 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf = LogisticRegression(C=grid.best_params_['C'])
 
     print('Fitting data to model...')
-    scores = cross_val_score(clf, train_fourier_descriptors, train_above_or_below_median, cv=10, n_jobs=NUM_CPUS)
+    scores = cross_val_score(clf, train_fourier_descriptors, train_feature_type, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
-    clf.fit(train_fourier_descriptors, train_above_or_below_median)
+    clf.fit(train_fourier_descriptors, train_feature_type)
 
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../../files/archaeology/archaeo_features_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_above_or_below_median = np.asarray(test_loaded['feature_type'], dtype=int)
+    test_feature_type = np.asarray(test_loaded['feature_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors)
-
-    correct = 0
-    for prediction, expected in zip(predictions, test_above_or_below_median):
-        if prediction == expected:
-            correct += 1
-
-    accuracy = correct / len(predictions)
+    accuracy = accuracy_score(test_feature_type, predictions)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0} with C: {1} '.format(str(accuracy), grid.best_params_['C'])
+    runtime = time() - SCRIPT_START
+    message = 'test accuracy of {} with C: {} in {}'.format(str(accuracy), grid.best_params_['C'],
+                                                            timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully with', message)
