@@ -10,10 +10,12 @@ comparable
 import os
 import sys
 import multiprocessing
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
-from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
@@ -23,13 +25,13 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.2'
+SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
-N_NEIGHBORS = 10
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
@@ -55,10 +57,25 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    clf = KNeighborsClassifier(n_neighbors=N_NEIGHBORS)
+    k_range = np.linspace(start=1, stop=16, num=16, dtype=int)
+    param_grid = dict(n_neighbors=k_range)
+    cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
+    grid = GridSearchCV(
+        KNeighborsClassifier(),
+        n_jobs=NUM_CPUS,
+        param_grid=param_grid,
+        verbose=10,
+        cv=cv)
 
-    print('Fitting data to model...')
-    print('Using %i threads' % NUM_CPUS)
+    print('Performing grid search on model...')
+    print('Using %i threads for grid search' % NUM_CPUS)
+    grid.fit(train_fourier_descriptors[::5], train_building_type[::5])
+
+    print("The best parameters are %s with a score of %0.3f"
+          % (grid.best_params_, grid.best_score_))
+
+    print('Training model on best parameters...')
+    clf = KNeighborsClassifier(n_neighbors=grid.best_params_['n_neighbors'])
     scores = cross_val_score(clf, train_fourier_descriptors, train_building_type, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
     clf.fit(train_fourier_descriptors, train_building_type)
@@ -72,15 +89,10 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     predictions = clf.predict(test_fourier_descriptors)
-
-    correct = 0
-    for prediction, expected in zip(predictions, test_building_type):
-        if prediction == expected:
-            correct += 1
-
-    accuracy = correct / len(predictions)
+    accuracy = accuracy_score(test_building_type, predictions)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0}'.format(str(accuracy))
+    runtime = time() - SCRIPT_START
+    message = 'test accuracy of {} in {}'.format(str(accuracy), timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully with', message)
