@@ -61,7 +61,7 @@ if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['building_type']
 else:
-    print('Training in standard validation mode')
+    print('Training in standard training mode')
     # Split the training data in random seen/unseen sets
     train_geoms, test_geoms, train_labels, test_labels = train_test_split(train_geoms, train_labels, test_size=0.1)
 
