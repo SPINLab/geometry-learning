@@ -47,7 +47,6 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     scaler = MinMaxScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
-    # C_range = np.logspace(-2, 10, 13)
     C_range = [1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]
     gamma_range = np.logspace(-3, 3, 7)
     param_grid = dict(gamma=gamma_range, C=C_range)
