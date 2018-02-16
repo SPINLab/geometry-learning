@@ -10,9 +10,11 @@ comparable
 import os
 import sys
 import multiprocessing
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -29,6 +31,7 @@ TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
@@ -68,7 +71,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Using %i threads for grid search' % NUM_CPUS)
     grid.fit(X=train_fourier_descriptors[::10], y=train_building_type[::10])
 
-    print("The best parameters are %s with a score of %0.2f"
+    print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
@@ -84,22 +87,11 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     predictions = clf.predict(test_fourier_descriptors)
-
-    correct = 0
-    for prediction, expected in zip(predictions, test_building_type):
-        if prediction == expected:
-            correct += 1
-
-    accuracy = correct / len(predictions)
+    accuracy = accuracy_score(test_building_type, predictions)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0} with ' \
-              'C: {1} ' \
-              'gamma: {2} ' \
-        .format(
-            str(accuracy),
-            grid.best_params_['C'],
-            grid.best_params_['gamma'],
-        )
+    runtime = time() - SCRIPT_START
+    message = 'test accuracy of {} with C: {} gamma: {} in {}'.format(
+        str(accuracy), grid.best_params_['C'], grid.best_params_['gamma'], timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully with', message)

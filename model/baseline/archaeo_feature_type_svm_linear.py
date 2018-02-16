@@ -13,6 +13,7 @@ import multiprocessing
 from datetime import datetime
 
 import numpy as np
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -47,9 +48,9 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(X=train_fourier_descriptors[::5], y=train_feature_type[::5])
+    grid.fit(X=train_fourier_descriptors[::10], y=train_feature_type[::10])
 
-    print("The best parameters are %s with a score of %0.2f"
+    print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
@@ -65,13 +66,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     predictions = clf.predict(test_fourier_descriptors)
-
-    correct = 0
-    for prediction, expected in zip(predictions, test_feature_type):
-        if prediction == expected:
-            correct += 1
-
-    accuracy = correct / len(predictions)
+    accuracy = accuracy_score(predictions, test_feature_type)
     print('Test accuracy: %0.3f' % accuracy)
 
     message = 'test accuracy of {0} with C: {1} '.format(str(accuracy), grid.best_params_['C'])

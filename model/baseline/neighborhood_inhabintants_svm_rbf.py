@@ -84,10 +84,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     accuracy = correct / len(predictions)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0} with ' \
-              'C: {1} ' \
-              'gamma: {2} ' \
-        .format(
+    message = 'test accuracy of {} in {} with C: {}, gamma: {}'.format(
             str(accuracy),
             grid.best_params_['C'],
             grid.best_params_['gamma'],
