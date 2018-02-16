@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.33'
+SCRIPT_VERSION = '0.2.34'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -30,8 +30,8 @@ FILENAME_PREFIX = 'buildings-train'
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 1024))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 256))
-DENSE_SIZE = int(os.getenv('DENSE_SIZE', 64))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
+DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
