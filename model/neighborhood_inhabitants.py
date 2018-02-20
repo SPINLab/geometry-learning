@@ -34,7 +34,7 @@ LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = int(os.getenv('PATIENCE', 16))
 RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.5))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
-OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1., decay=1e-6)
+OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1.)
 
 # Load data
 train_loaded = np.load(TRAINING_DATA_FILE)
