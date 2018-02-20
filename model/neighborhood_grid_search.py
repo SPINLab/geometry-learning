@@ -4,7 +4,7 @@ import sys
 from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.1.11'
+SCRIPT_VERSION = '0.1.12'
 N_TIMES = 6
 
 HYPERPARAMS = {
