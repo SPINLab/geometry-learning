@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.35'
+SCRIPT_VERSION = '0.2.36'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -120,7 +120,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=PATIENCE, min_delta=0.001)
+    # EarlyStopping(patience=PATIENCE, min_delta=0.001)
 ]
 
 history = model.fit(
