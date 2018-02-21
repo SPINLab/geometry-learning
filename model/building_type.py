@@ -73,7 +73,7 @@ train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use scale from training
 
 message = '''
-test accuracy of {:f}          in {} with 
+running {} with 
 version: {}                    batch size {} 
 train/validate split {}        repeat deep arch {} 
 lstm size {}                   dense size {} 
