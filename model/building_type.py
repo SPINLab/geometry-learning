@@ -36,10 +36,10 @@ LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
+PATIENCE = int(os.getenv('PATIENCE', 16))
+RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.05))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1.)
-PATIENCE = int(os.getenv('PATIENCE', 16))
-RECURRENT_DROPOUT = 0.05
 
 # Load training data
 train_geoms = []

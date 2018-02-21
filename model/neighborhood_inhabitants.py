@@ -36,7 +36,6 @@ RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.05))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
 OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1.)
 
-# Load data
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['input_geoms']
 train_labels = train_loaded['above_or_below_median']
