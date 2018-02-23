@@ -4,13 +4,13 @@ import sys
 from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.2'
+SCRIPT_VERSION = '0.0.3'
 N_TIMES = 6
 
 HYPERPARAMS = {
-    # 'BATCH_SIZE': [512],
+    'BATCH_SIZE': [512],
     # 'REPEAT_DEEP_ARCH': [0, 1],
-    # 'LSTM_SIZE': [192, 256, 384],
+    'LSTM_SIZE': [64],
     # 'DENSE_SIZE': [64],
     # 'EPOCHS': [200],
     # 'LEARNING_RATE': [1e-3, 3e-4, 1e-4],
