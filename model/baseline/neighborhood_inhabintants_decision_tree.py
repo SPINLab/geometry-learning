@@ -14,9 +14,9 @@ import sys
 from datetime import datetime
 
 import numpy as np
-from sklearn import tree
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
@@ -37,11 +37,25 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    clf = tree.DecisionTreeClassifier()
+    clf = DecisionTreeClassifier()
 
-    print('Fitting data to model...')
-    scores = cross_val_score(clf, train_fourier_descriptors, train_above_or_below_median, cv=10, n_jobs=NUM_CPUS)
-    print('Cross-validation scores:', scores)
+    param_grid = {'max_depth': range(6, 13)}
+    cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
+    grid = GridSearchCV(
+        DecisionTreeClassifier(),
+        n_jobs=NUM_CPUS,
+        param_grid=param_grid,
+        verbose=10,
+        cv=cv)
+
+    print('Performing grid search on model...')
+    print('Using %i threads for grid search' % NUM_CPUS)
+    grid.fit(train_fourier_descriptors, train_above_or_below_median)
+    print("The best parameters are %s with a score of %0.3f"
+          % (grid.best_params_, grid.best_score_))
+
+    print('Training model on best parameters...')
+    clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
     clf.fit(train_fourier_descriptors, train_above_or_below_median)
 
     # Run predictions on unseen test data to verify generalization
