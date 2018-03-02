@@ -10,7 +10,8 @@ comparable
 import multiprocessing
 import os
 import sys
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
@@ -25,6 +26,7 @@ from topoml_util.slack_send import notify
 
 SCRIPT_VERSION = '0.0.3'
 SCRIPT_NAME = os.path.basename(__file__)
+SCRIPT_START = time()
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
@@ -54,14 +56,16 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    C_range = [1e-2, 1e-1, 1e0, 1e1, 1e2]
-    gamma_range = np.logspace(-6, 1, 8)
-    param_grid = dict(gamma=gamma_range, C=C_range)
+    C_range = [1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1]
+    degree_range = range(1, 7)
+    param_grid = dict(degree=degree_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
-        SVC(kernel='poly', verbose=True, max_iter=int(1e7)),
+        SVC(kernel='poly', max_iter=int(1e7)),
         n_jobs=NUM_CPUS,
-        param_grid=param_grid, cv=cv)
+        verbose=10,
+        param_grid=param_grid,
+        cv=cv)
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
@@ -71,8 +75,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
-    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'], verbose=True,
-              max_iter=int(1e7))
+    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['degree'])
     clf.fit(X=train_fourier_descriptors, y=train_building_type)
 
     # Run predictions on unseen test data to verify generalization
@@ -93,13 +96,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     accuracy = correct / len(predictions)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0} with ' \
-              'C: {1} ' \
-              'gamma: {2} ' \
-        .format(
-            str(accuracy),
-            grid.best_params_['C'],
-            grid.best_params_['gamma'],
-        )
+    runtime = time() - SCRIPT_START
+    message = 'test accuracy of {} with C: {} degree: {} in {}'.format(
+        str(accuracy), grid.best_params_['C'], grid.best_params_['degree'], timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully with', message)

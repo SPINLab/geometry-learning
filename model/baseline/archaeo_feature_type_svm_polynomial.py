@@ -42,8 +42,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
     C_range = [1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1]
-    gamma_range = np.logspace(-3, 3, 7)
-    param_grid = dict(gamma=gamma_range, C=C_range)
+    degree_range = range(1, 7)
+    param_grid = dict(degree=degree_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
         SVC(kernel='poly', max_iter=int(1e7)),
@@ -60,7 +60,10 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
-    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'])
+    clf = SVC(kernel='poly',
+              C=grid.best_params_['C'],
+              degree=grid.best_params_['degree'],
+              max_iter=int(1e7))
     clf.fit(X=train_fourier_descriptors, y=train_feature_type)
 
     # Run predictions on unseen test data to verify generalization
@@ -76,7 +79,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Test accuracy: %0.3f' % accuracy)
 
     runtime = time() - SCRIPT_START
-    message = 'test accuracy of {} with C: {} gamma: {} in {}'.format(
-        str(accuracy), grid.best_params_['C'], grid.best_params_['gamma'], timedelta(seconds=runtime))
+    message = 'test accuracy of {} with C: {} degree: {} in {}'.format(
+        str(accuracy), grid.best_params_['C'], grid.best_params_['degree'], timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully with', message)

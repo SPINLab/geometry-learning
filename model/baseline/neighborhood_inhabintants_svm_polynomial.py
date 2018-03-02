@@ -10,7 +10,8 @@ comparable
 
 import multiprocessing
 import os
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
 import sys
@@ -28,6 +29,7 @@ SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_train.npz'
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     num_cpus = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
@@ -48,8 +50,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
     C_range = [1e-1, 1e0, 1e1, 1e2, 1e3, 1e4]
-    gamma_range = np.logspace(-3, 3, 7)
-    param_grid = dict(gamma=gamma_range, C=C_range)
+    degree_range = range(1, 7)
+    param_grid = dict(degree=degree_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
         SVC(kernel='poly', verbose=True, max_iter=int(1e7)),
@@ -64,7 +66,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
-    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'],
+    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['degree'],
               verbose=True)
     clf.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
 
@@ -86,13 +88,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     accuracy = correct / len(predictions)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0} with ' \
-              'C: {1} ' \
-              'gamma: {2} ' \
-        .format(
-            str(accuracy),
-            grid.best_params_['C'],
-            grid.best_params_['gamma'],
-        )
+    runtime = time() - SCRIPT_START
+    message = 'test accuracy of {} with C: {} degree: {} in {}'.format(
+        str(accuracy), grid.best_params_['C'], grid.best_params_['degree'], timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully with', message)
