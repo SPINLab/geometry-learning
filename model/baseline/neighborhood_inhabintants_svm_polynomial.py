@@ -54,9 +54,11 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     param_grid = dict(degree=degree_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
-        SVC(kernel='poly', verbose=True, max_iter=int(1e7)),
+        SVC(kernel='poly', max_iter=int(1e7)),
         n_jobs=num_cpus,
-        param_grid=param_grid, cv=cv)
+        param_grid=param_grid,
+        verbose=10,
+        cv=cv)
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % num_cpus)
@@ -66,8 +68,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
-    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['degree'],
-              verbose=True)
+    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['degree'])
     clf.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
 
     # Run predictions on unseen test data to verify generalization
