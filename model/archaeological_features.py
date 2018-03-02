@@ -1,13 +1,13 @@
 import os
-from time import time
+import sys
 from datetime import datetime, timedelta
+from time import time
 
 import numpy as np
-import sys
 from keras import Input
-from keras.callbacks import TensorBoard, EarlyStopping
+from keras.callbacks import TensorBoard
 from keras.engine import Model
-from keras.layers import LSTM, TimeDistributed, Dense, Flatten
+from keras.layers import LSTM, TimeDistributed, Dense, Flatten, Bidirectional
 from keras.optimizers import Adam
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.1.8'
+SCRIPT_VERSION = '0.1.9'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -86,7 +86,7 @@ output_seq_length = train_targets.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
+model = Bidirectional(LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
 model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 for layer in range(REPEAT_DEEP_ARCH):

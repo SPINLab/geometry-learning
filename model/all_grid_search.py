@@ -4,18 +4,18 @@ import sys
 from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.6'
+SCRIPT_VERSION = '0.0.7'
 N_TIMES = 10
 
 HYPERPARAMS = {
     'BATCH_SIZE': [512],
-    # 'REPEAT_DEEP_ARCH': [0, 1],
+    'REPEAT_DEEP_ARCH': [0],
     'LSTM_SIZE': [64],
-    # 'DENSE_SIZE': [64],
-    # 'EPOCHS': [200],
-    # 'LEARNING_RATE': [1e-3, 3e-4, 1e-4],
+    'DENSE_SIZE': [32],
+    'EPOCHS': [200],
+    'LEARNING_RATE': [1e-4],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
-    'RECURRENT_DROPOUT': [0.15],
+    'RECURRENT_DROPOUT': [0.10],
     # 'PATIENCE': [8, 16, 24, 32, 40],
 }
 grid = list(ParameterGrid(HYPERPARAMS))
@@ -27,7 +27,6 @@ scripts = [
 ]
 
 for configuration in grid:
-    envs = []
     # Set environment variables (this allows you to do hyperparam searches from any scripting environment)
     for key, value in configuration.items():
         os.environ[key] = str(value)
