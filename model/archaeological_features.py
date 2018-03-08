@@ -5,7 +5,7 @@ from time import time
 
 import numpy as np
 from keras import Input
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, TimeDistributed, Dense, Flatten, Bidirectional
 from keras.optimizers import Adam
@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.1.9'
+SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -23,7 +23,7 @@ TRAINING_DATA_FILE = '../files/archaeology/archaeo_features_train.npz'
 SCRIPT_START = time()
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 1024))
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 512))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 128))
@@ -106,7 +106,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    # EarlyStopping(patience=PATIENCE, min_delta=0.001),
+    EarlyStopping(patience=PATIENCE, min_delta=0.001),
 ]
 
 history = model.fit(

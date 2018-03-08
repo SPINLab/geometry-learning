@@ -10,7 +10,7 @@ from time import time
 
 import numpy as np
 from keras import Input
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
 from keras.layers import LSTM, Dense, Flatten, TimeDistributed, Bidirectional
 from keras.optimizers import Adam
@@ -20,7 +20,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.2.38'
+SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -122,7 +122,7 @@ model.summary()
 # Callbacks
 callbacks = [
     TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    # EarlyStopping(patience=PATIENCE, min_delta=0.001)
+    EarlyStopping(patience=PATIENCE, min_delta=0.001)
 ]
 
 history = model.fit(
