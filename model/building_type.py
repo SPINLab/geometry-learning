@@ -6,6 +6,7 @@ which will take about an hour or two.
 import os
 import sys
 from datetime import datetime, timedelta
+import socket
 from time import time
 
 import numpy as np
@@ -20,7 +21,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.0'
+SCRIPT_VERSION = '1.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -31,14 +32,15 @@ SCRIPT_START = time()
 # Hyperparameters
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 512))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
-REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 64))
+REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 10))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = int(os.getenv('PATIENCE', 16))
 RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.1))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # Default 0, overridden when data is known
+EARLY_STOPPING = bool(os.getenv('EARLY_STOPPING', False))
 OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1.)
 
 # Load training data
@@ -98,19 +100,21 @@ for index, building_type in enumerate(train_labels):
 
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
-output_seq_length = train_targets.shape[-1]
+output_size = train_targets.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = Bidirectional(LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
+# model = LSTM(LSTM_SIZE, recurrent_dropout=RECURRENT_DROPOUT)(inputs)
+model = Bidirectional(LSTM(LSTM_SIZE,
+                           return_sequences=True,
+                           recurrent_dropout=RECURRENT_DROPOUT))(inputs)
 model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 for layer in range(REPEAT_DEEP_ARCH):
     model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
 
-model = Dense(DENSE_SIZE, activation='relu')(model)
-model = Flatten()(model)
-model = Dense(output_seq_length, activation='softmax')(model)
+model = LSTM(LSTM_SIZE, recurrent_dropout=RECURRENT_DROPOUT)(model)
+model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
 model.compile(
@@ -139,15 +143,15 @@ accuracy = accuracy_score(test_labels, test_pred)
 
 runtime = time() - SCRIPT_START
 message = '''
-test accuracy of {:f}          in {} with 
-version: {}                    batch size {} 
-train/validate split {}        repeat deep arch {} 
-lstm size {}                   dense size {} 
-epochs {}                      learning rate {:.3E}
-geometry scale {:.3E}          recurrent dropout {}
+test accuracy of {:f} in {} on {}
+version: {}                batch size {} 
+train/validate split {}    repeat deep arch {} 
+lstm size {}               dense size {} 
+epochs {}                  learning rate {}
+geometry scale {:.3E}        recurrent dropout {}
 patience {}
 '''.format(
-    accuracy, timedelta(seconds=runtime),
+    accuracy, timedelta(seconds=runtime), socket.gethostname(),
     SCRIPT_VERSION, BATCH_SIZE,
     TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
     LSTM_SIZE, DENSE_SIZE,
