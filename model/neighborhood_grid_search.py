@@ -7,18 +7,18 @@ import numpy as np
 from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.1.14'
+SCRIPT_VERSION = '0.1.15'
 N_TIMES = 6
 
 HYPERPARAMS = {
     # 'BATCH_SIZE': [512],
-    'REPEAT_DEEP_ARCH': [0],
-    'LSTM_SIZE': np.linspace(24, 64, 6, dtype=int),
+    'REPEAT_DEEP_ARCH': [1, 2],
+    'LSTM_SIZE': np.linspace(64, 128, 3, dtype=int),
     # 'DENSE_SIZE': [32],
     # 'EPOCHS': [200],
     # 'LEARNING_RATE': [1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
-    'RECURRENT_DROPOUT': [0.0],
+    # 'RECURRENT_DROPOUT': [0.0],
     # 'PATIENCE': [0, 1, 4, 8, 16, 32],
     'EARLY_STOPPING': [1],
 }
@@ -38,6 +38,6 @@ for configuration in grid:
             notify('Neighborhood inhabitants grid search', 'with error')
             sys.exit(1)
 
-signature = 'Neighborhood inhabitants grid search on {}'.format(socket.gethostname())
-notify(signature, 'no errors')
+signature = 'Neighborhood inhabitants grid search {} on {}'.format(SCRIPT_VERSION, socket.gethostname())
+notify(signature, 'success')
 print('Neighborhood inhabitants grid search finished successfully')
