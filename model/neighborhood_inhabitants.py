@@ -8,7 +8,7 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, Bidirectional
+from keras.layers import LSTM, Dense, Bidirectional, TimeDistributed
 from keras.optimizers import Adam
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.14'
+SCRIPT_VERSION = '1.0.15'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -27,12 +27,12 @@ SCRIPT_START = time()
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 512))
 TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
 REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 10))
+LSTM_SIZE = int(os.getenv('LSTM_SIZE', 64))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
 EPOCHS = int(os.getenv('EPOCHS', 200))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
 PATIENCE = int(os.getenv('PATIENCE', 16))
-RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.1))
+RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.0))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
 EARLY_STOPPING = bool(os.getenv('EARLY_STOPPING', False))
 OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1.)
@@ -83,17 +83,13 @@ output_size = train_labels.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = Bidirectional(LSTM(LSTM_SIZE,
-                           return_sequences=(REPEAT_DEEP_ARCH > 0),
-                           recurrent_dropout=RECURRENT_DROPOUT))(inputs)
-
-for layer in range(REPEAT_DEEP_ARCH):
-    is_last_layer = (layer + 1 == REPEAT_DEEP_ARCH)
-    model = Bidirectional(LSTM(LSTM_SIZE,
-                               return_sequences=not is_last_layer,
-                               recurrent_dropout=RECURRENT_DROPOUT))(model)
-
-model = Dense(DENSE_SIZE, activation='relu')(model)
+# model = Bidirectional(LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
+# model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+#
+# for layer in range(REPEAT_DEEP_ARCH):
+#     model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
+#
+model = Bidirectional(LSTM(LSTM_SIZE, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
 model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
