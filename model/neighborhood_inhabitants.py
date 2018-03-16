@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.12'
+SCRIPT_VERSION = '1.0.13'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -84,16 +84,16 @@ output_size = train_labels.shape[-1]
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
 model = Bidirectional(LSTM(LSTM_SIZE,
-                           return_sequences=True,
+                           # return_sequences=True,
                            recurrent_dropout=RECURRENT_DROPOUT))(inputs)
-model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+# model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
-for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
-    model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+# for layer in range(REPEAT_DEEP_ARCH):
+#     model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
+#     model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
 
 model = Dense(DENSE_SIZE, activation='relu')(model)
-model = Flatten()(model)
+# model = Flatten()(model)
 model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
