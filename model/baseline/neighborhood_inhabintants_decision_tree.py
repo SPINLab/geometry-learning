@@ -14,7 +14,8 @@ import sys
 from datetime import datetime
 
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV, cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
@@ -28,6 +29,7 @@ SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_train.npz'
+REPEAT_ACCURACY_TEST = 10
 NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -39,7 +41,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
     clf = DecisionTreeClassifier()
 
-    param_grid = {'max_depth': range(6, 13)}
+    param_grid = {'max_depth': range(4, 10)}
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
         DecisionTreeClassifier(),
@@ -58,6 +60,9 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
     clf.fit(train_fourier_descriptors, train_above_or_below_median)
 
+    scores = cross_val_score(clf, train_fourier_descriptors, train_above_or_below_median, cv=10, n_jobs=NUM_CPUS)
+    print('Cross-validation scores:', scores)
+
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
@@ -67,15 +72,34 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors)
+    test_accuracy = accuracy_score(test_above_or_below_median, predictions)
+    print('Test accuracy: %0.3f' % test_accuracy)
+    message = 'test accuracy of {0}'.format(str(test_accuracy))
 
-    correct = 0
-    for prediction, expected in zip(predictions, test_above_or_below_median):
-        if all([pred == exp for pred, exp in zip(prediction, expected)]):
-            correct += 1
+    # Repeat on all data to assess spread in model accuracy from random splits
+    print('Running random split accuracy spread test...')
+    train_fourier_descriptors = np.append(train_fourier_descriptors, test_fourier_descriptors, axis=0)
+    train_above_or_below_median = np.append(train_above_or_below_median, test_above_or_below_median, axis=0)
 
-    accuracy = correct / len(predictions)
-    print('Test accuracy: %0.3f' % accuracy)
+    accuracy_scores = []
 
-    message = 'test accuracy of {0}'.format(str(accuracy))
+    for _ in range(REPEAT_ACCURACY_TEST):
+        train_fourier_descriptors, test_fourier_descriptors, train_above_or_below_median, test_above_or_below_median = \
+            train_test_split(train_fourier_descriptors, train_above_or_below_median, test_size=0.1)
+        grid.fit(train_fourier_descriptors, train_above_or_below_median)
+        print("The best parameters are %s with a score of %0.3f" % (grid.best_params_, grid.best_score_))
+        print('Training model on best parameters...')
+        clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
+        clf.fit(train_fourier_descriptors, train_above_or_below_median)
+        print('Run on test data...')
+        predictions = clf.predict(test_fourier_descriptors)
+        accuracy = accuracy_score(test_above_or_below_median, predictions)
+        print('Random split accuracy: %0.3f' % accuracy)
+        accuracy_scores.append(accuracy)
+
+    print('Test accuracy: {} with standard deviation {}'.format(test_accuracy, np.std(accuracy_scores)))
+    print('random split accuracy values: {}'.format(accuracy_scores))
+    message = 'test accuracy of {} with standard deviation {}'.format(test_accuracy, np.std(accuracy_scores))
+
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully')
