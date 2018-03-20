@@ -8,7 +8,7 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import LSTM, Dense, Bidirectional, TimeDistributed
+from keras.layers import Dense, Conv1D, MaxPooling1D, GlobalAveragePooling1D
 from keras.optimizers import Adam
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.15'
+SCRIPT_VERSION = '0.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -83,13 +83,11 @@ output_size = train_labels.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-# model = Bidirectional(LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
-# model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
-#
-# for layer in range(REPEAT_DEEP_ARCH):
-#     model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
-#
-model = Bidirectional(LSTM(LSTM_SIZE, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
+model = Conv1D(32, (5,))(inputs)
+model = MaxPooling1D(3)(model)
+model = Conv1D(64, (5,))(model)
+model = GlobalAveragePooling1D()(model)
+model = Dense(DENSE_SIZE, activation='relu')(model)
 model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
@@ -100,10 +98,9 @@ model.compile(
 model.summary()
 
 # Callbacks
-callbacks = [
-    TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=PATIENCE, min_delta=0.001)
-]
+callbacks = [TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False)]
+if EARLY_STOPPING:
+    callbacks.append(EarlyStopping(patience=PATIENCE, min_delta=0.001))
 
 history = model.fit(
     x=train_geoms,
