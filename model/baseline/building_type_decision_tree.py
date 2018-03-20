@@ -10,10 +10,12 @@ comparable
 import multiprocessing
 import os
 import sys
-from datetime import datetime
+from time import time
+from datetime import datetime, timedelta
 
 import numpy as np
-from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
@@ -23,12 +25,14 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
 FILENAME_PREFIX = 'buildings-train'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+SCRIPT_START = time()
+REPEAT_ACCURACY_TEST = 10
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
@@ -38,19 +42,19 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             training_files.append(file)
 
     train_fourier_descriptors = np.array([])
-    train_building_type = np.array([])
+    train_labels = np.array([])
 
     for index, file in enumerate(training_files):  # load and concatenate the training files
         train_loaded = np.load(DATA_FOLDER + file)
 
         if index == 0:
             train_fourier_descriptors = train_loaded['fourier_descriptors']
-            train_building_type = train_loaded['building_type']
+            train_labels = train_loaded['building_type']
         else:
             train_fourier_descriptors = \
                 np.append(train_fourier_descriptors, train_loaded['fourier_descriptors'], axis=0)
-            train_building_type = \
-                np.append(train_building_type, train_loaded['building_type'], axis=0)
+            train_labels = \
+                np.append(train_labels, train_loaded['building_type'], axis=0)
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -67,34 +71,59 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(train_fourier_descriptors, train_building_type)
+    grid.fit(train_fourier_descriptors, train_labels)
     print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
     clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
-    scores = cross_val_score(clf, train_fourier_descriptors, train_building_type, cv=10, n_jobs=NUM_CPUS)
+    scores = cross_val_score(clf, train_fourier_descriptors, train_labels, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
-    clf.fit(train_fourier_descriptors, train_building_type)
+    clf.fit(train_fourier_descriptors, train_labels)
 
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = DATA_FOLDER + 'buildings-test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_building_type = np.asarray(test_loaded['building_type'], dtype=int)
+    test_labels = np.asarray(test_loaded['building_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors)
+    test_accuracy = accuracy_score(test_labels, predictions)
 
-    correct = 0
-    for prediction, expected in zip(predictions, test_building_type):
-        if prediction == expected:
-            correct += 1
+    # Repeat on all data to assess spread in model accuracy from random splits
+    print('Running random split accuracy spread test...')
+    train_fourier_descriptors = np.append(train_fourier_descriptors, test_fourier_descriptors, axis=0)
+    train_labels = np.append(train_labels, test_labels, axis=0)
 
-    accuracy = correct / len(predictions)
-    print('Test accuracy: %0.3f' % accuracy)
+    accuracy_scores = []
 
-    message = 'test accuracy of {0}'.format(str(accuracy))
+    for _ in range(REPEAT_ACCURACY_TEST):
+        train_fourier_descriptors, test_fourier_descriptors, train_labels, test_labels = \
+            train_test_split(train_fourier_descriptors, train_labels, test_size=0.1)
+        grid.fit(train_fourier_descriptors, train_labels)
+        print("The best parameters are %s with a score of %0.3f" % (grid.best_params_, grid.best_score_))
+        print('Training model on best parameters...')
+        clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
+        clf.fit(train_fourier_descriptors, train_labels)
+        print('Run on test data...')
+        predictions = clf.predict(test_fourier_descriptors)
+        accuracy = accuracy_score(test_labels, predictions)
+        accuracy_scores.append(accuracy)
+
+    runtime = time() - SCRIPT_START
+    print('')
+    message = 'Test accuracy of {} with standard deviation {} in {}'.format(
+        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
+    print(message)
+    print('Random split accuracy values: {}'.format(accuracy_scores))
+
+    runtime = time() - SCRIPT_START
+    print('')
+    message = 'test accuracy of {} with standard deviation {} in {}'.format(
+        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
+    print(message)
+    print('Random split accuracy values: {}'.format(accuracy_scores))
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))

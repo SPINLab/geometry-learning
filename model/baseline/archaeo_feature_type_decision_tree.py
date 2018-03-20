@@ -15,28 +15,30 @@ from time import time
 
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV
+from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
+# https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html#case-4-importing-from-parent-directory
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.1.2'
+SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/archaeology/archaeo_features_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 SCRIPT_START = time()
+REPEAT_ACCURACY_TEST = 10
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
     train_loaded = np.load(TRAINING_DATA_FILE)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
-    train_feature_type = train_loaded['feature_type']
+    train_labels = train_loaded['feature_type']
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -53,30 +55,59 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(train_fourier_descriptors, train_feature_type)
+    grid.fit(train_fourier_descriptors, train_labels)
     print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
     clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
-    scores = cross_val_score(clf, train_fourier_descriptors, train_feature_type, cv=10, n_jobs=NUM_CPUS)
+    scores = cross_val_score(clf, train_fourier_descriptors, train_labels, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
-    clf.fit(train_fourier_descriptors, train_feature_type)
+    clf.fit(train_fourier_descriptors, train_labels)
 
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../../files/archaeology/archaeo_features_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_feature_type = np.asarray(test_loaded['feature_type'], dtype=int)
+    test_labels = np.asarray(test_loaded['feature_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors)
-    accuracy = accuracy_score(test_feature_type, predictions)
-    print('Test accuracy: %0.3f' % accuracy)
+    test_accuracy = accuracy_score(test_labels, predictions)
+
+    # Repeat on all data to assess spread in model accuracy from random splits
+    print('Running random split accuracy spread test...')
+    train_fourier_descriptors = np.append(train_fourier_descriptors, test_fourier_descriptors, axis=0)
+    train_labels = np.append(train_labels, test_labels, axis=0)
+
+    accuracy_scores = []
+
+    for _ in range(REPEAT_ACCURACY_TEST):
+        train_fourier_descriptors, test_fourier_descriptors, train_labels, test_labels = \
+            train_test_split(train_fourier_descriptors, train_labels, test_size=0.1)
+        grid.fit(train_fourier_descriptors, train_labels)
+        print("The best parameters are %s with a score of %0.3f" % (grid.best_params_, grid.best_score_))
+        print('Training model on best parameters...')
+        clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
+        clf.fit(train_fourier_descriptors, train_labels)
+        print('Run on test data...')
+        predictions = clf.predict(test_fourier_descriptors)
+        accuracy = accuracy_score(test_labels, predictions)
+        accuracy_scores.append(accuracy)
 
     runtime = time() - SCRIPT_START
-    message = 'test accuracy of {} in {}'.format(str(accuracy), timedelta(seconds=runtime))
-    notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully in {0}'.format(timedelta(seconds=runtime)))
+    print('')
+    message = 'Test accuracy of {} with standard deviation {} in {}'.format(
+        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
+    print(message)
+    print('Random split accuracy values: {}'.format(accuracy_scores))
 
+    runtime = time() - SCRIPT_START
+    print('')
+    message = 'test accuracy of {} with standard deviation {} in {}'.format(
+        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
+    print(message)
+    print('Random split accuracy values: {}'.format(accuracy_scores))
+    notify(SCRIPT_NAME, message)
+    print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))
