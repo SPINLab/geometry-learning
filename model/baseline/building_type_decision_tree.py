@@ -118,12 +118,5 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
     print(message)
     print('Random split accuracy values: {}'.format(accuracy_scores))
-
-    runtime = time() - SCRIPT_START
-    print('')
-    message = 'test accuracy of {} with standard deviation {} in {}'.format(
-        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
-    print(message)
-    print('Random split accuracy values: {}'.format(accuracy_scores))
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))
