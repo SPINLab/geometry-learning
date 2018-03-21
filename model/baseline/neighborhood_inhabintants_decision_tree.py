@@ -11,8 +11,8 @@ comparable.
 import multiprocessing
 import os
 import sys
-from time import time
 from datetime import datetime, timedelta
+from time import time
 
 import numpy as np
 from sklearn.metrics import accuracy_score
@@ -26,7 +26,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.0'
+SCRIPT_VERSION = '1.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_train.npz'
