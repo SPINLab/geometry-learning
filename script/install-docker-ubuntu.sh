@@ -23,5 +23,15 @@ curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.li
   sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 sudo apt-get update
 sudo apt-get install -y nvidia-docker2
-sudo pkill -SIGHUP dockerd
+sudo tee /etc/docker/daemon.json <<EOF
+{
+    "runtimes": {
+        "nvidia": {
+            "path": "/usr/bin/nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+    },
+    "default-runtime": "nvidia"
+}
+EOF
 sudo service docker restart
