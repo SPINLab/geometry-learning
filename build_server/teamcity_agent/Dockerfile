@@ -33,6 +33,14 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 ENV NVIDIA_REQUIRE_CUDA "cuda>=9.0"
 
+# CUDNN
+ENV CUDNN_VERSION 7.1.1.5
+LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+            libcudnn7=$CUDNN_VERSION-1+cuda9.0 && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update && apt-get install -y python3-pip
 RUN pip3 install --upgrade pip
 COPY requirements.txt /requirements.txt
