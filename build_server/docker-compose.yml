@@ -5,14 +5,16 @@ services:
     image: jetbrains/teamcity-server
     restart: unless-stopped
     volumes:
-      - ./teamcity_logs:/data/teamcity_server/datadir
-      - ./teamcity_server_data:/opt/teamcity/logs
+      - ./teamcity_logs:/opt/teamcity/logs
+      - ./teamcity_server_data:/data/teamcity_server/datadir
     ports:
       - "8111:8111"
 
   teamcity_agent:
-    build: ./teamcity_agent
+    build: teamcity_agent
     restart: unless-stopped
+    depends_on:
+      - teamcity
     volumes:
       - ./teamcity_agent:/data/teamcity_agent/conf
     environment:

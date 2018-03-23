@@ -106,12 +106,12 @@ ENV/
 /model/plots/*.png
 /model/configs/*.py
 /script/cuda/
-!/files/continuous_delivery/teamcity_logs/README.md
-!/files/continuous_delivery/teamcity_server_data/README.md
-!/files/continuous_delivery/docker-compose.yml
-!/files/continuous_delivery/teamcity_agent/Dockerfile
+!/continuous_delivery/teamcity_logs/README.md
+!/continuous_delivery/teamcity_server_data/README.md
+!/continuous_delivery/docker-compose.yml
+!/continuous_delivery/teamcity_agent/Dockerfile
 !/files/roads/boogstralen.zip
-!/files/continuous_delivery/
+!/continuous_delivery/
 !/files/neighborhoods/neighborhoods_train.npz
 !/files/neighborhoods/neighborhoods_test.npz
 *.csv
