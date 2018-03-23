@@ -33,6 +33,14 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 ENV NVIDIA_REQUIRE_CUDA "cuda>=9.0"
 
+# NCCL
+ENV NCCL_VERSION 2.1.15
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cuda-libraries-$CUDA_PKG_VERSION \
+        libnccl2=$NCCL_VERSION-1+cuda9.0 && \
+    rm -rf /var/lib/apt/lists/*
+
 # CUDNN
 ENV CUDNN_VERSION 7.1.1.5
 LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
