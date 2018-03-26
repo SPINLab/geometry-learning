@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
@@ -30,7 +30,7 @@ REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 0))
 LSTM_SIZE = int(os.getenv('LSTM_SIZE', 64))
 DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
 EPOCHS = int(os.getenv('EPOCHS', 200))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
+LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-2))
 PATIENCE = int(os.getenv('PATIENCE', 16))
 RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.0))
 GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
