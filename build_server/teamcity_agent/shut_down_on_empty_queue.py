@@ -32,7 +32,7 @@ def notify(signature, message):
 
 
 # Get build queue length
-queue = "http://localhost:8111/guestAuth/app/rest/buildQueue"
+queue = "http://teamcity:8111/guestAuth/app/rest/buildQueue"
 headers = {
     'Accept': "application/json",
     'Cache-Control': "no-cache",
