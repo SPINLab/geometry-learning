@@ -60,12 +60,6 @@ geom_scale = hp['GEOM_SCALE'] or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
 
-message = 'running {} with version: {}\n'.format(SIGNATURE, SCRIPT_VERSION)
-
-for key, value in hp.items():
-    message += '{}: {}\t'.format(key, value)
-print(message)
-
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
 output_size = train_labels.shape[-1]
@@ -110,7 +104,7 @@ test_labels = [np.argmax(label) for label in test_labels]
 accuracy = accuracy_score(test_labels, test_pred)
 
 runtime = time() - SCRIPT_START
-message = '{} on {} completed with accuracy of {:f} in {} in {} epochs\n'.format(
+message = '{} \non {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
     SIGNATURE, socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
 
 for key, value in sorted(hp.items()):
