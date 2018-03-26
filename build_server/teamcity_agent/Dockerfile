@@ -36,19 +36,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libnccl2=$NCCL_VERSION-1+cuda9.0 && \
     rm -rf /var/lib/apt/lists/*
 
-# CUDNN: Use older version for tensorflow
-ENV CUDNN_VERSION 7.0.5.15 #
+# CUDNN
+#ENV CUDNN_VERSION 7.1.1.5
+ENV CUDNN_VERSION 7.0.3.11
 LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
             libcudnn7=$CUDNN_VERSION-1+cuda9.0 && \
     rm -rf /var/lib/apt/lists/*
 
+# Extra env vars
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64/
+ENV CUDA_HOME=/usr/local/cuda
+
 RUN apt-get update && apt-get install -y python3-pip
 RUN pip3 install --upgrade pip
 COPY requirements.txt /requirements.txt
 RUN pip3 install -r requirements.txt
-
-ENV LD_LIBRARY_PATH /usr/local/cuda-9.0/lib64/
-ENV CUDA_HOME=/usr/local/cuda-9.0
-
