@@ -19,3 +19,7 @@ services:
       - ./teamcity_agent:/data/teamcity_agent/conf
     environment:
       - SERVER_URL=teamcity:8111
+      - SLACK_API_TOKEN=yourslackapitoken
+      - SLACK_CHANNEL=#machinelearning
+      - AWS_ACCESS_KEY_ID=yourawsaccesskeyid
+      - AWS_SECRET_ACCESS_KEY=yourawsaccesskeytoken
