@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 set -x
-# Jenkins style
-# CHANGED_MODEL_FILES=`git diff --stat --name-only $GIT_PREVIOUS_COMMIT $GIT_COMMIT | grep model | grep py | grep -v topoml_util`
-
 echo "Changes:"
 cat $1
 
@@ -11,7 +8,8 @@ CHANGED_MODEL_FILES="$(cat $1 | \
   cut -d \: -f 1 | \
   grep -e model | \
   grep .py | \
-  grep -v topoml_util | \
+  grep -v util | \
+  grep -v REMOVED | \
   grep -v baseline | \
   grep -v png \
   )"
