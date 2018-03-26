@@ -83,14 +83,8 @@ output_size = train_labels.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = Bidirectional(LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
-
-for layer in range(REPEAT_DEEP_ARCH):
-    is_last_layer = (layer + 1 == REPEAT_DEEP_ARCH)
-    model = Bidirectional(LSTM(LSTM_SIZE,
-                               return_sequences=not is_last_layer,
-                               recurrent_dropout=RECURRENT_DROPOUT))(model)
-
+model = Dense(DENSE_SIZE)(inputs)
+model = Flatten()(model)
 model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
