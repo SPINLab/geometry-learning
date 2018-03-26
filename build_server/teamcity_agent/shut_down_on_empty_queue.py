@@ -37,23 +37,23 @@ headers = {
     'Accept': "application/json",
     'Cache-Control': "no-cache",
 }
-instance_metadata = requests.get(queue, headers=headers)
-queue_status = instance_metadata.json()
+queue_res = requests.get(queue, headers=headers)
+queue_status = queue_res.json()
 queue_length = queue_status['count']
+
+# Get instance id for this machine
+# https://stackoverflow.com/questions/33301880/how-to-obtain-current-instance-id-from-boto3#33307704
+try:
+    instance_metadata = requests.get('http://169.254.169.254/latest/meta-data/instance-id')
+except ConnectionError as e:
+    notify(SCRIPT_NAME, 'ERROR getting instance id, cannot issue commands')
+    raise ConnectionError(e)
+
+instance_id = instance_metadata.text
 
 if queue_length == 0:
     notify(SCRIPT_NAME, 'build server reports empty queue, shutting down.')
-
-    # Get instance id for this machine
-    # https://stackoverflow.com/questions/33301880/how-to-obtain-current-instance-id-from-boto3#33307704
-    try:
-        instance_metadata = requests.get('http://169.254.169.254/latest/meta-data/instance-id')
-    except ConnectionError as e:
-        notify(SCRIPT_NAME, 'ERROR getting instance id, cannot shut down!!!')
-
-    instance_id = instance_metadata.text
     shutdown_res = ec2.stop_instances(InstanceIds=[instance_id])
-
     http_status_code = shutdown_res['ResponseMetadata']['HTTPStatusCode']
     http_status = http.HTTPStatus(http_status_code).name
 
