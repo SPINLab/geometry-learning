@@ -52,7 +52,7 @@ except ConnectionError as e:
 instance_id = instance_metadata.text
 
 if queue_length == 0:
-    notify(SCRIPT_NAME, 'build server reports empty queue, shutting down.')
+    print('build server reports empty queue, shutting down.')
     shutdown_res = ec2.stop_instances(InstanceIds=[instance_id])
     http_status_code = shutdown_res['ResponseMetadata']['HTTPStatusCode']
     http_status = http.HTTPStatus(http_status_code).name
