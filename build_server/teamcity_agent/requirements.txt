@@ -8,3 +8,4 @@ slackclient>=1.1.0
 tensorflow-gpu>=1.4.1
 matplotlib>=2.1.2
 pyefd>=1.0
+boto3>=1.6
