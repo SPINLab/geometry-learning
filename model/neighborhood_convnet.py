@@ -8,7 +8,7 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.engine import Model
-from keras.layers import Dense, Conv1D, MaxPooling1D, GlobalAveragePooling1D
+from keras.layers import Dense, Conv1D, MaxPooling1D, GlobalAveragePooling1D, Dropout
 from keras.optimizers import Adam
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -33,7 +33,7 @@ hp = {
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
     'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 6e-3)),
     'PATIENCE': int(os.getenv('PATIENCE', 16)),
-    'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
+    'DROPOUT': float(os.getenv('DROPOUT', 0.5)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
     'EARLY_STOPPING': bool(os.getenv('EARLY_STOPPING', False)),
 }
@@ -71,6 +71,7 @@ model = MaxPooling1D(3)(model)
 model = Conv1D(64, (5,))(model)
 model = GlobalAveragePooling1D()(model)
 model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
+model = Dropout(hp['DROPOUT'])(model)
 model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
