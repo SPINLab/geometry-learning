@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.18'
+SCRIPT_VERSION = '1.0.19'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -31,7 +31,7 @@ hp = {
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 2e-2)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 3e-2)),
     'PATIENCE': int(os.getenv('PATIENCE', 16)),
     'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
