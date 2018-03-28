@@ -19,23 +19,25 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '1.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-SIGNATURE = SCRIPT_NAME + ' ' + TIMESTAMP
+SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 TRAINING_DATA_FILE = '../files/archaeology/archaeo_features_train.npz'
 SCRIPT_START = time()
 
 # Hyperparameters
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 512))
-TRAIN_VALIDATE_SPLIT = float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1))
-REPEAT_DEEP_ARCH = int(os.getenv('REPEAT_DEEP_ARCH', 1))
-LSTM_SIZE = int(os.getenv('LSTM_SIZE', 10))
-DENSE_SIZE = int(os.getenv('DENSE_SIZE', 32))
-EPOCHS = int(os.getenv('EPOCHS', 200))
-LEARNING_RATE = float(os.getenv('LEARNING_RATE', 1e-4))
-PATIENCE = int(os.getenv('PATIENCE', 16))
-RECURRENT_DROPOUT = float(os.getenv('RECURRENT_DROPOUT', 0.1))
-GEOM_SCALE = float(os.getenv('GEOM_SCALE', 0))  # If no default or 0: overridden when data is known
-EARLY_STOPPING = bool(os.getenv('EARLY_STOPPING', False))
-OPTIMIZER = Adam(lr=LEARNING_RATE, clipnorm=1.)
+hp = {
+    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 512)),
+    'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
+    'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
+    'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
+    'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
+    'EPOCHS': int(os.getenv('EPOCHS', 200)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 8e-3)),
+    'PATIENCE': int(os.getenv('PATIENCE', 16)),
+    'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
+    'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
+    'EARLY_STOPPING': bool(os.getenv('EARLY_STOPPING', False)),
+}
+OPTIMIZER = Adam(lr=hp['LEARNING_RATE'], clipnorm=1.)
 
 train_loaded = np.load(TRAINING_DATA_FILE)
 train_geoms = train_loaded['geoms']
@@ -54,7 +56,7 @@ else:
     train_geoms, test_geoms, train_labels, test_labels = train_test_split(train_geoms, train_labels, test_size=0.1)
 
 # Normalize
-geom_scale = GEOM_SCALE or geom_scaler.scale(train_geoms)
+geom_scale = hp['GEOM_SCALE'] or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
 
@@ -63,40 +65,23 @@ train_targets = np.zeros((len(train_labels), train_labels.max() + 1))
 for index, feature_type in enumerate(train_labels):
     train_targets[index, feature_type] = 1
 
-message = '''
-running {} with 
-version: {}                batch size: {} 
-train/validate split: {}   repeat deep: {} 
-lstm size: {}              dense size: {} 
-epochs: {}                 learning rate: {:.3E}
-geometry scale: {:.3E}     recurrent dropout: {}
-patience {}
-'''.format(
-    SIGNATURE,
-    SCRIPT_VERSION, BATCH_SIZE,
-    TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
-    LSTM_SIZE, DENSE_SIZE,
-    EPOCHS, LEARNING_RATE,
-    geom_scale, RECURRENT_DROPOUT,
-    PATIENCE,
-)
-print(message)
-
 # Shape determination
 geom_max_points, geom_vector_len = train_geoms.shape[1:]
-output_seq_length = train_targets.shape[-1]
+output_size = train_targets.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = Bidirectional(LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT))(inputs)
-model = TimeDistributed(Dense(DENSE_SIZE, activation='relu'))(model)
+model = Bidirectional(LSTM(hp['LSTM_SIZE'],
+                           return_sequences=(hp['REPEAT_DEEP_ARCH'] > 0),
+                           recurrent_dropout=hp['RECURRENT_DROPOUT']))(inputs)
 
-for layer in range(REPEAT_DEEP_ARCH):
-    model = LSTM(LSTM_SIZE, return_sequences=True, recurrent_dropout=RECURRENT_DROPOUT)(model)
+for layer in range(hp['REPEAT_DEEP_ARCH']):
+    is_last_layer = (layer + 1 == hp['REPEAT_DEEP_ARCH'])
+    model = Bidirectional(LSTM(hp['LSTM_SIZE'],
+                               return_sequences=(not is_last_layer),
+                               recurrent_dropout=hp['RECURRENT_DROPOUT']))(model)
 
-model = Dense(DENSE_SIZE, activation='relu')(model)
-model = Flatten()(model)
-model = Dense(output_seq_length, activation='softmax')(model)
+model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
 model.compile(
@@ -106,17 +91,16 @@ model.compile(
 model.summary()
 
 # Callbacks
-callbacks = [
-    TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=PATIENCE, min_delta=0.001),
-]
+callbacks = [TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False)]
+if hp['EARLY_STOPPING']:
+    callbacks.append(EarlyStopping(patience=hp['PATIENCE'], min_delta=0.001))
 
 history = model.fit(
     x=train_geoms,
-    y=train_targets,
-    epochs=EPOCHS,
-    batch_size=BATCH_SIZE,
-    validation_split=TRAIN_VALIDATE_SPLIT,
+    y=train_labels,
+    epochs=hp['EPOCHS'],
+    batch_size=hp['BATCH_SIZE'],
+    validation_split=hp['TRAIN_VALIDATE_SPLIT'],
     callbacks=callbacks).history
 
 # Run on unseen test data
@@ -124,22 +108,11 @@ test_pred = [np.argmax(classes) for classes in model.predict(test_geoms)]
 accuracy = accuracy_score(test_labels, test_pred)
 
 runtime = time() - SCRIPT_START
-message = '''
-test accuracy of {:f} in {} on {}
-version: {}                batch size {} 
-train/validate split {}    repeat deep arch {} 
-lstm size {}               dense size {} 
-epochs {}                  learning rate {}
-geometry scale {:.3E}        recurrent dropout {}
-patience {}
-'''.format(
-    accuracy, timedelta(seconds=runtime), socket.gethostname(),
-    SCRIPT_VERSION, BATCH_SIZE,
-    TRAIN_VALIDATE_SPLIT, REPEAT_DEEP_ARCH,
-    LSTM_SIZE, DENSE_SIZE,
-    len(history['val_loss']), LEARNING_RATE,
-    geom_scale, RECURRENT_DROPOUT,
-    PATIENCE,
-)
+message = '{} \non {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
+    SIGNATURE, socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
+
+for key, value in sorted(hp.items()):
+    message += '{}: {}\t'.format(key, value)
+
 notify(SIGNATURE, message)
 print(SCRIPT_NAME, 'finished successfully with', message)
