@@ -30,7 +30,7 @@ HYPERPARAMS = {
     # 'REPEAT_DEEP_ARCH': [1, 2],
     # 'KERNEL_SIZE': np.linspace(1, 8, 8, dtype=int),
     # 'LSTM_SIZE': np.linspace(64, 128, 3, dtype=int),
-    # 'DENSE_SIZE': [64],
+    'DENSE_SIZE': [64],
     # 'EPOCHS': [200],
     'LEARNING_RATE': [1e-3, 8e-4, 6e-4, 4e-4, 2e-4],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
