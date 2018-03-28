@@ -15,9 +15,9 @@ N_TIMES = 1
 if len(sys.argv) > 1:
     script_name = sys.argv[1]
 else:  # resort to default, for
-    # script_name = 'neighborhood_dense.py'
+    script_name = 'neighborhood_dense.py'
     # script_name = 'neighborhood_convnet.py'
-    script_name = 'neighborhood_lstm.py'
+    # script_name = 'neighborhood_lstm.py'
     # script_name = 'building_dense.py'
     # script_name = 'building_convnet.py'
     # script_name = 'building_lstm.py'
