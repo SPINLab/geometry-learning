@@ -32,7 +32,7 @@ HYPERPARAMS = {
     # 'LSTM_SIZE': np.linspace(64, 128, 3, dtype=int),
     # 'DENSE_SIZE': [64],
     # 'EPOCHS': [200],
-    'LEARNING_RATE': [8e-4, 6e-4, 4e-4, 2e-4],
+    'LEARNING_RATE': [8e-5, 6e-5, 4e-5, 2e-5, 1e-5],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
     # 'RECURRENT_DROPOUT': [0.0],
     # 'PATIENCE': [0, 1, 4, 8, 16, 32],
