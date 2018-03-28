@@ -104,10 +104,9 @@ model.compile(
 model.summary()
 
 # Callbacks
-callbacks = [
-    TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False),
-    EarlyStopping(patience=hp['PATIENCE'], min_delta=0.001)
-]
+callbacks = [TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False)]
+if hp['EARLY_STOPPING']:
+    callbacks.append(EarlyStopping(patience=hp['PATIENCE'], min_delta=0.001))
 
 history = model.fit(
     x=train_geoms,
@@ -122,8 +121,8 @@ test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
 accuracy = accuracy_score(test_labels, test_pred)
 
 runtime = time() - SCRIPT_START
-message = '{} \non {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
-    SIGNATURE, socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
+message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
+    socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
 
 for key, value in sorted(hp.items()):
     message += '{}: {}\t'.format(key, value)
