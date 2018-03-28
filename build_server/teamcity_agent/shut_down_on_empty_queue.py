@@ -63,6 +63,6 @@ if queue_length == 0:
     else:
         notify(SCRIPT_NAME, 'ERROR shutting down instance id: {}'.format(http_status))
 else:
-    notify(SCRIPT_NAME, 'job finished, build server reports non-empty queue, exiting.')
+    notify(SCRIPT_NAME, 'job finished, build server reports non-empty queue, continuing.')
 
 
