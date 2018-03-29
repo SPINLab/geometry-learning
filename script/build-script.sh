@@ -5,11 +5,11 @@ cat $1
 
 # TeamCity style
 CHANGED_MODEL_FILES="$(cat $1 | \
+  grep -v REMOVED | \
   cut -d \: -f 1 | \
   grep -e model | \
   grep .py | \
   grep -v util | \
-  grep -v REMOVED | \
   grep -v baseline | \
   grep -v png \
   )"
