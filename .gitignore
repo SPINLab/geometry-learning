@@ -119,3 +119,4 @@ ENV/
 !/model/topoml_util/test_files/polygon_multipolygon.csv
 # Prevent committing credentials set in compose file
 build_server/docker-compose.yml
+/model/all_test.py
