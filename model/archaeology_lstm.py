@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.1'
+SCRIPT_VERSION = '1.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -97,7 +97,7 @@ if hp['EARLY_STOPPING']:
 
 history = model.fit(
     x=train_geoms,
-    y=train_labels,
+    y=train_targets,
     epochs=hp['EPOCHS'],
     batch_size=hp['BATCH_SIZE'],
     validation_split=hp['TRAIN_VALIDATE_SPLIT'],
@@ -108,8 +108,8 @@ test_pred = [np.argmax(classes) for classes in model.predict(test_geoms)]
 accuracy = accuracy_score(test_labels, test_pred)
 
 runtime = time() - SCRIPT_START
-message = '{} \non {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
-    SIGNATURE, socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
+message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
+    socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
 
 for key, value in sorted(hp.items()):
     message += '{}: {}\t'.format(key, value)
