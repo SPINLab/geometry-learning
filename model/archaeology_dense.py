@@ -20,7 +20,8 @@ SCRIPT_VERSION = '1.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
-TRAINING_DATA_FILE = '../files/archaeology/archaeo_features_train.npz'
+DATA_FOLDER = '../files/archaeology/'
+FILENAME_PREFIX = 'archaeology_order_30_train'
 SCRIPT_START = time()
 
 # Hyperparameters
@@ -38,14 +39,29 @@ hp = {
 }
 OPTIMIZER = Adam(lr=hp['LEARNING_RATE'], clipnorm=1.)
 
-train_loaded = np.load(TRAINING_DATA_FILE)
-train_geoms = train_loaded['geoms']
-train_labels = train_loaded['feature_type']
+training_files = []
+for file in os.listdir(DATA_FOLDER):
+    if file.startswith(FILENAME_PREFIX) and file.endswith('.npz'):
+        training_files.append(file)
+
+# Load training data
+train_geoms = []
+train_labels = []
+
+for file in os.listdir(DATA_FOLDER):
+    if file.startswith(FILENAME_PREFIX) and file.endswith('.npz'):
+        train_loaded = np.load(DATA_FOLDER + file)
+        if len(train_geoms):
+            train_geoms = np.append(train_geoms, train_loaded['geoms'], axis=0)
+            train_labels = np.append(train_labels, train_loaded['feature_type'], axis=0)
+        else:
+            train_geoms = train_loaded['geoms']
+            train_labels = train_loaded['feature_type']
 
 # Determine final test mode or standard
 if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     print('Training in final test mode')
-    TEST_DATA_FILE = '../files/archaeology/archaeo_features_test.npz'
+    TEST_DATA_FILE = '../files/archaeology/archaeology_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['feature_type']

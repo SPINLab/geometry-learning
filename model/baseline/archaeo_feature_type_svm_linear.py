@@ -10,13 +10,14 @@ comparable
 import os
 import sys
 import multiprocessing
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
+from time import time
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
@@ -27,14 +28,33 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '0.0.5'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FILE = '../../files/archaeology/archaeo_features_train.npz'
+REPEAT_ACCURACY_TEST = 10
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
+FILENAME_PREFIX = 'archaeology_order_30_train'
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
-    train_loaded = np.load(TRAINING_DATA_FILE)
-    train_fourier_descriptors = train_loaded['fourier_descriptors']
-    train_feature_type = train_loaded['feature_type']
+    training_files = []
+    for file in os.listdir(DATA_FOLDER):
+        if file.startswith(FILENAME_PREFIX) and file.endswith('.npz'):
+            training_files.append(file)
+
+    train_fourier_descriptors = np.array([])
+    train_labels = np.array([])
+
+    for index, file in enumerate(training_files):  # load and concatenate the training files
+        train_loaded = np.load(DATA_FOLDER + file)
+
+        if index == 0:
+            train_fourier_descriptors = train_loaded['fourier_descriptors']
+            train_labels = train_loaded['feature_type']
+        else:
+            train_fourier_descriptors = \
+                np.append(train_fourier_descriptors, train_loaded['fourier_descriptors'], axis=0)
+            train_labels = \
+                np.append(train_labels, train_loaded['feature_type'], axis=0)
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -48,18 +68,18 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(X=train_fourier_descriptors[::10], y=train_feature_type[::10])
+    grid.fit(X=train_fourier_descriptors[::10], y=train_labels[::10])
 
     print("The best parameters are %s with a score of %0.3f"
           % (grid.best_params_, grid.best_score_))
 
     print('Training model on best parameters...')
     clf = SVC(kernel='linear', C=grid.best_params_['C'], max_iter=int(1e7), verbose=True)
-    clf.fit(X=train_fourier_descriptors, y=train_feature_type)
+    clf.fit(X=train_fourier_descriptors, y=train_labels)
 
     # Run predictions on unseen test data to verify generalization
     print('Run on test data...')
-    TEST_DATA_FILE = '../../files/archaeology/archaeo_features_test.npz'
+    TEST_DATA_FILE = '../../files/archaeology/archaeology_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_feature_type = np.asarray(test_loaded['feature_type'], dtype=int)
@@ -69,6 +89,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     accuracy = accuracy_score(predictions, test_feature_type)
     print('Test accuracy: %0.3f' % accuracy)
 
-    message = 'test accuracy of {0} with C: {1} '.format(str(accuracy), grid.best_params_['C'])
+    runtime = time() - SCRIPT_START
+    message = 'test accuracy of {} with C: {} in {}'.format(str(accuracy), grid.best_params_['C'],
+                                                            timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully')

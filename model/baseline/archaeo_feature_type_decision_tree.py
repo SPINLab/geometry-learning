@@ -29,16 +29,33 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FILE = '../../files/archaeology/archaeo_features_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
-SCRIPT_START = time()
+DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
+FILENAME_PREFIX = 'archaeology_order_30_train'
 REPEAT_ACCURACY_TEST = 10
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
-    train_loaded = np.load(TRAINING_DATA_FILE)
-    train_fourier_descriptors = train_loaded['fourier_descriptors']
-    train_labels = train_loaded['feature_type']
+    training_files = []
+    for file in os.listdir(DATA_FOLDER):
+        if file.startswith(FILENAME_PREFIX) and file.endswith('.npz'):
+            training_files.append(file)
+
+    train_fourier_descriptors = np.array([])
+    train_labels = np.array([])
+
+    for index, file in enumerate(training_files):  # load and concatenate the training files
+        train_loaded = np.load(DATA_FOLDER + file)
+
+        if index == 0:
+            train_fourier_descriptors = train_loaded['fourier_descriptors']
+            train_labels = train_loaded['feature_type']
+        else:
+            train_fourier_descriptors = \
+                np.append(train_fourier_descriptors, train_loaded['fourier_descriptors'], axis=0)
+            train_labels = \
+                np.append(train_labels, train_loaded['feature_type'], axis=0)
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -66,7 +83,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors, train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = '../../files/archaeology/archaeo_features_test.npz'
+    TEST_DATA_FILE = '../../files/archaeology/archaeology_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = np.asarray(test_loaded['feature_type'], dtype=int)
