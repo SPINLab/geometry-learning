@@ -57,7 +57,7 @@ areas = [shape.area for shape in shapes]
 plt.scatter(areas, df.aantal_inwoners.values, s=0.1, alpha=0.5)
 plt.xlim(0, 5e-3)
 plt.ylim(0, 10000)
-plt.savefig('neighborhood_area_inhabitants_scatter.png')
+# plt.savefig('neighborhood_area_inhabitants_scatter.png')
 
 print('Saving to neighborhoods numpy train and test archives...')
 train_test_split_index = round(TRAIN_TEST_SPLIT * len(geoms))
