@@ -38,8 +38,10 @@ def create_geom_fourier_descriptor(shape, order):
         # centroid_fourier_descriptors = elliptic_fourier_descriptors(centroid_distances, normalize=True)
 
         # Stack 'em all
-        coeffs = np.append(non_normalized_coeffs, normalized_coeffs)  # without axis this will just create an array
-        coeffs = np.append(coeffs, [boundary.area, boundary.length, len(boundary.coords)])
+        coeffs = [shape.area, boundary.length, len(boundary.coords)]
+        for nn, n in zip(non_normalized_coeffs, normalized_coeffs):
+            coeffs = np.append(coeffs, nn)  # without axis this will just create an array
+            coeffs = np.append(coeffs, n)
     except Exception as e:
         print('Error %s on geom ' % e)
         raise e
