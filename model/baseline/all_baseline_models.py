@@ -8,16 +8,16 @@ SCRIPT_VERSION = '0.0.9'
 N_TIMES = 6
 
 HYPERPARAMS = {
-    'BATCH_SIZE': [512],
-    'REPEAT_DEEP_ARCH': [1],
-    'LSTM_SIZE': [64],
-    'DENSE_SIZE': [32],
-    'EPOCHS': [200],
-    'LEARNING_RATE': [1e-4],
+    # 'BATCH_SIZE': [512],
+    # 'REPEAT_DEEP_ARCH': [1],
+    # 'LSTM_SIZE': [64],
+    # 'DENSE_SIZE': [32],
+    # 'EPOCHS': [200],
+    # 'LEARNING_RATE': [1e-4],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
-    'RECURRENT_DROPOUT': [0.10],
+    # 'RECURRENT_DROPOUT': [0.10],
     # 'PATIENCE': [8, 16, 24, 32, 40],
-    'EARLY_STOPPING': 1
+    # 'EARLY_STOPPING': 1
 }
 grid = list(ParameterGrid(HYPERPARAMS))
 
