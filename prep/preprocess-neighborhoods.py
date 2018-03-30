@@ -11,7 +11,7 @@ from shapely import wkt
 from prep.ProgressBar import ProgressBar
 
 SOURCE_ZIP = '../files/neighborhoods/neighborhoods.csv.zip'
-NEIGHBORHOODS_CSV = 'neighborhoods.csv'
+SOURCE_CSV = 'neighborhoods.csv'
 NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_order_30_train.npz'
 NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_order_30_test.npz'
 SANE_NUMBER_OF_POINTS = 512
@@ -22,7 +22,7 @@ if not os.path.isfile(SOURCE_ZIP):
     raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % SOURCE_ZIP)
 
 zfile = ZipFile(SOURCE_ZIP)
-df = read_csv(zfile.open(NEIGHBORHOODS_CSV))
+df = read_csv(zfile.open(SOURCE_CSV))
 df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for unknowns
 
 print('Creating neighborhood geometry vectors...')
