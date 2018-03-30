@@ -26,7 +26,7 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/buildings/'
-FILENAME_PREFIX = 'buildings-train'
+FILENAME_PREFIX = 'buildings_order_30_train'
 SCRIPT_START = time()
 
 # Hyperparameters
@@ -62,7 +62,7 @@ for file in os.listdir(DATA_FOLDER):
 # Determine final test mode or standard
 if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     print('Training in final test mode')
-    TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
+    TEST_DATA_FILE = '../files/buildings/buildings_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['building_type']

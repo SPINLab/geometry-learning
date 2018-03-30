@@ -29,7 +29,7 @@ SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
-FILENAME_PREFIX = 'buildings-train'
+FILENAME_PREFIX = 'buildings_order_30_train'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 SCRIPT_START = time()
 REPEAT_ACCURACY_TEST = 10
@@ -82,7 +82,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors, train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = DATA_FOLDER + 'buildings-test.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'buildings_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = np.asarray(test_loaded['building_type'], dtype=int)

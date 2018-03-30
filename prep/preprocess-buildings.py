@@ -75,7 +75,8 @@ for f_index, function_type in enumerate(building_types):
 
     print('Creating building geometry fourier descriptors...')
     shapes = []
-    for wkt_string in df.geometrie.values:  # create the descriptors on the untruncated geoms
+    for w_index, wkt_string in enumerate(df.geometrie.values):  # create the descriptors on the untruncated geoms
+        pgb.update_progress(w_index/len(df.geometrie.values))
         shape = wkt.loads(wkt_string)
         # If multipart multipolygon: select the largest, but it will throw off the accuracy a bit.
         if shape.geom_type == 'MultiPolygon':
