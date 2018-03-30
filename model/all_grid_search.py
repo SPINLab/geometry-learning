@@ -17,13 +17,14 @@ HYPERPARAMS = {
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
     'RECURRENT_DROPOUT': [0.10],
     # 'PATIENCE': [8, 16, 24, 32, 40],
+    'EARLY_STOPPING': 1
 }
 grid = list(ParameterGrid(HYPERPARAMS))
 
 scripts = [
-    'neighborhood_inhabitants.py',
-    'building_type.py',
-    'archaeological_features.py'
+    # 'neighborhood_inhabitants.py',
+    # 'building_type.py',
+    # 'archaeological_features.py'
 ]
 
 for configuration in grid:
