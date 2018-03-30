@@ -20,7 +20,7 @@ SCRIPT_VERSION = '1.0.21'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
-TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
+TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_order_30_train.npz'
 SCRIPT_START = time()
 
 # Hyperparameters
@@ -44,7 +44,7 @@ train_labels = train_loaded['above_or_below_median']
 # Determine final test mode or standard
 if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     print('Training in final test mode')
-    TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
+    TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_geoms = test_loaded['input_geoms']
     test_labels = test_loaded['above_or_below_median']
@@ -65,6 +65,10 @@ output_size = train_labels.shape[-1]
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
 model = Dense(hp['DENSE_SIZE'], activation='relu')(inputs)
+
+for _ in range(hp['REPEAT_DEEP_ARCH']):
+    model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
+
 model = Flatten()(model)
 model = Dense(output_size, activation='softmax')(model)
 

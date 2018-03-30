@@ -29,7 +29,10 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '1.0.6'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_train.npz'
+TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_train.npz'
+TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_test.npz'
+ORDER = int(os.getenv('ORDER', 11))
+CUTOFF_POINT = 3 + ORDER * 8
 REPEAT_ACCURACY_TEST = 10
 NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
 SCRIPT_START = time()
@@ -39,6 +42,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_fourier_descriptors = train_loaded['fourier_descriptors']
     train_labels = train_loaded['above_or_below_median']
 
+    train_fourier_descriptors = train_fourier_descriptors[:, :CUTOFF_POINT]
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
     clf = DecisionTreeClassifier()
@@ -66,11 +70,13 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Cross-validation scores:', scores)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_labels = np.asarray(test_loaded['above_or_below_median'], dtype=int)
+    test_fourier_descriptors = test_fourier_descriptors[:, :CUTOFF_POINT]
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
+
+    test_labels = np.asarray(test_loaded['above_or_below_median'], dtype=int)
+    test_labels = test_labels[:, :CUTOFF_POINT]
 
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors)
@@ -83,7 +89,6 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     train_labels = np.append(train_labels, test_labels, axis=0)
 
     accuracy_scores = []
-
     for _ in range(REPEAT_ACCURACY_TEST):
         train_fourier_descriptors, test_fourier_descriptors, train_labels, test_labels = \
             train_test_split(train_fourier_descriptors, train_labels, test_size=0.1)
@@ -99,8 +104,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     runtime = time() - SCRIPT_START
     print('')
-    message = 'test accuracy of {} with standard deviation {} in {}'.format(
-        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
+    message = 'test accuracy of {} with standard deviation {} for EFD order {} in {}'.format(
+        test_accuracy, np.std(accuracy_scores), ORDER, timedelta(seconds=runtime))
     print(message)
     print('Random split accuracy values: {}'.format(accuracy_scores))
 

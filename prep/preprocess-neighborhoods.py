@@ -1,4 +1,5 @@
 import os
+from zipfile import ZipFile
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,23 +8,30 @@ from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
 from pandas import read_csv
 from shapely import wkt
 
-NEIGHBORHOODS_SOURCE = '../files/neighborhoods/neighborhoods.csv'
-NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_train.npz'
-NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_test.npz'
+from prep.ProgressBar import ProgressBar
+
+NEIGHBORHOODS_SOURCE = '../files/neighborhoods/neighborhoods.csv.zip'
+NEIGHBORHOODS_CSV = 'neighborhoods.csv'
+NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_order_30_train.npz'
+NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_order_30_test.npz'
 SANE_NUMBER_OF_POINTS = 512
 TRAIN_TEST_SPLIT = 0.1
-FOURIER_DESCRIPTOR_ORDER = 16  # The axis 0 size
+FOURIER_DESCRIPTOR_ORDER = 30  # The axis 0 size
+
 
 if not os.path.isfile(NEIGHBORHOODS_SOURCE):
     raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % NEIGHBORHOODS_SOURCE)
 
-with open(NEIGHBORHOODS_SOURCE) as file:
-    df = read_csv(file)
-
+zfile = ZipFile(NEIGHBORHOODS_SOURCE)
+df = read_csv(zfile.open(NEIGHBORHOODS_CSV))
 df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for unknowns
 
 print('Creating neighborhood geometry vectors...')
-geoms = [GeoVectorizer.vectorize_wkt(wkt_string, SANE_NUMBER_OF_POINTS, simplify=True) for wkt_string in df.geom.values]
+pgb = ProgressBar()
+geoms = []
+for index, wkt_string in enumerate(df.geom.values):
+    pgb.update_progress(index/len(df.geom.values))
+    geoms.append(GeoVectorizer.vectorize_wkt(wkt_string, SANE_NUMBER_OF_POINTS, simplify=True))
 
 print('Creating neighborhood geometry fourier descriptors...')
 shapes = []

@@ -29,7 +29,10 @@ SCRIPT_VERSION = '0.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = SCRIPT_DIR + '/../../files/neighborhoods/'
-TRAINING_DATA_FILE = DATA_FOLDER + 'neighborhoods_train.npz'
+TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_train.npz'
+TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_test.npz'
+ORDER = int(os.getenv('ORDER', 11))
+CUTOFF_POINT = 3 + ORDER * 8
 NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -61,7 +64,6 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors, train_above_or_below_median)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = DATA_FOLDER + 'neighborhoods_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_above_or_below_median = np.asarray(test_loaded['above_or_below_median'][:, 0], dtype=int)

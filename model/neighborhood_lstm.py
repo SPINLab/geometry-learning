@@ -20,7 +20,7 @@ SCRIPT_VERSION = '1.0.20'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
-TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_train.npz'
+TRAINING_DATA_FILE = '../files/neighborhoods/neighborhoods_order_30_train.npz'
 SCRIPT_START = time()
 
 # Hyperparameters
@@ -46,7 +46,7 @@ train_labels = train_loaded['above_or_below_median']
 # Determine final test mode or standard
 if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     print('Training in final test mode')
-    TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test.npz'
+    TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_geoms = test_loaded['input_geoms']
     test_labels = test_loaded['above_or_below_median']
@@ -104,8 +104,8 @@ test_labels = [np.argmax(label) for label in test_labels]
 accuracy = accuracy_score(test_labels, test_pred)
 
 runtime = time() - SCRIPT_START
-message = '{} \non {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
-    SIGNATURE, socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
+message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
+            socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
 
 for key, value in sorted(hp.items()):
     message += '{}: {}\t'.format(key, value)
