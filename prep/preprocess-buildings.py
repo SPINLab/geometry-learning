@@ -9,6 +9,7 @@
 # 23000 buildings for habitation
 
 import os
+from zipfile import ZipFile
 
 from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
 from model.topoml_util.GeoVectorizer import GeoVectorizer
@@ -16,12 +17,15 @@ from pandas import read_csv
 from shapely import wkt
 import numpy as np
 
+from prep.ProgressBar import ProgressBar
+
 SANE_NUMBER_OF_POINTS = 64
 TRAIN_TEST_SPLIT = 0.1
-FOURIER_DESCRIPTOR_ORDER = 16  # The axis 0 size
-TRAIN_DATA_FILE = '../files/buildings/buildings-train-'
-TEST_DATA_FILE = '../files/buildings/buildings-test.npz'
-NUMBER_OF_FILES = 4
+FOURIER_DESCRIPTOR_ORDER = 30  # The axis 0 size
+SOURCE_ZIP = '../files/buildings/buildings.csv.zip'
+TRAIN_DATA_FILE = '../files/buildings/buildings_order_30_train-'
+TEST_DATA_FILE = '../files/buildings/buildings_order_30_test.npz'
+NUMBER_OF_FILES = 5
 
 building_types = [
     'bijeenkomstfunctie',  # gatherings
@@ -47,24 +51,27 @@ test_data = {
     'building_type': [],
 }
 
-for function_type in building_types:
-    path = '../files/buildings/buildings-' + function_type + '.csv'
-    print('Processing', path)
+if not os.path.isfile(SOURCE_ZIP):
+    raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % SOURCE_ZIP)
 
-    if not os.path.isfile(path):
-        raise FileNotFoundError('Unable to locate %s. Please run the prep/get-data.sh script first' % path)
+zfile = ZipFile(SOURCE_ZIP)
+pgb = ProgressBar()
 
-    with open(path) as data_file:
-        df = read_csv(data_file)
+for f_index, function_type in enumerate(building_types):
+    file = 'buildings-' + function_type + '.csv'
+    print('Processing', file, ': file', f_index + 1, 'of', len(building_types))
+
+    df = read_csv(zfile.open(file))
 
     print('Creating building geometry vectors...')
     geoms = []
     for index, wkt_string in enumerate(df.geometrie.values):
+        pgb.update_progress(index/len(df.geometrie.values))
         try:
             geoms.append(GeoVectorizer.vectorize_wkt(wkt_string, SANE_NUMBER_OF_POINTS, simplify=True))
         except Exception as e:
             raise ValueError('Incorrect geometry entry in {0} on line {1}: {2} with error {3}'
-                             .format(path, index + 2, wkt_string, e))
+                             .format(file, index + 2, wkt_string, e))
 
     print('Creating building geometry fourier descriptors...')
     shapes = []

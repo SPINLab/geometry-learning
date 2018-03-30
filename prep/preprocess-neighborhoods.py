@@ -10,7 +10,7 @@ from shapely import wkt
 
 from prep.ProgressBar import ProgressBar
 
-NEIGHBORHOODS_SOURCE = '../files/neighborhoods/neighborhoods.csv.zip'
+SOURCE_ZIP = '../files/neighborhoods/neighborhoods.csv.zip'
 NEIGHBORHOODS_CSV = 'neighborhoods.csv'
 NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_order_30_train.npz'
 NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_order_30_test.npz'
@@ -18,11 +18,10 @@ SANE_NUMBER_OF_POINTS = 512
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 30  # The axis 0 size
 
+if not os.path.isfile(SOURCE_ZIP):
+    raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % SOURCE_ZIP)
 
-if not os.path.isfile(NEIGHBORHOODS_SOURCE):
-    raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % NEIGHBORHOODS_SOURCE)
-
-zfile = ZipFile(NEIGHBORHOODS_SOURCE)
+zfile = ZipFile(SOURCE_ZIP)
 df = read_csv(zfile.open(NEIGHBORHOODS_CSV))
 df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for unknowns
 
