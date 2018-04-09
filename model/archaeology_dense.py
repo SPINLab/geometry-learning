@@ -86,14 +86,14 @@ output_size = train_targets.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = Dense(hp['DENSE_SIZE'], activation='relu')(inputs)
+model = Flatten()(inputs)
+model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
 model = Dropout(hp['DROPOUT'])(model)
 
 for _ in range(hp['REPEAT_DEEP_ARCH']):
     model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
     model = Dropout(hp['DROPOUT'])(model)
 
-model = Flatten()(model)
 model = Dense(output_size, activation='softmax')(model)
 
 model = Model(inputs=inputs, outputs=model)
