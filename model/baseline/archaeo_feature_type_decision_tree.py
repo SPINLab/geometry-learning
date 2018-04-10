@@ -26,7 +26,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.0'
+SCRIPT_VERSION = '1.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
