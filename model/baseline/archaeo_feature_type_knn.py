@@ -80,7 +80,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     for order in EFD_ORDERS:
         print('Fitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
-        grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
+        grid.fit(train_fourier_descriptors[::5, :stop_position], train_labels[::5])
         print("The best parameters for order {} are {} with a score of {}\n".format(
             order, grid.best_params_, grid.best_score_))
         if grid.best_score_ > best_score:
@@ -110,5 +110,6 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     runtime = time() - SCRIPT_START
     message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
+    print(message)
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))
