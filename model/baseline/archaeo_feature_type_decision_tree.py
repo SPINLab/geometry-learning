@@ -60,7 +60,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
-    param_grid = {'max_depth': range(3, 10)}
+    param_grid = {'max_depth': range(5, 11)}
 
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
@@ -95,7 +95,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf = DecisionTreeClassifier(max_depth=best_params['max_depth'])
     scores = cross_val_score(clf, train_fourier_descriptors[:, :stop_position], train_labels, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
-    clf.fit(train_fourier_descriptors, train_labels)
+    clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../../files/archaeology/archaeology_order_30_test.npz'
@@ -105,7 +105,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     print('Run on test data...')
-    predictions = clf.predict(test_fourier_descriptors)
+    predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
     test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
