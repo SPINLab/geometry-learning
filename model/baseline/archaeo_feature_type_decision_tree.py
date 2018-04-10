@@ -72,7 +72,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     print('Performing grid search on model...')
     print('Using {} threads for grid search'.format(NUM_CPUS))
-    print('searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
+    print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
 
     best_order = 0
     best_score = 0
@@ -82,7 +82,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         print('Fitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
         grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
-        print("The best parameters for order {} are {} with a score of {}".format(
+        print("The best parameters for order {} are {} with a score of {}\n".format(
             order, grid.best_params_, grid.best_score_))
         if grid.best_score_ > best_score:
             best_score = grid.best_score_
@@ -110,8 +110,8 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     runtime = time() - SCRIPT_START
     print('')
-    message = 'Test accuracy of {} for fourier descriptor order {} with depth {} in {}'.format(
-        test_accuracy, best_order, best_params['max_depth'], timedelta(seconds=runtime))
+    message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+        test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))

@@ -26,14 +26,14 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.4'
+SCRIPT_VERSION = '1.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/archaeology/archaeology_order_30_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
 FILENAME_PREFIX = 'archaeology_order_30_train'
-REPEAT_ACCURACY_TEST = 10
+EFD_ORDERS = [1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -60,28 +60,41 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    k_range = np.linspace(start=1, stop=16, num=16, dtype=int)
+    k_range = np.linspace(start=10, stop=20, num=11, dtype=int)
     param_grid = dict(n_neighbors=k_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
         KNeighborsClassifier(),
         n_jobs=NUM_CPUS,
         param_grid=param_grid,
-        verbose=10,
+        verbose=2,
         cv=cv)
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(train_fourier_descriptors, train_labels)
+    print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
+    best_order = 0
+    best_score = 0
+    best_params = {}
 
-    print("The best parameters are %s with a score of %0.3f"
-          % (grid.best_params_, grid.best_score_))
+    for order in EFD_ORDERS:
+        print('Fitting order {} fourier descriptors'.format(order))
+        stop_position = 3 + (order * 8)
+        grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
+        print("The best parameters for order {} are {} with a score of {}\n".format(
+            order, grid.best_params_, grid.best_score_))
+        if grid.best_score_ > best_score:
+            best_score = grid.best_score_
+            best_order = order
+            best_params = grid.best_params_
 
-    print('Training model on best parameters...')
-    clf = KNeighborsClassifier(n_neighbors=grid.best_params_['n_neighbors'])
-    scores = cross_val_score(clf, train_fourier_descriptors, train_labels, cv=10, n_jobs=NUM_CPUS)
+    print('Training model on order {} with best parameters {}'.format(
+        best_order, best_params))
+    stop_position = 3 + (best_order * 8)
+    clf = KNeighborsClassifier(n_neighbors=best_params['n_neighbors'])
+    scores = cross_val_score(clf, train_fourier_descriptors[:, :stop_position], train_labels, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
-    clf.fit(train_fourier_descriptors, train_labels)
+    clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../../files/archaeology/archaeology_order_30_test.npz'
@@ -91,11 +104,11 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     print('Run on test data...')
-    predictions = clf.predict(test_fourier_descriptors)
-    accuracy = accuracy_score(test_feature_type, predictions)
-    print('Test accuracy: %0.3f' % accuracy)
+    predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
+    test_accuracy = accuracy_score(test_feature_type, predictions)
 
     runtime = time() - SCRIPT_START
-    message = 'test accuracy of {0} in {1}'.format(str(accuracy), timedelta(seconds=runtime))
+    message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+        test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))
