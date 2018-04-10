@@ -32,7 +32,7 @@ TIMESTAMP = str(datetime.now()).replace(':', '.')
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
 FILENAME_PREFIX = 'archaeology_order_30_train'
-REPEAT_ACCURACY_TEST = 10
+EFD_ORDERS = [1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -59,26 +59,41 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    clf = DecisionTreeClassifier()
 
     param_grid = {'max_depth': range(3, 10)}
+
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
         DecisionTreeClassifier(),
         n_jobs=NUM_CPUS,
         param_grid=param_grid,
-        verbose=10,
+        verbose=1,
         cv=cv)
 
     print('Performing grid search on model...')
-    print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(train_fourier_descriptors, train_labels)
-    print("The best parameters are %s with a score of %0.3f"
-          % (grid.best_params_, grid.best_score_))
+    print('Using {} threads for grid search'.format(NUM_CPUS))
+    print('searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
 
-    print('Training model on best parameters...')
-    clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
-    scores = cross_val_score(clf, train_fourier_descriptors, train_labels, cv=10, n_jobs=NUM_CPUS)
+    best_order = 0
+    best_score = 0
+    best_params = {}
+
+    for order in EFD_ORDERS:
+        print('Fitting order {} fourier descriptors'.format(order))
+        stop_position = 3 + (order * 8)
+        grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
+        print("The best parameters for order {} are {} with a score of {}".format(
+            order, grid.best_params_, grid.best_score_))
+        if grid.best_score_ > best_score:
+            best_score = grid.best_score_
+            best_order = order
+            best_params = grid.best_params_
+
+    print('Training model on order {} with best parameters {}'.format(
+        best_order, best_params))
+    stop_position = 3 + (best_order * 8)
+    clf = DecisionTreeClassifier(max_depth=best_params['max_depth'])
+    scores = cross_val_score(clf, train_fourier_descriptors[:, :stop_position], train_labels, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
     clf.fit(train_fourier_descriptors, train_labels)
 
@@ -93,38 +108,10 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     predictions = clf.predict(test_fourier_descriptors)
     test_accuracy = accuracy_score(test_labels, predictions)
 
-    # Repeat on all data to assess spread in model accuracy from random splits
-    print('Running random split accuracy spread test...')
-    train_fourier_descriptors = np.append(train_fourier_descriptors, test_fourier_descriptors, axis=0)
-    train_labels = np.append(train_labels, test_labels, axis=0)
-
-    accuracy_scores = []
-
-    for _ in range(REPEAT_ACCURACY_TEST):
-        train_fourier_descriptors, test_fourier_descriptors, train_labels, test_labels = \
-            train_test_split(train_fourier_descriptors, train_labels, test_size=0.1)
-        grid.fit(train_fourier_descriptors, train_labels)
-        print("The best parameters are %s with a score of %0.3f" % (grid.best_params_, grid.best_score_))
-        print('Training model on best parameters...')
-        clf = DecisionTreeClassifier(max_depth=grid.best_params_['max_depth'])
-        clf.fit(train_fourier_descriptors, train_labels)
-        print('Run on test data...')
-        predictions = clf.predict(test_fourier_descriptors)
-        accuracy = accuracy_score(test_labels, predictions)
-        accuracy_scores.append(accuracy)
-
     runtime = time() - SCRIPT_START
     print('')
-    message = 'Test accuracy of {} with standard deviation {} in {}'.format(
-        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
+    message = 'Test accuracy of {} for fourier descriptor order {} with depth {} in {}'.format(
+        test_accuracy, best_order, best_params['max_depth'], timedelta(seconds=runtime))
     print(message)
-    print('Random split accuracy values: {}'.format(accuracy_scores))
-
-    runtime = time() - SCRIPT_START
-    print('')
-    message = 'test accuracy of {} with standard deviation {} in {}'.format(
-        test_accuracy, np.std(accuracy_scores), timedelta(seconds=runtime))
-    print(message)
-    print('Random split accuracy values: {}'.format(accuracy_scores))
     notify(SCRIPT_NAME, message)
     print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))
