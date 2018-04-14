@@ -32,7 +32,7 @@ REPEAT_ACCURACY_TEST = 10
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
 FILENAME_PREFIX = 'archaeology_order_30_train'
-EFD_ORDERS = [1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
+EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -59,7 +59,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    C_range = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3]
+    C_range = [1e-1, 1e0, 1e1, 1e2, 1e3]
     param_grid = dict(C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
@@ -91,7 +91,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Training model on order {} with best parameters {}'.format(
         best_order, best_params))
     stop_position = 3 + (best_order * 8)
-    clf = SVC(kernel='linear', C=best_params['C'])
+    clf = SVC(kernel='linear', C=best_params['C'], max_iter=int(1e8))
     clf.fit(X=train_fourier_descriptors[:, :stop_position], y=train_labels)
 
     # Run predictions on unseen test data to verify generalization
