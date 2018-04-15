@@ -63,7 +63,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     param_grid = dict(C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
-        SVC(kernel='linear', max_iter=int(1e7)),
+        SVC(kernel='linear', max_iter=int(1e8)),
         n_jobs=NUM_CPUS,
         verbose=2,
         param_grid=param_grid,
