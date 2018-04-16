@@ -81,7 +81,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     for order in EFD_ORDERS:
         print('\nFitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
-        grid.fit(train_fourier_descriptors[::10, :stop_position], train_labels[::10])
+        grid.fit(train_fourier_descriptors[::5, :stop_position], train_labels[::5])
         print("The best parameters for order {} are {} with a score of {}\n".format(
             order, grid.best_params_, grid.best_score_))
         if grid.best_score_ > best_score:

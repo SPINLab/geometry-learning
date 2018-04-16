@@ -30,10 +30,10 @@ SCRIPT_VERSION = '1.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/archaeology/archaeology_order_30_train.npz'
-NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
 FILENAME_PREFIX = 'archaeology_order_30_train'
-EFD_ORDERS = [1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
+NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -100,12 +100,12 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     TEST_DATA_FILE = '../../files/archaeology/archaeology_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_feature_type = np.asarray(test_loaded['feature_type'], dtype=int)
+    test_labels = np.asarray(test_loaded['feature_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
-    test_accuracy = accuracy_score(test_feature_type, predictions)
+    test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
     message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(

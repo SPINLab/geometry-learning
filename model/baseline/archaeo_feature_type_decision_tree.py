@@ -79,7 +79,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     best_params = {}
 
     for order in EFD_ORDERS:
-        print('Fitting order {} fourier descriptors'.format(order))
+        print('\nFitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
         grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
         print("The best parameters for order {} are {} with a score of {}\n".format(
@@ -89,7 +89,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             best_order = order
             best_params = grid.best_params_
 
-    print('Training model on order {} with best parameters {}'.format(
+    print('\Training model on order {} with best parameters {}'.format(
         best_order, best_params))
     stop_position = 3 + (best_order * 8)
     clf = DecisionTreeClassifier(max_depth=best_params['max_depth'])
@@ -109,8 +109,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
-    print('')
-    message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+    message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
