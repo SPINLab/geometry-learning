@@ -28,7 +28,6 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-REPEAT_ACCURACY_TEST = 10
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
 FILENAME_PREFIX = 'archaeology_order_30_train'
@@ -99,11 +98,11 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     TEST_DATA_FILE = '../../files/archaeology/archaeology_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_feature_type = np.asarray(test_loaded['feature_type'], dtype=int)
+    test_labels = np.asarray(test_loaded['feature_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
-    test_accuracy = accuracy_score(predictions, test_feature_type)
+    test_accuracy = accuracy_score(predictions, test_labels)
 
     runtime = time() - SCRIPT_START
     print('')

@@ -60,7 +60,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    k_range = np.linspace(start=10, stop=20, num=11, dtype=int)
+    k_range = np.linspace(start=21, stop=30, num=10, dtype=int)
     param_grid = dict(n_neighbors=k_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(

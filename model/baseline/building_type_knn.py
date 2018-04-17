@@ -58,7 +58,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    k_range = np.linspace(start=1, stop=16, num=16, dtype=int)
+    k_range = np.linspace(start=21, stop=30, num=10, dtype=int)
     param_grid = dict(n_neighbors=k_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
@@ -95,7 +95,6 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    print('Run on test data...')
     TEST_DATA_FILE = DATA_FOLDER + 'buildings_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']

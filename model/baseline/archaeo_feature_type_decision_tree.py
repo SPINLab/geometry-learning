@@ -32,7 +32,7 @@ TIMESTAMP = str(datetime.now()).replace(':', '.')
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
 FILENAME_PREFIX = 'archaeology_order_30_train'
-EFD_ORDERS = [1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
+EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
