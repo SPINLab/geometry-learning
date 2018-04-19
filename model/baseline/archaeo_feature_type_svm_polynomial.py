@@ -67,7 +67,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         SVC(kernel='poly', max_iter=int(1e8)),
         n_jobs=NUM_CPUS,
         param_grid=param_grid,
-        verbose=10,
+        verbose=2,
         cv=cv)
 
     print('Performing grid search on model...')
@@ -102,11 +102,11 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     TEST_DATA_FILE = '../../files/archaeology/archaeology_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_feature_type = np.asarray(test_loaded['feature_type'], dtype=int)
+    test_labels = np.asarray(test_loaded['feature_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
     predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
-    test_accuracy = accuracy_score(test_feature_type, predictions)
+    test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
     message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(

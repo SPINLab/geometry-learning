@@ -28,9 +28,10 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
+NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
 FILENAME_PREFIX = 'buildings_order_30_train'
-NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
@@ -41,19 +42,19 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             training_files.append(file)
 
     train_fourier_descriptors = np.array([])
-    train_building_type = np.array([])
+    train_labels = np.array([])
 
     for index, file in enumerate(training_files):  # load and concatenate the training files
         train_loaded = np.load(DATA_FOLDER + file)
 
         if index == 0:
             train_fourier_descriptors = train_loaded['fourier_descriptors']
-            train_building_type = train_loaded['building_type']
+            train_labels = train_loaded['building_type']
         else:
             train_fourier_descriptors = \
                 np.append(train_fourier_descriptors, train_loaded['fourier_descriptors'], axis=0)
-            train_building_type = \
-                np.append(train_building_type, train_loaded['building_type'], axis=0)
+            train_labels = \
+                np.append(train_labels, train_loaded['building_type'], axis=0)
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -63,35 +64,49 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     param_grid = dict(gamma=gamma_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
-        SVC(kernel='rbf', verbose=True, max_iter=int(1e7)),
+        SVC(kernel='rbf', max_iter=int(1e8)),
         n_jobs=NUM_CPUS,
         param_grid=param_grid, cv=cv)
 
     print('Performing grid search on model...')
     print('Using %i threads for grid search' % NUM_CPUS)
-    grid.fit(X=train_fourier_descriptors[::10], y=train_building_type[::10])
+    print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
 
-    print("The best parameters are %s with a score of %0.3f"
-          % (grid.best_params_, grid.best_score_))
+    best_order = 0
+    best_score = 0
+    best_params = {}
 
-    print('Training model on best parameters...')
-    clf = SVC(kernel='rbf', C=grid.best_params_['C'], gamma=grid.best_params_['gamma'], verbose=True)
-    clf.fit(X=train_fourier_descriptors, y=train_building_type)
+    for order in EFD_ORDERS:
+        print('\nFitting order {} fourier descriptors'.format(order))
+        stop_position = 3 + (order * 8)
+        grid.fit(train_fourier_descriptors[::5, :stop_position], train_labels[::5])
+        print("The best parameters for order {} are {} with a score of {}\n".format(
+            order, grid.best_params_, grid.best_score_))
+        if grid.best_score_ > best_score:
+            best_score = grid.best_score_
+            best_order = order
+            best_params = grid.best_params_
+
+    print('\nTraining model on order {} with best parameters {}'.format(
+        best_order, best_params))
+    stop_position = 3 + (best_order * 8)
+    clf = SVC(kernel='rbf', C=best_params['C'], gamma=best_params['gamma'])
+    clf.fit(X=train_fourier_descriptors[:, :stop_position], y=train_labels)
 
     # Run predictions on unseen test data to verify generalization
     print('Run on test data...')
     TEST_DATA_FILE = DATA_FOLDER + 'buildings_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_building_type = np.asarray(test_loaded['building_type'], dtype=int)
+    test_labels = np.asarray(test_loaded['building_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
-    predictions = clf.predict(test_fourier_descriptors)
-    accuracy = accuracy_score(test_building_type, predictions)
-    print('Test accuracy: %0.3f' % accuracy)
+    predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
+    test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
-    message = 'test accuracy of {} with C: {} gamma: {} in {}'.format(
-        str(accuracy), grid.best_params_['C'], grid.best_params_['gamma'], timedelta(seconds=runtime))
+    message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+        test_accuracy, best_order, best_params, timedelta(seconds=runtime))
+    print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully with', message)
+    print(SCRIPT_NAME, 'finished successfully')

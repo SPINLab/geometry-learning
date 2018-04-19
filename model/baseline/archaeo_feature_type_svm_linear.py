@@ -105,8 +105,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_accuracy = accuracy_score(predictions, test_labels)
 
     runtime = time() - SCRIPT_START
-    print('')
-    message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+    message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
