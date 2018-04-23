@@ -10,14 +10,17 @@ comparable
 
 import multiprocessing
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import sys
+
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
+from time import time
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
@@ -31,14 +34,14 @@ TIMESTAMP = str(datetime.now()).replace(':', '.')
 DATA_FOLDER = SCRIPT_DIR + '/../../files/neighborhoods/'
 TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_train.npz'
 TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_test.npz'
-ORDER = int(os.getenv('ORDER', 11))
-CUTOFF_POINT = 3 + ORDER * 8
+EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
+SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     train_loaded = np.load(TRAINING_DATA_FILE)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
-    train_above_or_below_median = train_loaded['above_or_below_median'][:, 0]
+    train_labels = train_loaded['above_or_below_median'][:, 0]
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
@@ -48,38 +51,52 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     param_grid = dict(C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
-        LogisticRegression(verbose=True),
+        LogisticRegression(),
         n_jobs=NUM_CPUS,
-        param_grid=param_grid, cv=cv)
-    grid.fit(train_fourier_descriptors, train_above_or_below_median)
+        verbose=2,
+        param_grid=param_grid,
+        cv=cv)
 
-    print("The best parameters are %s with a score of %0.3f"
-          % (grid.best_params_, grid.best_score_))
+    print('Performing grid search on model...')
+    print('Using %i threads for grid search' % NUM_CPUS)
+    print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
 
-    clf = LogisticRegression(C=grid.best_params_['C'])
+    best_order = 0
+    best_score = 0
+    best_params = {}
 
-    print('Fitting data to model...')
-    scores = cross_val_score(clf, train_fourier_descriptors, train_above_or_below_median, cv=10, n_jobs=NUM_CPUS)
+    for order in EFD_ORDERS:
+        print('Fitting order {} fourier descriptors'.format(order))
+        stop_position = 3 + (order * 8)
+        grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
+        print("The best parameters for order {} are {} with a score of {}\n".format(
+            order, grid.best_params_, grid.best_score_))
+        if grid.best_score_ > best_score:
+            best_score = grid.best_score_
+            best_order = order
+            best_params = grid.best_params_
+
+    print('Training model on order {} with best parameters {}'.format(
+        best_order, best_params))
+    stop_position = 3 + (best_order * 8)
+    clf = LogisticRegression(C=best_params['C'])
+    scores = cross_val_score(clf, train_fourier_descriptors[:, :stop_position], train_labels, cv=10, n_jobs=NUM_CPUS)
     print('Cross-validation scores:', scores)
-    clf.fit(train_fourier_descriptors, train_above_or_below_median)
+    clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_above_or_below_median = np.asarray(test_loaded['above_or_below_median'][:, 0], dtype=int)
+    test_labels = np.asarray(test_loaded['above_or_below_median'][:, 0], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
-    print('Run on test data...')
-    predictions = clf.predict(test_fourier_descriptors)
+    predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
+    test_accuracy = accuracy_score(test_labels, predictions)
+    print('Test accuracy: %0.3f' % test_accuracy)
 
-    correct = 0
-    for prediction, expected in zip(predictions, test_above_or_below_median):
-        if prediction == expected:
-            correct += 1
-
-    accuracy = correct / len(predictions)
-    print('Test accuracy: %0.3f' % accuracy)
-
-    message = 'test accuracy of {0} with C: {1} '.format(str(accuracy), grid.best_params_['C'])
+    runtime = time() - SCRIPT_START
+    message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+        test_accuracy, best_order, best_params, timedelta(seconds=runtime))
+    print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
+    print(SCRIPT_NAME, 'finished successfully with', message)

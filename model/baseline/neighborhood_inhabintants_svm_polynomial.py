@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import sys
+
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
@@ -29,68 +31,71 @@ SCRIPT_VERSION = '0.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_train.npz'
+NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
-    num_cpus = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
-
     train_loaded = np.load(TRAINING_DATA_FILE)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
-    train_above_or_below_median = train_loaded['above_or_below_median'][:, 0]
-    train_above_or_below_median = np.reshape(train_above_or_below_median, (train_above_or_below_median.shape[0]))
+    train_labels = train_loaded['above_or_below_median'][:, 0]
+    train_labels = np.reshape(train_labels, (train_labels.shape[0]))
 
-    # Adapted from http://scikit-learn.org/stable/auto_examples/svm/plot_rbf_parameters.html#sphx-glr-auto-examples
-    # -svm-plot-rbf-parameters-py
-
-    # plot distribution of features
-    # if clustered: whiten (standardscaler)
-    # if uniform: normalize
-    # normalizer = Normalizer()
     scaler = MinMaxScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
-    C_range = [1e-1, 1e0, 1e1, 1e2, 1e3, 1e4]
+    C_range = [1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
     degree_range = range(1, 7)
     param_grid = dict(degree=degree_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
-        SVC(kernel='poly', max_iter=int(1e7)),
-        n_jobs=num_cpus,
+        SVC(kernel='poly'),
+        n_jobs=NUM_CPUS,
         param_grid=param_grid,
-        verbose=10,
+        verbose=2,
         cv=cv)
 
     print('Performing grid search on model...')
-    print('Using %i threads for grid search' % num_cpus)
-    grid.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
+    print('Using %i threads for grid search' % NUM_CPUS)
+    print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
 
-    print("The best parameters are %s with a score of %0.3f"
-          % (grid.best_params_, grid.best_score_))
+    best_order = 0
+    best_score = 0
+    best_params = {}
 
-    print('Training model on best parameters...')
-    clf = SVC(kernel='poly', C=grid.best_params_['C'], gamma=grid.best_params_['degree'])
-    clf.fit(X=train_fourier_descriptors, y=train_above_or_below_median)
+    for order in EFD_ORDERS:
+        print('\nFitting order {} fourier descriptors'.format(order))
+        stop_position = 3 + (order * 8)
+        grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
+        print("The best parameters for order {} are {} with a score of {}\n".format(
+            order, grid.best_params_, grid.best_score_))
+        if grid.best_score_ > best_score:
+            best_score = grid.best_score_
+            best_order = order
+            best_params = grid.best_params_
+
+    print('\nTraining model on order {} with best parameters {}'.format(
+        best_order, best_params))
+    stop_position = 3 + (best_order * 8)
+    clf = SVC(kernel='poly',
+              C=best_params['C'],
+              degree=best_params['degree'])
+    clf.fit(X=train_fourier_descriptors[:, :stop_position], y=train_labels)
 
     # Run predictions on unseen test data to verify generalization
     TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_test.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
-    test_above_or_below_median = test_loaded['above_or_below_median'][:, 0]
-    test_above_or_below_median = np.reshape(test_above_or_below_median, (test_above_or_below_median.shape[0]))
+    test_labels = test_loaded['above_or_below_median'][:, 0]
+    test_labels = np.reshape(test_labels, (test_labels.shape[0]))
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
-    predictions = clf.predict(test_fourier_descriptors)
-
-    correct = 0
-    for prediction, expected in zip(predictions, test_above_or_below_median):
-        if prediction == expected:
-            correct += 1
-
-    accuracy = correct / len(predictions)
-    print('Test accuracy: %0.3f' % accuracy)
+    predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
+    test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
-    message = 'test accuracy of {} with C: {} degree: {} in {}'.format(
-        str(accuracy), grid.best_params_['C'], grid.best_params_['degree'], timedelta(seconds=runtime))
+    message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+        test_accuracy, best_order, best_params, timedelta(seconds=runtime))
+    print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully with', message)
+    print(SCRIPT_NAME, 'finished successfully')

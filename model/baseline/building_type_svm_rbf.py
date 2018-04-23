@@ -66,6 +66,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     grid = GridSearchCV(
         SVC(kernel='rbf', max_iter=int(1e8)),
         n_jobs=NUM_CPUS,
+        verbose=2,
         param_grid=param_grid, cv=cv)
 
     print('Performing grid search on model...')
@@ -79,7 +80,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     for order in EFD_ORDERS:
         print('\nFitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
-        grid.fit(train_fourier_descriptors[::5, :stop_position], train_labels[::5])
+        grid.fit(train_fourier_descriptors[::10, :stop_position], train_labels[::10])
         print("The best parameters for order {} are {} with a score of {}\n".format(
             order, grid.best_params_, grid.best_score_))
         if grid.best_score_ > best_score:
