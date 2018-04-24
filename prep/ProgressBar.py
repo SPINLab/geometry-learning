@@ -18,17 +18,17 @@ class ProgressBar:
         self.start_seconds = datetime.datetime.now()
         self.bar_length = bar_length
 
-    def update_progress(self, progress):
+    def update_progress(self, progress, status=''):
         """
         update_progress() : Displays or updates a std out progress bar
 
         The method simply repeats  on the console each time the method is called
+        :param status: Optional status message
         :param progress: Accepts a float between 0 and 1. Any int will be converted to a float.
         A value under 0 represents a 'halt'.
         A value at 1 or bigger represents 100%
         :return: 
         """
-        status = ""
         if isinstance(progress, int):
             progress = float(progress)
         if not isinstance(progress, float):
