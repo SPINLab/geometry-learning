@@ -23,27 +23,23 @@ def create_geom_fourier_descriptor(shape, order):
     boundary = shape.boundary
     while boundary.geom_type == "MultiLineString":
         boundary = boundary.geoms[0]
-    try:
-        # Set normalize to false to retain size information.
-        non_normalized_coeffs = elliptic_fourier_descriptors(
-            boundary.coords, order=order, normalize=False)
-        # normalized Fouriers
-        normalized_coeffs = elliptic_fourier_descriptors(
-            boundary.coords, order=order, normalize=True)
+    # Set normalize to false to retain size information.
+    non_normalized_coeffs = elliptic_fourier_descriptors(
+        boundary.coords, order=order, normalize=False)
+    # normalized Fouriers
+    normalized_coeffs = elliptic_fourier_descriptors(
+        boundary.coords, order=order, normalize=True)
 
-        # TODO: create centroid distance fourier descriptors
-        # See https://doi-org.vu-nl.idm.oclc.org/10.1016/j.image.2009.04.001
-        # coords = np.array(boundary.coords)
-        # centroid_distances = [boundary.centroid.distance(Point(point)) for point in coords]
-        # centroid_fourier_descriptors = elliptic_fourier_descriptors(centroid_distances, normalize=True)
+    # TODO: create centroid distance fourier descriptors
+    # See https://doi-org.vu-nl.idm.oclc.org/10.1016/j.image.2009.04.001
+    # coords = np.array(boundary.coords)
+    # centroid_distances = [boundary.centroid.distance(Point(point)) for point in coords]
+    # centroid_fourier_descriptors = elliptic_fourier_descriptors(centroid_distances, normalize=True)
 
-        # Stack 'em all
-        coeffs = [shape.area, boundary.length, len(boundary.coords)]
-        for nn, n in zip(non_normalized_coeffs, normalized_coeffs):
-            coeffs = np.append(coeffs, nn)  # without axis this will just create an array
-            coeffs = np.append(coeffs, n)
-    except Exception as e:
-        print('Error %s on geom ' % e)
-        raise e
+    # Stack 'em all
+    coeffs = [shape.area, boundary.length, len(boundary.coords)]
+    for nn, n in zip(non_normalized_coeffs, normalized_coeffs):
+        coeffs = np.append(coeffs, nn)  # without axis this will just create an array
+        coeffs = np.append(coeffs, n)
 
     return coeffs
