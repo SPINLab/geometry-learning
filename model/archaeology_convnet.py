@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.5'
+SCRIPT_VERSION = '1.0.6'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -31,13 +31,13 @@ hp = {
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 6e-3)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-3)),
     'PATIENCE': int(os.getenv('PATIENCE', 16)),
-    'DROPOUT': float(os.getenv('DROPOUT', 0.5)),
+    'DROPOUT': float(os.getenv('DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
     'EARLY_STOPPING': bool(os.getenv('EARLY_STOPPING', False)),
 }
-OPTIMIZER = Adam(lr=hp['LEARNING_RATE'], clipnorm=1.)
+OPTIMIZER = Adam(lr=hp['LEARNING_RATE'])
 
 training_files = []
 for file in os.listdir(DATA_FOLDER):
@@ -85,10 +85,10 @@ geom_max_points, geom_vector_len = train_geoms.shape[1:]
 output_size = train_targets.shape[-1]
 
 # Build model
-inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = Conv1D(32, (5,))(inputs)
+inputs = Input(shape=(None, geom_vector_len))
+model = Conv1D(32, (5,), activation='relu')(inputs)
 model = MaxPooling1D(3)(model)
-model = Conv1D(64, (5,))(model)
+model = Conv1D(64, (5,), activation='relu')(model)
 model = GlobalAveragePooling1D()(model)
 model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
 model = Dropout(hp['DROPOUT'])(model)

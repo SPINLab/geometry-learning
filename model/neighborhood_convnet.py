@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.0'
+SCRIPT_VERSION = '1.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -66,11 +66,12 @@ output_size = train_labels.shape[-1]
 
 # Build model
 inputs = Input(shape=(geom_max_points, geom_vector_len))
-model = Conv1D(32, (5,))(inputs)
+model = Conv1D(32, (5,), activation='relu')(inputs)
 model = MaxPooling1D(3)(model)
-model = Conv1D(64, (5,))(model)
+model = Conv1D(64, (5,), activation='relu')(model)
 model = GlobalAveragePooling1D()(model)
 model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
+# TODO: test without dropout
 model = Dropout(hp['DROPOUT'])(model)
 model = Dense(output_size, activation='softmax')(model)
 
