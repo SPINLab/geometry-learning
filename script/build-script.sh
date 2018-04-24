@@ -16,7 +16,7 @@ CHANGED_MODEL_FILES="$(cat $1 | \
 echo ${CHANGED_MODEL_FILES}
 
 # Comment out line below to enable automated script execution
-# CHANGED_MODEL_FILES="echo ${CHANGED_MODEL_FILES} | grep DISABLE_AUTOMATED_EXECUTION"
+CHANGED_MODEL_FILES="echo ${CHANGED_MODEL_FILES} | grep DISABLE_AUTOMATED_EXECUTION"
 
 set -e
 cd model
