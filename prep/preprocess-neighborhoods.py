@@ -1,4 +1,5 @@
 import os
+import re
 from zipfile import ZipFile
 
 import matplotlib.pyplot as plt
@@ -14,9 +15,9 @@ SOURCE_ZIP = '../files/neighborhoods/neighborhoods.csv.zip'
 SOURCE_CSV = 'neighborhoods.csv'
 NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_order_30_train.npz'
 NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_order_30_test.npz'
-SANE_NUMBER_OF_POINTS = 512
+SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
-FOURIER_DESCRIPTOR_ORDER = 30  # The axis 0 size
+FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
 
 if not os.path.isfile(SOURCE_ZIP):
     raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % SOURCE_ZIP)
@@ -27,7 +28,16 @@ df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for u
 
 print('Creating neighborhood geometry vectors...')
 pgb = ProgressBar()
+
 geoms = []
+shapes = [wkt.loads(wkt_string) for wkt_string in df.geom.values]
+number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
+
+plt.hist(number_of_vertices, bins=20, log=True)
+plt.savefig('neighborhood_geom_vertices_distr.png')
+geoms_above_treshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
+print('{} geometries marked as over the max {} vertices treshold.\n'.format(geoms_above_treshold, SANE_NUMBER_OF_POINTS))
+
 for index, wkt_string in enumerate(df.geom.values):
     pgb.update_progress(index/len(df.geom.values))
     geoms.append(GeoVectorizer.vectorize_wkt(wkt_string, SANE_NUMBER_OF_POINTS, simplify=True))
@@ -53,10 +63,10 @@ for number in df.aantal_inwoners.values:
     above_or_below_median.append(category)
 
 # Scatterplot of area versus inhabitants
-areas = [shape.area for shape in shapes]
-plt.scatter(areas, df.aantal_inwoners.values, s=0.1, alpha=0.5)
-plt.xlim(0, 5e-3)
-plt.ylim(0, 10000)
+# areas = [shape.area for shape in shapes]
+# plt.scatter(areas, df.aantal_inwoners.values, s=0.1, alpha=0.5)
+# plt.xlim(0, 5e-3)
+# plt.ylim(0, 10000)
 # plt.savefig('neighborhood_area_inhabitants_scatter.png')
 
 print('Saving to neighborhoods numpy train and test archives...')

@@ -9,9 +9,11 @@
 # 23000 buildings for habitation
 
 import os
+import re
 from zipfile import ZipFile
 
-from pandas import read_csv
+from pandas import read_csv, concat
+import matplotlib.pyplot as plt
 from shapely import wkt
 import numpy as np
 
@@ -19,9 +21,9 @@ from prep.ProgressBar import ProgressBar
 from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
 from model.topoml_util.GeoVectorizer import GeoVectorizer
 
-SANE_NUMBER_OF_POINTS = 64
+SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
-FOURIER_DESCRIPTOR_ORDER = 30  # The axis 0 size
+FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
 SOURCE_ZIP = '../files/buildings/buildings.csv.zip'
 TRAIN_DATA_FILE = '../files/buildings/buildings_order_30_train-'
 TEST_DATA_FILE = '../files/buildings/buildings_order_30_test.npz'
@@ -56,6 +58,24 @@ if not os.path.isfile(SOURCE_ZIP):
 
 zfile = ZipFile(SOURCE_ZIP)
 pgb = ProgressBar()
+df = []
+
+for f_index, function_type in enumerate(building_types):
+    file = 'buildings-' + function_type + '.csv'
+    print('Processing', file, ': file', f_index + 1, 'of', len(building_types))
+    if not len(df):
+        df = read_csv(zfile.open(file))
+    else:
+        df = concat([df, read_csv(zfile.open(file))])
+
+geoms = []
+shapes = [wkt.loads(wkt_string) for wkt_string in df.geometrie.values]
+number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
+
+plt.hist(number_of_vertices, bins=20, log=True)
+plt.savefig('buildings_geom_vertices_distr.png')
+geoms_above_treshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
+print('{} geometries marked as over the max {} vertices treshold.\n'.format(geoms_above_treshold, SANE_NUMBER_OF_POINTS))
 
 for f_index, function_type in enumerate(building_types):
     file = 'buildings-' + function_type + '.csv'
@@ -131,8 +151,7 @@ for offset in range(NUMBER_OF_FILES):
         TRAIN_DATA_FILE + str(offset),
         geoms=part_geoms,
         fourier_descriptors=part_fourier_descriptors,
-        building_type=part_building_type,
-    )
+        building_type=part_building_type)
 
 # Test data is small enough to put in one archive
 np.savez_compressed(
