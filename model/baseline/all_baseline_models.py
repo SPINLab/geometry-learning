@@ -5,7 +5,7 @@ from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
 SCRIPT_VERSION = '0.0.9'
-N_TIMES = 6
+N_TIMES = 1
 
 HYPERPARAMS = {
     # 'BATCH_SIZE': [512],
@@ -50,6 +50,7 @@ for configuration in grid:
     # repeat to get a sense of results spread
     for _ in range(N_TIMES):
         for script in scripts:
+            print('Executing', script)
             r_code = os.system('python3 {}'.format(script))
             if not r_code == 0:
                 print('{} exited with error'.format(script))
