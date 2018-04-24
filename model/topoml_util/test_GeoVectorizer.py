@@ -7,7 +7,6 @@ import numpy as np
 from shapely import wkt as wktreader
 
 from GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX
-from test_files import gmm_output
 
 TOPOLOGY_CSV = 'test_files/polygon_multipolygon.csv'
 SOURCE_DATA = pandas.read_csv(TOPOLOGY_CSV)
