@@ -1,3 +1,8 @@
+"""
+Preprocessing script to convert well-known-text geometries to matrix representations thereof.
+With a SANE_NUMBER_OF_POINTS set to 2048, it simplifies only 248
+"""
+
 import os
 import re
 from datetime import timedelta
@@ -19,9 +24,9 @@ SCRIPT_VERSION = '4'
 SOURCE_ZIP = '../files/archaeology/archaeology.csv.zip'
 SOURCE_CSV = 'archaeology.csv'
 LOG_FILE = 'archaeology_preprocessing.log'
-TRAIN_DATA_FILE = '../files/archaeology/archaeology_train_v{}-'.format(SCRIPT_VERSION)
+TRAIN_DATA_FILE = '../files/archaeology/archaeology_train_v{}'.format(SCRIPT_VERSION)
 NUMBER_OF_FILES = 5
-TEST_DATA_FILE = '../files/archaeology/archaeology_test_v{}.npz'.format(SCRIPT_VERSION)
+TEST_DATA_FILE = '../files/archaeology/archaeology_test_v{}'.format(SCRIPT_VERSION)
 SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
@@ -60,22 +65,25 @@ number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
 plt.hist(number_of_vertices, bins=20, log=True)
 plt.savefig('archaeology_geom_vertices_distr.png')
 geoms_above_treshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
-print('{} of the {} geometries marked as over the max {} vertices treshold will be simplified.\n'.format(
+print('{} of the {} geometries are over the max {} vertices treshold and will be simplified.\n'.format(
     geoms_above_treshold, len(shapes), SANE_NUMBER_OF_POINTS))
 
 pgb = ProgressBar()
 logfile = open(LOG_FILE, 'w')
-
 selected_data = []
+simplified_geometries = 0
 
 for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix)):
-    pgb.update_progress(index/len(aardspoor__as_matrix), '{} errors in logfile'.format(errors))
+    pgb.update_progress(index/len(aardspoor__as_matrix), '{} geometries, {} errors in logfile'.format(index, errors))
     if feature in included_classes:
         try:
-            wkt_vector = GeoVectorizer.vectorize_wkt(geom, SANE_NUMBER_OF_POINTS, simplify=True)
+            shape = wkt.loads(geom)
+            geom_len = min(len(re.findall('\d \d', shape.wkt)), SANE_NUMBER_OF_POINTS)
+            if geom_len == SANE_NUMBER_OF_POINTS:
+                simplified_geometries += 1
+            wkt_vector = GeoVectorizer.vectorize_wkt(geom, geom_len, simplify=True)
 
             # create the descriptors on the untruncated geoms
-            shape = wkt.loads(geom)
             # If multipart multipolygon: reduce to polygon by selecting the largest,
             # but it will throw off the accuracy a bit.
             if shape.geom_type == 'MultiPolygon':
@@ -107,10 +115,11 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
             })
 
 logfile.close()
-print('created {} data points with {} errors'.format(len(wkt_vectors), errors))
+print('\ncreated {} data points with {} simplified geometries and {} errors'.format(
+    len(selected_data), simplified_geometries, errors))
 
 # Split and save data
-train, test = train_test_split(selected_data, test_size=0.1, shuffle=False, random_state=42)
+train, test = train_test_split(selected_data, test_size=0.1, random_state=42)
 
 print('Saving test data...')
 # Test data is small enough to put in one archive
@@ -125,23 +134,19 @@ np.savez_compressed(
     feature_type_index=included_classes)
 
 print('Saving training data...')
-train_geoms = [record['geom'] for record in train]
-train_fds = [record['fourier_descriptors'] for record in train]
-train_fts = [record['feature_type'] for record in train]
+# stride = NUMBER_OF_FILES  # just an alias
+# for offset in range(NUMBER_OF_FILES):
+#     print('Saving part {} of {}'.format(offset + 1, NUMBER_OF_FILES))
+#     part_geoms = train_geoms[offset::stride]
+#     part_fourier_descriptors = train_fds[offset::stride]
+#     part_building_type = train_fts[offset::stride]
 
-stride = NUMBER_OF_FILES  # just an alias
-for offset in range(NUMBER_OF_FILES):
-    print('Saving part {} of {}'.format(offset + 1, NUMBER_OF_FILES))
-    part_geoms = train_geoms[offset::stride]
-    part_fourier_descriptors = train_fds[offset::stride]
-    part_building_type = train_fts[offset::stride]
-
-    np.savez_compressed(
-        TRAIN_DATA_FILE + str(offset),
-        geoms=part_geoms,
-        fourier_descriptors=part_fourier_descriptors,
-        building_type=part_building_type,
-        feature_type_index=included_classes)
+np.savez_compressed(
+    TRAIN_DATA_FILE,
+    geoms=[record['geom'] for record in train],
+    fourier_descriptors=[record['fourier_descriptors'] for record in train],
+    feature_type=[record['feature_type'] for record in train],
+    feature_type_index=included_classes)
 
 runtime = time() - SCRIPT_START
 print('Done in {}'.format(timedelta(seconds=runtime)))
