@@ -4,18 +4,18 @@ building. The data for this script is committed in the repository and can be reg
 and prep/preprocess-buildings.py scripts, which will take about an hour or two.
 
 This script itself will run for about two minutes depending on your hardware, if you have at least a recent i7 or
-comparable
+comparable.
 """
 
 import multiprocessing
 import os
 import sys
-from time import time
 from datetime import datetime, timedelta
+from time import time
 
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV, train_test_split
+from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
@@ -30,43 +30,26 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
-FILENAME_PREFIX = 'buildings_order_30_train'
+FILENAME = 'buildings_train_v4.npz'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
-    training_files = []
-    for file in os.listdir(DATA_FOLDER):
-        if file.startswith(FILENAME_PREFIX) and file.endswith('.npz'):
-            training_files.append(file)
-
-    train_fourier_descriptors = np.array([])
-    train_labels = np.array([])
-
-    for index, file in enumerate(training_files):  # load and concatenate the training files
-        train_loaded = np.load(DATA_FOLDER + file)
-
-        if index == 0:
-            train_fourier_descriptors = train_loaded['fourier_descriptors']
-            train_labels = train_loaded['building_type']
-        else:
-            train_fourier_descriptors = \
-                np.append(train_fourier_descriptors, train_loaded['fourier_descriptors'], axis=0)
-            train_labels = \
-                np.append(train_labels, train_loaded['building_type'], axis=0)
+    train_loaded = np.load(DATA_FOLDER + FILENAME)
+    train_fourier_descriptors = train_loaded['fourier_descriptors']
+    train_labels = train_loaded['building_type']
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
     param_grid = {'max_depth': range(6, 13)}
-
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
         DecisionTreeClassifier(),
         n_jobs=NUM_CPUS,
         param_grid=param_grid,
-        verbose=1,
+        verbose=2,
         cv=cv)
 
     print('Performing grid search on model...')
@@ -78,7 +61,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     best_params = {}
 
     for order in EFD_ORDERS:
-        print('\nFitting order {} fourier descriptors'.format(order))
+        print('Fitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
         grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
         print("The best parameters for order {} are {} with a score of {}\n".format(
@@ -88,7 +71,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             best_order = order
             best_params = grid.best_params_
 
-    print('\Training model on order {} with best parameters {}'.format(
+    print('Training model on order {} with best parameters {}'.format(
         best_order, best_params))
     stop_position = 3 + (best_order * 8)
     clf = DecisionTreeClassifier(max_depth=best_params['max_depth'])
@@ -97,7 +80,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = DATA_FOLDER + 'buildings_order_30_test.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'buildings_test_v4.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = np.asarray(test_loaded['building_type'], dtype=int)
@@ -112,4 +95,3 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))

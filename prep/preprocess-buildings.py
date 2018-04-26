@@ -1,164 +1,137 @@
 # 22007 buildings for gatherings
-# 7832 buildings for health care
 # 23000 industrial buildings
-# 21014 office buildings
 # 23000 building for lodging
+# 23000 buildings for habitation
+# 23000 shopping buildings
+# 21014 office buildings
+# 7832 buildings for health care
 # 10717 educational buildings
 # 6916 buildings for sports facilities
-# 23000 shopping buildings
-# 23000 buildings for habitation
 
 import os
 import re
 from zipfile import ZipFile
 
-from pandas import read_csv, concat
 import matplotlib.pyplot as plt
-from shapely import wkt
 import numpy as np
+from pandas import read_csv, concat
+from shapely import wkt
+from sklearn.model_selection import train_test_split
 
-from prep.ProgressBar import ProgressBar
-from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
 from model.topoml_util.GeoVectorizer import GeoVectorizer
+from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
+from prep.ProgressBar import ProgressBar
 
+SCRIPT_VERSION = '4'
 SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
-SOURCE_ZIP = '../files/buildings/buildings.csv.zip'
-TRAIN_DATA_FILE = '../files/buildings/buildings_order_30_train-'
-TEST_DATA_FILE = '../files/buildings/buildings_order_30_test.npz'
-NUMBER_OF_FILES = 5
+DATA_TYPE = 'buildings'
+LOG_FILE = '{}_preprocessing.log'.format(DATA_TYPE)
+SOURCE_ZIP = '../files/{}/{}.csv.zip'.format(DATA_TYPE, DATA_TYPE)
+TRAIN_DATA_FILE = '../files/{}/{}_train_v{}'.format(DATA_TYPE, DATA_TYPE, SCRIPT_VERSION)
+TEST_DATA_FILE = '../files/{}/{}_test_v{}'.format(DATA_TYPE, DATA_TYPE, SCRIPT_VERSION)
 
 building_types = [
     'bijeenkomstfunctie',  # gatherings
-    'gezondheidszorgfunctie',  # health care
     'industriefunctie',  # industrial
-    'kantoorfunctie',  # office
     'logiesfunctie',  # lodging
+    'woonfunctie',  # habitation
+    'winkelfunctie',  # shopping
+    'kantoorfunctie',  # office
+    'gezondheidszorgfunctie',  # health care
     'onderwijsfunctie',  # educational
     'sportfunctie',  # sports
-    'winkelfunctie',  # shopping
-    'woonfunctie',  # habitation
 ]
-
-training_data = {
-    'geoms': [],
-    'fourier_descriptors': [],
-    'building_type': [],
-}
-
-test_data = {
-    'geoms': [],
-    'fourier_descriptors': [],
-    'building_type': [],
-}
 
 if not os.path.isfile(SOURCE_ZIP):
     raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % SOURCE_ZIP)
 
-zfile = ZipFile(SOURCE_ZIP)
-pgb = ProgressBar()
+zip_file = ZipFile(SOURCE_ZIP)
 df = []
 
+print('Reading source data files...')
 for f_index, function_type in enumerate(building_types):
     file = 'buildings-' + function_type + '.csv'
-    print('Processing', file, ': file', f_index + 1, 'of', len(building_types))
     if not len(df):
-        df = read_csv(zfile.open(file))
+        df = read_csv(zip_file.open(file))
     else:
-        df = concat([df, read_csv(zfile.open(file))])
+        df = concat([df, (read_csv(zip_file.open(file)))])
 
-geoms = []
 shapes = [wkt.loads(wkt_string) for wkt_string in df.geometrie.values]
 number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
 
+vertices_distr_png = 'buildings_geom_vertices_distr.png'
+print('Saving histogram of vertices per geometry {}'.format(vertices_distr_png))
 plt.hist(number_of_vertices, bins=20, log=True)
-plt.savefig('buildings_geom_vertices_distr.png')
-geoms_above_treshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
-print('{} geometries marked as over the max {} vertices treshold.\n'.format(geoms_above_treshold, SANE_NUMBER_OF_POINTS))
+plt.savefig(vertices_distr_png)
 
-for f_index, function_type in enumerate(building_types):
-    file = 'buildings-' + function_type + '.csv'
-    print('Processing', file, ': file', f_index + 1, 'of', len(building_types))
+logfile = open(LOG_FILE, 'w')
+selected_data = []
+simplified_geometries = 0
+errors = 0
 
-    df = read_csv(zfile.open(file))
+print('Processing data...')
+pgb = ProgressBar()
 
-    print('Creating building geometry vectors...')
-    geoms = []
-    for index, wkt_string in enumerate(df.geometrie.values):
-        pgb.update_progress(index/len(df.geometrie.values))
-        try:
-            geoms.append(GeoVectorizer.vectorize_wkt(wkt_string, SANE_NUMBER_OF_POINTS, simplify=True))
-        except Exception as e:
-            raise ValueError('Incorrect geometry entry in {0} on line {1}: {2} with error {3}'
-                             .format(file, index + 2, wkt_string, e))
-
-    print('Creating building geometry fourier descriptors...')
-    shapes = []
-    for w_index, wkt_string in enumerate(df.geometrie.values):  # create the descriptors on the untruncated geoms
-        pgb.update_progress(w_index/len(df.geometrie.values))
+for index, (wkt_string, building_type) in enumerate(zip(df.geometrie.values, df.gebruiksdoel.values)):
+    pgb.update_progress(index/len(df.geometrie.values))
+    try:
         shape = wkt.loads(wkt_string)
+        geom_len = min(len(re.findall('\d \d', shape.wkt)), SANE_NUMBER_OF_POINTS)
+        if geom_len == SANE_NUMBER_OF_POINTS:
+            simplified_geometries += 1
+        wkt_vector = GeoVectorizer.vectorize_wkt(wkt_string, geom_len, simplify=True)
+
         # If multipart multipolygon: select the largest, but it will throw off the accuracy a bit.
         if shape.geom_type == 'MultiPolygon':
             if len(shape.geoms) > 1:
                 geometries = sorted(shape.geoms, key=lambda x: x.area)
-                shapes.append(geometries[-1])
+                shape = geometries[-1]
             else:
-                shapes.append(shape.geoms[0])
+                shape = shape.geoms[0]
+            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
+        elif shape.geom_type == 'Polygon':
+            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
         else:
-            shapes.append(shape)
+            logfile.write('Skipping record: no (multi)polygon on line {}'.format(index + 2))
+            errors += 1
+            continue
 
-    fourier_descriptors = geom_fourier_descriptors(shapes, FOURIER_DESCRIPTOR_ORDER)
-    train_test_split_index = round(TRAIN_TEST_SPLIT * len(geoms))
+        # Label as numerical index
+        type_int = building_types.index(building_type)
 
-    # Labels
-    type_int = [building_types.index(building_type) for building_type in df.gebruiksdoel]
+    except Exception as e:
+        logfile.write('Skipping record on account of faulty geometry entry {} with error: {}\n'.format(index + 2, e))
+        errors += 1
+        continue
 
-    if len(training_data['geoms']) == 0:
-        training_data['geoms'] = geoms[:-train_test_split_index]
-        training_data['fourier_descriptors'] = fourier_descriptors[:-train_test_split_index]
-        training_data['building_type'] = type_int[:-train_test_split_index]
+    # Append the converted values if all went well
+    selected_data.append({
+        'geom': wkt_vector,
+        'fourier_descriptors': fds,
+        'building_type': type_int
+    })
 
-        test_data['geoms'] = geoms[-train_test_split_index:]
-        test_data['fourier_descriptors'] = fourier_descriptors[-train_test_split_index:]
-        test_data['building_type'] = type_int[-train_test_split_index:]
-    else:
-        training_data['geoms'] = \
-            np.append(training_data['geoms'], geoms[:-train_test_split_index], axis=0)
-        training_data['fourier_descriptors'] = \
-            np.append(training_data['fourier_descriptors'], fourier_descriptors[:-train_test_split_index], axis=0)
-        training_data['building_type'] = \
-            np.append(training_data['building_type'], type_int[:-train_test_split_index], axis=0)
+logfile.close()
+print('\ncreated {} data points with {} simplified geometries and {} errors'.format(
+    len(selected_data), simplified_geometries, errors))
 
-        test_data['geoms'] = \
-            np.append(test_data['geoms'], geoms[-train_test_split_index:], axis=0)
-        test_data['fourier_descriptors'] = \
-            np.append(test_data['fourier_descriptors'], fourier_descriptors[-train_test_split_index:], axis=0)
-        test_data['building_type'] = \
-            np.append(test_data['building_type'], type_int[-train_test_split_index:], axis=0)
+# Split and save data
+train, test = train_test_split(selected_data, test_size=0.1, random_state=42)
 
-print('Saving training and test data files...')
+print('Saving training data...')
+np.savez_compressed(
+    TRAIN_DATA_FILE,
+    geoms=[record['geom'] for record in train],
+    fourier_descriptors=[record['fourier_descriptors'] for record in train],
+    building_type=[record['building_type'] for record in train])
 
-# Create nicely even-sized chunks
-for offset in range(NUMBER_OF_FILES):
-    stride = NUMBER_OF_FILES  # just an alias
-
-    part_geoms = training_data['geoms'][offset::stride]
-    part_fourier_descriptors = training_data['fourier_descriptors'][offset::stride]
-    part_building_type = training_data['building_type'][offset::stride]
-
-    np.savez_compressed(
-        TRAIN_DATA_FILE + str(offset),
-        geoms=part_geoms,
-        fourier_descriptors=part_fourier_descriptors,
-        building_type=part_building_type)
-
-# Test data is small enough to put in one archive
+print('Saving test data...')
 np.savez_compressed(
     TEST_DATA_FILE,
-    geoms=test_data['geoms'],
-    fourier_descriptors=test_data['fourier_descriptors'],
-    building_type=test_data['building_type'],
-)
+    geoms=[record['geom'] for record in test],
+    fourier_descriptors=[record['fourier_descriptors'] for record in test],
+    building_type=[record['building_type'] for record in test])
 
 print('Done!')
