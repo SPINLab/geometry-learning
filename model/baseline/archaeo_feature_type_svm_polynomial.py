@@ -7,9 +7,9 @@ This script itself will run for about six hours depending on your hardware, if y
 comparable.
 """
 
+import multiprocessing
 import os
 import sys
-import multiprocessing
 from time import time
 from datetime import datetime, timedelta
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         cv=cv)
 
     print('Performing grid search on model...')
-    print('Using %i threads for grid search' % NUM_CPUS)
+    print('Using {} threads for grid search'.format(NUM_CPUS))
     print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
 
     best_order = 0
@@ -63,7 +63,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     best_params = {}
 
     for order in EFD_ORDERS:
-        print('\nFitting order {} fourier descriptors'.format(order))
+        print('Fitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
         grid.fit(train_fourier_descriptors[::10, :stop_position], train_labels[::10])
         print("The best parameters for order {} are {} with a score of {}\n".format(
@@ -73,22 +73,20 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             best_order = order
             best_params = grid.best_params_
 
-    print('\nTraining model on order {} with best parameters {}'.format(
+    print('Training model on order {} with best parameters {}'.format(
         best_order, best_params))
     stop_position = 3 + (best_order * 8)
-    clf = SVC(kernel='poly',
-              C=best_params['C'],
-              degree=best_params['degree'])
+    clf = SVC(kernel='poly', C=best_params['C'], degree=best_params['degree'])
     clf.fit(X=train_fourier_descriptors[:, :stop_position], y=train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    print('Run on test data...')
-    TEST_DATA_FILE = '../../files/archaeology/archaeology_test_v4.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'buildings_test_v4.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = np.asarray(test_loaded['feature_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
+    print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
     test_accuracy = accuracy_score(test_labels, predictions)
 
@@ -97,4 +95,3 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')

@@ -10,16 +10,14 @@ comparable
 
 import multiprocessing
 import os
-from time import time
+import sys
 from datetime import datetime, timedelta
+from time import time
 
 import numpy as np
-import sys
-
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
 PACKAGE_PARENT = '..'
@@ -31,7 +29,7 @@ from topoml_util.slack_send import notify
 SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-NUM_CPUS = multiprocessing.cpu_count() - 1 if multiprocessing.cpu_count() > 1 else 1
+NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
 FILENAME = 'archaeology_train_v4.npz'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
@@ -58,7 +56,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         cv=cv)
 
     print('Performing grid search on model...')
-    print('Using %i threads for grid search' % NUM_CPUS)
+    print('Using {} threads for grid search'.format(NUM_CPUS))
     print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
 
     best_order = 0
@@ -85,7 +83,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = '../../files/archaeology/archaeology_test_v4.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'archaeology_test_v4.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = np.asarray(test_loaded['feature_type'], dtype=int)
@@ -94,12 +92,9 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
     test_accuracy = accuracy_score(test_labels, predictions)
-    print('Test accuracy: %0.3f' % test_accuracy)
 
     runtime = time() - SCRIPT_START
-    print('')
-    message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+    message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully with', message)

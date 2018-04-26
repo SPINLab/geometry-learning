@@ -52,7 +52,6 @@ print('Creating geometry vectors and descriptors...')
 feature_types = []
 wkt_vectors = []
 fourier_descriptors = []
-errors = 0
 shapes = []
 
 for wkt_string in df.WKT.values:
@@ -72,6 +71,7 @@ pgb = ProgressBar()
 logfile = open(LOG_FILE, 'w')
 selected_data = []
 simplified_geometries = 0
+errors = 0
 
 for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix)):
     pgb.update_progress(index/len(aardspoor__as_matrix), '{} geometries, {} errors in logfile'.format(index, errors))
@@ -83,9 +83,7 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
                 simplified_geometries += 1
             wkt_vector = GeoVectorizer.vectorize_wkt(geom, geom_len, simplify=True)
 
-            # create the descriptors on the untruncated geoms
-            # If multipart multipolygon: reduce to polygon by selecting the largest,
-            # but it will throw off the accuracy a bit.
+            # If multipart multipolygon: select the largest, but it will throw off the accuracy a bit.
             if shape.geom_type == 'MultiPolygon':
                 if len(shape.geoms) > 1:
                     geometries = sorted(shape.geoms, key=lambda x: x.area)
@@ -111,7 +109,7 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
         selected_data.append({
                 'geom': wkt_vector,
                 'fourier_descriptors': fds,
-                'feature_type': included_classes.index(feature), # Convert types to numerical index
+                'feature_type': included_classes.index(feature),  # Convert types to numerical index
             })
 
 logfile.close()
@@ -123,24 +121,14 @@ train, test = train_test_split(selected_data, test_size=0.1, random_state=42)
 
 print('Saving test data...')
 # Test data is small enough to put in one archive
-test_geoms = [record['geom'] for record in test]
-test_fds = [record['fourier_descriptors'] for record in test]
-test_fts = [record['feature_type'] for record in test]
 np.savez_compressed(
     TEST_DATA_FILE,
-    geoms=test_geoms,
-    fourier_descriptors=test_fds,
-    feature_type=test_fts,
+    geoms=[record['geom'] for record in test],
+    fourier_descriptors=[record['fourier_descriptors'] for record in test],
+    feature_type=[record['feature_type'] for record in test],
     feature_type_index=included_classes)
 
 print('Saving training data...')
-# stride = NUMBER_OF_FILES  # just an alias
-# for offset in range(NUMBER_OF_FILES):
-#     print('Saving part {} of {}'.format(offset + 1, NUMBER_OF_FILES))
-#     part_geoms = train_geoms[offset::stride]
-#     part_fourier_descriptors = train_fds[offset::stride]
-#     part_building_type = train_fts[offset::stride]
-
 np.savez_compressed(
     TRAIN_DATA_FILE,
     geoms=[record['geom'] for record in train],
