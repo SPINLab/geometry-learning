@@ -6,7 +6,7 @@ from time import time
 
 import numpy as np
 from keras import Input
-from keras.callbacks import TensorBoard, EarlyStopping
+from keras.callbacks import TensorBoard
 from keras.engine import Model
 from keras.layers import LSTM, Dense, Bidirectional
 from keras.optimizers import Adam
@@ -68,6 +68,7 @@ train_labels__max = np.array(train_labels).max()
 
 for geom, label in zip(train_geoms, train_labels):
     # Map types to one-hot vectors
+    # noinspection PyUnresolvedReferences
     one_hot_label = np.zeros((train_labels__max + 1))
     one_hot_label[label] = 1
 
@@ -152,7 +153,7 @@ for epoch in range(hp['EPOCHS']):
             callbacks=callbacks)
 
 # Run on unseen test data
-print('Run on test data...')
+print('\n\nRun on test data...')
 test_labels = []
 test_pred = []
 for sequence_len in test_input_sorted.keys():
