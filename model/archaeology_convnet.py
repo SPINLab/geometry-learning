@@ -28,7 +28,7 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.1'
+SCRIPT_VERSION = '2.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -57,7 +57,7 @@ train_labels = train_loaded['feature_type']
 # Determine final test mode or standard
 if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     print('Training in final test mode')
-    TEST_DATA_FILE = '../files/archaeology/archaeology_test_v4.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'archaeology_test_v4.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['feature_type']
