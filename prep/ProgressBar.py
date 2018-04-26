@@ -28,8 +28,9 @@ class ProgressBar:
         :param progress: Accepts a float between 0 and 1. Any int will be converted to a float.
         A value under 0 represents a 'halt'.
         A value at 1 or bigger represents 100%
-        :return: 
+        :return: None
         """
+
         if isinstance(progress, int):
             progress = float(progress)
         if not isinstance(progress, float):
@@ -41,7 +42,6 @@ class ProgressBar:
             progress = 1
             status = "Done...\r\n"
 
-        block = int(round(self.bar_length * progress))
         progress_rounded = "{:10.2f}".format(float(progress*100))
         elapsed_time = time() - self.start_seconds
         if progress > 0:
@@ -49,18 +49,14 @@ class ProgressBar:
         else:
             projected_time = 0
 
-        progress_line = "#" * (block - 1) + ">"
+        block = round(self.bar_length * min(progress, 1))
+        progress_line = "=" * (max(0, block - 1)) + ">"
         progress_line += "-" * (self.bar_length - block)
 
         hours, remainder = divmod(projected_time, 3600)
         minutes, seconds = divmod(remainder, 60)
         eta = '{}h{}m{}s'.format(int(hours), int(minutes), int(seconds))
 
-        text = "\r[{}] {}% {} {}"\
-            .format(progress_line,
-                    progress_rounded,
-                    eta,
-                    status)
-
+        text = "\r[{}] {}% {} {}".format(progress_line, progress_rounded, eta, status)
         sys.stdout.write(text)
         sys.stdout.flush()
