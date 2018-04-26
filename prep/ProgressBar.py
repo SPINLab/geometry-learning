@@ -2,8 +2,9 @@
 Adapted from http://stackoverflow.com/questions/3160699/python-progress-bar
 """
 
-import datetime
 import sys
+
+from time import time
 
 
 class ProgressBar:
@@ -15,7 +16,7 @@ class ProgressBar:
         Constructor
         :param bar_length: length of the bar in characters
         """
-        self.start_seconds = datetime.datetime.now()
+        self.start_seconds = time()
         self.bar_length = bar_length
 
     def update_progress(self, progress, status=''):
@@ -42,12 +43,23 @@ class ProgressBar:
 
         block = int(round(self.bar_length * progress))
         progress_rounded = "{:10.2f}".format(float(progress*100))
-        elapsed_time = datetime.datetime.now() - self.start_seconds
-        # projected_time = (elapsed_time / progress + 0.0000001) - elapsed_time
+        elapsed_time = time() - self.start_seconds
+        if progress > 0:
+            projected_time = elapsed_time / progress - elapsed_time
+        else:
+            projected_time = 0
 
-        text = "\rPercent: [{}] {}% {}"\
-            .format("#" * block + "-" * (self.bar_length - block),
+        progress_line = "#" * (block - 1) + ">"
+        progress_line += "-" * (self.bar_length - block)
+
+        hours, remainder = divmod(projected_time, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        eta = '{}h{}m{}s'.format(int(hours), int(minutes), int(seconds))
+
+        text = "\r[{}] {}% {} {}"\
+            .format(progress_line,
                     progress_rounded,
+                    eta,
                     status)
 
         sys.stdout.write(text)
