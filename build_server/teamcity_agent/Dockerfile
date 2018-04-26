@@ -53,3 +53,10 @@ RUN apt-get update && apt-get install -y python3-pip
 RUN pip3 install --upgrade pip
 COPY requirements.txt /requirements.txt
 RUN pip3 install -r requirements.txt
+
+# Install Git Large File Storage
+RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
+RUN apt-get update && apt-get install -y --no-install-recommends \
+            git-lfs && \
+    rm -rf /var/lib/apt/lists/*
+RUN git lfs install
