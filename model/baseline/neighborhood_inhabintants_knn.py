@@ -9,12 +9,11 @@ i7 or comparable. """
 
 import multiprocessing
 import os
-from time import time
+import sys
 from datetime import datetime, timedelta
+from time import time
 
 import numpy as np
-import sys
-
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score, StratifiedShuffleSplit, GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
@@ -26,24 +25,25 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_train.npz'
-TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_test.npz'
-ORDER = int(os.getenv('ORDER', 11))
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+DATA_FOLDER = SCRIPT_DIR + '/../../files/neighborhoods/'
+FILENAME = 'neighborhoods_train_v4.npz'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
-    train_loaded = np.load(TRAINING_DATA_FILE)
+    # Load training data
+    train_loaded = np.load(DATA_FOLDER + FILENAME)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
     train_labels = train_loaded['above_or_below_median'][:, 0]
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
-    k_range = np.linspace(start=1, stop=16, num=16, dtype=int)
+
+    k_range = np.linspace(start=21, stop=30, num=10, dtype=int)
     param_grid = dict(n_neighbors=k_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(
@@ -54,8 +54,9 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         cv=cv)
 
     print('Performing grid search on model...')
-    print('Using %i threads for grid search' % NUM_CPUS)
+    print('Using {} threads for grid search'.format(NUM_CPUS))
     print('Searching {} elliptic fourier descriptor orders'.format(EFD_ORDERS))
+
     best_order = 0
     best_score = 0
     best_params = {}
@@ -80,6 +81,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
+    TEST_DATA_FILE = DATA_FOLDER + 'neighborhoods_test_v4.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = test_loaded['above_or_below_median'][:, 0]
@@ -90,8 +92,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
-    message = 'Test accuracy of {} for fourier descriptor order {} with {} in {}'.format(
+    message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully in {}'.format(timedelta(seconds=runtime)))

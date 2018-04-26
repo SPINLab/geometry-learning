@@ -10,15 +10,14 @@ comparable
 
 import multiprocessing
 import os
+import sys
 from time import time
 from datetime import datetime, timedelta
 
 import numpy as np
-import sys
-
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
 PACKAGE_PARENT = '..'
@@ -27,21 +26,23 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.4'
+SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+DATA_FOLDER = SCRIPT_DIR + '/../../files/neighborhoods/'
+FILENAME = 'neighborhoods_train_v4.npz'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
-    train_loaded = np.load(TRAINING_DATA_FILE)
+    # Load training data
+    train_loaded = np.load(DATA_FOLDER + FILENAME)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
     train_labels = train_loaded['above_or_below_median'][:, 0]
     train_labels = np.reshape(train_labels, (train_labels.shape[0]))
 
-    scaler = MinMaxScaler().fit(train_fourier_descriptors)
+    scaler = StandardScaler().fit(train_fourier_descriptors)
     train_fourier_descriptors = scaler.transform(train_fourier_descriptors)
 
     C_range = [1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
@@ -64,7 +65,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     best_params = {}
 
     for order in EFD_ORDERS:
-        print('\nFitting order {} fourier descriptors'.format(order))
+        print('Fitting order {} fourier descriptors'.format(order))
         stop_position = 3 + (order * 8)
         grid.fit(train_fourier_descriptors[:, :stop_position], train_labels)
         print("The best parameters for order {} are {} with a score of {}\n".format(
@@ -74,7 +75,7 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
             best_order = order
             best_params = grid.best_params_
 
-    print('\nTraining model on order {} with best parameters {}'.format(
+    print('Training model on order {} with best parameters {}'.format(
         best_order, best_params))
     stop_position = 3 + (best_order * 8)
     clf = SVC(kernel='poly',
@@ -83,13 +84,14 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(X=train_fourier_descriptors[:, :stop_position], y=train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_test.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'neighborhoods_test_v4.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = test_loaded['above_or_below_median'][:, 0]
-    test_labels = np.reshape(test_labels, (test_labels.shape[0]))
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
+    test_labels = np.reshape(test_labels, (test_labels.shape[0]))
 
+    print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
     test_accuracy = accuracy_score(test_labels, predictions)
 
@@ -98,4 +100,3 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')

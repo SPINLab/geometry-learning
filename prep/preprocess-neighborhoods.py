@@ -1,90 +1,123 @@
+"""
+Preprocessing script to convert well-known-text geometries to matrix representations thereof.
+With a SANE_NUMBER_OF_POINTS set to 2048, it simplifies only 248
+"""
+
 import os
 import re
+from datetime import timedelta
+from time import time
 from zipfile import ZipFile
 
-import matplotlib.pyplot as plt
 import numpy as np
-from model.topoml_util.GeoVectorizer import GeoVectorizer
-from model.topoml_util.geom_fourier_descriptors import geom_fourier_descriptors
 from pandas import read_csv
 from shapely import wkt
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
+from model.topoml_util.GeoVectorizer import GeoVectorizer
+from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
+SCRIPT_VERSION = '4'
 SOURCE_ZIP = '../files/neighborhoods/neighborhoods.csv.zip'
 SOURCE_CSV = 'neighborhoods.csv'
-NEIGHBORHOODS_TRAIN = '../files/neighborhoods/neighborhoods_order_30_train.npz'
-NEIGHBORHOODS_TEST = '../files/neighborhoods/neighborhoods_order_30_test.npz'
+LOG_FILE = 'neighborhoods_preprocessing.log'
+TRAIN_DATA_FILE = '../files/neighborhoods/neighborhoods_train_v{}'.format(SCRIPT_VERSION)
+NUMBER_OF_FILES = 5
+TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test_v{}'.format(SCRIPT_VERSION)
 SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
+SCRIPT_START = time()
 
 if not os.path.isfile(SOURCE_ZIP):
-    raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % SOURCE_ZIP)
+    raise FileNotFoundError('Unable to locate %s. Please run the prep/get-data.sh script first'.format(SOURCE_ZIP))
 
 zfile = ZipFile(SOURCE_ZIP)
 df = read_csv(zfile.open(SOURCE_CSV))
 df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for unknowns
 
-print('Creating neighborhood geometry vectors...')
-pgb = ProgressBar()
-
-geoms = []
+print('Creating geometry vectors and descriptors...')
+wkt_vectors = []
 shapes = [wkt.loads(wkt_string) for wkt_string in df.geom.values]
 number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
 
 plt.hist(number_of_vertices, bins=20, log=True)
 plt.savefig('neighborhood_geom_vertices_distr.png')
 geoms_above_treshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
-print('{} geometries marked as over the max {} vertices treshold.\n'.format(geoms_above_treshold, SANE_NUMBER_OF_POINTS))
+print('{} of the {} geometries are over the max {} vertices treshold and will be simplified.\n'.format(
+    geoms_above_treshold, len(shapes), SANE_NUMBER_OF_POINTS))
 
-for index, wkt_string in enumerate(df.geom.values):
-    pgb.update_progress(index/len(df.geom.values))
-    geoms.append(GeoVectorizer.vectorize_wkt(wkt_string, SANE_NUMBER_OF_POINTS, simplify=True))
-
-print('Creating neighborhood geometry fourier descriptors...')
-shapes = []
-for wkt_string in df.geom.values:
-    shape = wkt.loads(wkt_string)
-    # Out of the 13,300 neighborhoods there's about 300 multipart multipolygon geometries.
-    # We're selecting the largest here, but it will throw off the accuracy a bit.
-    geometries = sorted(shape.geoms, key=lambda x: x.area)
-    shapes.append(geometries[-1])
-
-fourier_descriptors = geom_fourier_descriptors(shapes, FOURIER_DESCRIPTOR_ORDER)
-
-print('Creating categories for neighborhood inhabitants')
-# This will create a roughly even (6610:6598) split as the number of inhabitants isn't distributed normally.
+pgb = ProgressBar()
+logfile = open(LOG_FILE, 'w')
+selected_data = []
+simplified_geometries = 0
+errors = 0
 median = np.median(df.aantal_inwoners.values)
 print('Median:', median, 'inhabitants')
-above_or_below_median = []
-for number in df.aantal_inwoners.values:
-    category = [1, 0] if number > median else [0, 1]
-    above_or_below_median.append(category)
 
-# Scatterplot of area versus inhabitants
-# areas = [shape.area for shape in shapes]
-# plt.scatter(areas, df.aantal_inwoners.values, s=0.1, alpha=0.5)
-# plt.xlim(0, 5e-3)
-# plt.ylim(0, 10000)
-# plt.savefig('neighborhood_area_inhabitants_scatter.png')
+for index, (inhabitants, wkt_string) in enumerate(zip(df.aantal_inwoners.values, df.geom.values)):
+    pgb.update_progress(index/len(df.geom.values), '{} geometries, {} errors in logfile'.format(index, errors))
+    try:
+        shape = wkt.loads(wkt_string)
+        geom_len = min(len(re.findall('\d \d', shape.wkt)), SANE_NUMBER_OF_POINTS)
+        if geom_len == SANE_NUMBER_OF_POINTS:
+            simplified_geometries += 1
+        wkt_vector = GeoVectorizer.vectorize_wkt(wkt_string, geom_len, simplify=True)
 
-print('Saving to neighborhoods numpy train and test archives...')
-train_test_split_index = round(TRAIN_TEST_SPLIT * len(geoms))
+        # If multipart multipolygon: select the largest, but it will throw off the accuracy a bit.
+        if shape.geom_type == 'MultiPolygon':
+            if len(shape.geoms) > 1:
+                geometries = sorted(shape.geoms, key=lambda x: x.area)
+                shape = geometries[-1]
+            else:
+                shape = shape.geoms[0]
+            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
+        elif shape.geom_type == 'Polygon':
+            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
+        else:
+            logfile.write('skipping record: no (multi)polygon entry in {0} on line {1}'.format(
+                SOURCE_CSV, index + 2))
+            errors += 1
+            continue
+
+        above_or_below_median = [1, 0] if inhabitants > median else [0, 1]
+
+    except Exception as e:
+        logfile.write('Skipping record on account of geometry entry in {} on line {} with error: {}\n'.format(
+            SOURCE_CSV, index + 2, e))
+        errors += 1
+        continue
+
+    # Append the converted values if all went well
+    selected_data.append({
+        'geom': wkt_vector,
+        'fourier_descriptors': fds,
+        'above_or_below_median': above_or_below_median
+    })
+
+logfile.close()
+print('\ncreated {} data points with {} simplified geometries and {} errors'.format(
+    len(selected_data), simplified_geometries, errors))
+
+# Split and save data
+train, test = train_test_split(selected_data, test_size=0.1, random_state=42)
+
+print('Saving test data...')
+# Test data is small enough to put in one archive
 np.savez_compressed(
-    NEIGHBORHOODS_TRAIN,
-    input_geoms=geoms[:-train_test_split_index],
-    inhabitants=df.aantal_inwoners[:-train_test_split_index],
-    fourier_descriptors=fourier_descriptors[:-train_test_split_index],
-    above_or_below_median=above_or_below_median[:-train_test_split_index],
-)
+    TEST_DATA_FILE,
+    geoms=[record['geom'] for record in test],
+    fourier_descriptors=[record['fourier_descriptors'] for record in test],
+    above_or_below_median=[record['above_or_below_median'] for record in test])
 
+print('Saving training data...')
 np.savez_compressed(
-    NEIGHBORHOODS_TEST,
-    input_geoms=geoms[-train_test_split_index:],
-    inhabitants=df.aantal_inwoners[-train_test_split_index:],
-    fourier_descriptors=fourier_descriptors[-train_test_split_index:],
-    above_or_below_median=above_or_below_median[-train_test_split_index:],
-)
+    TRAIN_DATA_FILE,
+    geoms=[record['geom'] for record in train],
+    fourier_descriptors=[record['fourier_descriptors'] for record in train],
+    above_or_below_median=[record['above_or_below_median'] for record in train])
 
-print('Done!')
+runtime = time() - SCRIPT_START
+print('Done in {}'.format(timedelta(seconds=runtime)))

@@ -8,19 +8,17 @@ This script itself will run for about fourteen hours depending on your hardware,
 comparable
 """
 
+import multiprocessing
 import os
-
+import sys
+from time import time
 from datetime import datetime, timedelta
 
-import multiprocessing
 import numpy as np
-import sys
-
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from time import time
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
@@ -28,16 +26,18 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '0.0.3'
+SCRIPT_VERSION = '1.0.0'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
-TRAINING_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_train.npz'
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
+DATA_FOLDER = SCRIPT_DIR + '/../../files/neighborhoods/'
+FILENAME = 'neighborhoods_train_v4.npz'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
-    train_loaded = np.load(TRAINING_DATA_FILE)
+    # Load training data
+    train_loaded = np.load(DATA_FOLDER + FILENAME)
     train_fourier_descriptors = train_loaded['fourier_descriptors']
     train_labels = train_loaded['above_or_below_median'][:, 0]
     train_labels = np.reshape(train_labels, (train_labels.shape[0]))
@@ -81,19 +81,19 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(X=train_fourier_descriptors[:, :stop_position], y=train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = '../../files/neighborhoods/neighborhoods_order_30_test.npz'
+    TEST_DATA_FILE = DATA_FOLDER + 'neighborhoods_test_v4.npz'
     test_loaded = np.load(TEST_DATA_FILE)
     test_fourier_descriptors = test_loaded['fourier_descriptors']
     test_labels = test_loaded['above_or_below_median'][:, 0]
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
     test_labels = np.reshape(test_labels, (test_labels.shape[0]))
 
+    print('Run on test data...')
     predictions = clf.predict(test_fourier_descriptors[:, :stop_position])
-    test_accuracy = accuracy_score(predictions, test_labels)
+    test_accuracy = accuracy_score(test_labels, predictions)
 
     runtime = time() - SCRIPT_START
     message = '\nTest accuracy of {} for fourier descriptor order {} with {} in {}'.format(
         test_accuracy, best_order, best_params, timedelta(seconds=runtime))
     print(message)
     notify(SCRIPT_NAME, message)
-    print(SCRIPT_NAME, 'finished successfully')
