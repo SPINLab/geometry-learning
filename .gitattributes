@@ -1,1 +1,2 @@
 *.sh     text eol=lf
+*.npz filter=lfs diff=lfs merge=lfs -text

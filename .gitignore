@@ -120,3 +120,6 @@ ENV/
 # Prevent committing credentials set in compose file
 build_server/docker-compose.yml
 /model/all_test.py
+/build_server/teamcity_server_data/config/
+/build_server/teamcity_server_data/plugins/
+/build_server/teamcity_server_data/system/
