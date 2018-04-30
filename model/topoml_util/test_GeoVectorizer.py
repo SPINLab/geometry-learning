@@ -1,12 +1,9 @@
-import math
 import unittest
-from math import log
 
-import pandas
 import numpy as np
+import pandas
+from GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN
 from shapely import wkt as wktreader
-
-from GeoVectorizer import GeoVectorizer, GEO_VECTOR_LEN, RENDER_INDEX, FULL_STOP_INDEX
 
 TOPOLOGY_CSV = 'test_files/polygon_multipolygon.csv'
 SOURCE_DATA = pandas.read_csv(TOPOLOGY_CSV)
@@ -55,6 +52,7 @@ output_geom = np.array([
 
 non_empty_geom_collection = 'GEOMETRYCOLLECTION(LINESTRING(1 1, 3 5),POLYGON((-1 -1, -1 -5, -5 -5, -5 -1, -1 -1)))'
 
+
 class TestVectorizer(unittest.TestCase):
     def test_max_points(self):
         max_points = GeoVectorizer.max_points(brt_wkt, osm_wkt)
@@ -74,7 +72,7 @@ class TestVectorizer(unittest.TestCase):
         for index in range(len(input_set)):
             vectorized.append(GeoVectorizer.vectorize_wkt(input_set[index], max_points, simplify=True))
         self.assertEqual(len(input_set), len(brt_wkt))
-        self.assertEqual(vectorized[0].shape, (32, GEO_VECTOR_LEN))
+        self.assertEqual(vectorized[0].shape, (19, GEO_VECTOR_LEN))
         self.assertEqual(vectorized[1].shape, (1, GEO_VECTOR_LEN))
 
     def test_fixed_size(self):
@@ -101,16 +99,14 @@ class TestVectorizer(unittest.TestCase):
             wkt = file.read()
             max_points = GeoVectorizer.max_points([wkt])
             vectorized = GeoVectorizer.vectorize_wkt(wkt, max_points)
-            standardized_size = math.ceil(math.log(max_points, 2))
-            self.assertEqual(standardized_size, 8)
-            self.assertEqual(vectorized.shape, (math.pow(2, standardized_size), GEO_VECTOR_LEN))
+            self.assertEqual((144, GEO_VECTOR_LEN), vectorized.shape)
 
     def test_simplify_multipolygon_gt_max_points(self):
         with open('test_files/multipart_multipolygon_wkt.txt', 'r') as file:
             wkt = file.read()
             max_points = 20
             vectorized = GeoVectorizer.vectorize_wkt(wkt, max_points, simplify=True)
-            self.assertEqual(vectorized.shape, (32, GEO_VECTOR_LEN))
+            self.assertEqual((20, GEO_VECTOR_LEN), vectorized.shape)
 
     def test_multipolygon_exceed_max_points(self):
         with open('test_files/multipart_multipolygon_wkt.txt', 'r') as file:

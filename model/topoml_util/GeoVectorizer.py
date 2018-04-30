@@ -61,15 +61,15 @@ class GeoVectorizer:
 
     @staticmethod
     def num_points_from_wkt(wkt):
+        # A 2D point in WKT is a set of two numerical values, separated by a space:
+        # marked by two decimal values on either side
         shape = loads(wkt)
-        if shape.geom_type == 'Polygon':
-            number_of_points = len(shape.exterior.coords)
-        elif shape.geom_type == 'MultiPolygon':
-            number_of_points = len(shape.geoms[0].exterior.coords)
-        else:
-            raise ValueError("Don't know how to get the number of points from geometry type %s" % (
-                shape.geom_type))
+        pattern = '\d \d'
 
+        if shape.has_z:
+            pattern += ' \d'
+
+        number_of_points = len(re.findall(pattern, shape.wkt))
         return number_of_points
 
     @staticmethod
@@ -85,9 +85,7 @@ class GeoVectorizer:
         :return vectors: a 2d numpy array as vectorized representation of the input geometry
         """
         shape = loads(wkt)
-        # A point in WKT is a set of twonumerical values, separated by a space:
-        # marked by two decimal values on either side
-        total_points = len(re.findall('\d \d', shape.wkt))  # use the shapely canonical wkt form for consistency
+        total_points = GeoVectorizer.num_points_from_wkt(shape.wkt)  # use the shapely canonical wkt form for consistency
 
         if total_points > max_points:
             if not simplify:
@@ -96,19 +94,22 @@ class GeoVectorizer:
                                  'the number of points, or increase max_points parameter.')
             else:
                 shape = GeoVectorizer.recursive_simplify(max_points, shape)
-                total_points = len(re.findall('\d \d', shape.wkt))
+                total_points = GeoVectorizer.num_points_from_wkt(shape.wkt)
 
         if shape.geom_type == 'Polygon':
             geom_matrix = GeoVectorizer._vectorize_polygon(shape, simplify)
         elif shape.geom_type == 'MultiPolygon':
+            # noinspection PyUnresolvedReferences
             geom_matrix = np.concatenate(
                 [GeoVectorizer._vectorize_polygon(geom, geom.geom_type) for geom in shape.geoms], axis=0)
             geom_matrix[total_points - 1, STOP_INDEX] = 0
+            # noinspection PyUnresolvedReferences
             geom_matrix = np.append(geom_matrix, np.zeros((max_points - total_points, GEO_VECTOR_LEN)), axis=0)
             geom_matrix[total_points - 1:, FULL_STOP_INDEX] = 1  # Manually set full stop bits
         elif shape.geom_type == 'GeometryCollection':
             if len(shape.geoms) > 0:  # not GEOMETRYCOLLECTION EMPTY
                 raise ValueError("Don't know how to process non-empty GeometryCollection type")
+            # noinspection PyUnresolvedReferences
             geom_matrix = np.zeros((1, GEO_VECTOR_LEN))
             geom_matrix[:, FULL_STOP_INDEX] = 1  # Manually set full stop bits
         elif shape.geom_type == 'Point':
@@ -119,11 +120,8 @@ class GeoVectorizer:
         pre_padded_len = len(geom_matrix)
         if fixed_size:
             pad_shape = ((0, max_points - len(geom_matrix)), (0, 0))
-        else:
-            standardized_size = math.ceil(math.log(len(geom_matrix), 2))
-            pad_shape = ((0, int(math.pow(2, standardized_size)) - len(geom_matrix)), (0, 0))
-        padded_matrix = np.pad(geom_matrix, pad_shape, mode='constant')
-        return padded_matrix
+            geom_matrix = np.pad(geom_matrix, pad_shape, mode='constant')
+        return geom_matrix
 
     @staticmethod
     def _vectorize_polygon(shape, simplify):
@@ -135,11 +133,10 @@ class GeoVectorizer:
         Fill an array of vectors out of an array of points from a geometry
         :param points: the array of input points
         :param geom_type: a geometry type string, one of GEOMETRY_TYPES
-        :param offset: offset in the vector, to be used to fill in a second point in the vector.
         :param is_last: extra offset for the last point in a geometry, to indicate a full stop.
         :return matrix: a matrix representation of the points.
         """
-
+        # noinspection PyUnresolvedReferences
         matrix = np.zeros((len(points), GEO_VECTOR_LEN))
 
         for point_index, point in enumerate(points):
