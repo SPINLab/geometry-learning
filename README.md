@@ -6,7 +6,7 @@ The repository contains the necessary code and data for three different experime
 - predict the building type from a building geometry
 - predict the archaeological feature type from a feature geometry
 
-# Data preparation
+# Data
 **TLDR;**
 All data necessary to run the scripts on neighborhoods, building types, and archaeological features is enclosed in the repository itself.
 
