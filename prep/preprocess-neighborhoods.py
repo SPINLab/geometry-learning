@@ -19,23 +19,27 @@ from model.topoml_util.GeoVectorizer import GeoVectorizer
 from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
-SCRIPT_VERSION = '4'
-SOURCE_ZIP = '../files/neighborhoods/neighborhoods.csv.zip'
+SCRIPT_VERSION = '5'
+SOURCE_DIR = '../files/neighborhoods/'
+SOURCE_ZIP = SOURCE_DIR + 'neighborhoods.csv.zip'
 SOURCE_CSV = 'neighborhoods.csv'
 LOG_FILE = 'neighborhoods_preprocessing.log'
-TRAIN_DATA_FILE = '../files/neighborhoods/neighborhoods_train_v{}'.format(SCRIPT_VERSION)
-NUMBER_OF_FILES = 5
-TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_test_v{}'.format(SCRIPT_VERSION)
+TRAIN_DATA_FILE = SOURCE_DIR + 'neighborhoods_train_v' + SCRIPT_VERSION
+TEST_DATA_FILE = SOURCE_DIR + 'neighborhoods_test_v' + SCRIPT_VERSION
 SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
 SCRIPT_START = time()
 
 if not os.path.isfile(SOURCE_ZIP):
-    raise FileNotFoundError('Unable to locate %s. Please run the prep/get-data.sh script first'.format(SOURCE_ZIP))
+    raise FileNotFoundError('Unable to locate {}. Please run the prep/get-data.sh script first'.format(SOURCE_ZIP))
 
+print('Preprocessing archaeological features...')
 zfile = ZipFile(SOURCE_ZIP)
 df = read_csv(zfile.open(SOURCE_CSV))
+
+zip_file = ZipFile(SOURCE_ZIP)
+df = read_csv(zip_file.open(SOURCE_CSV))
 df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for unknowns
 
 print('Creating geometry vectors and descriptors...')
@@ -45,9 +49,9 @@ number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
 
 plt.hist(number_of_vertices, bins=20, log=True)
 plt.savefig('neighborhood_geom_vertices_distr.png')
-geoms_above_treshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
-print('{} of the {} geometries are over the max {} vertices treshold and will be simplified.\n'.format(
-    geoms_above_treshold, len(shapes), SANE_NUMBER_OF_POINTS))
+geoms_above_threshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
+print('{} of the {} geometries are over the max {} vertices threshold and will be simplified.\n'.format(
+    geoms_above_threshold, len(shapes), SANE_NUMBER_OF_POINTS))
 
 pgb = ProgressBar()
 logfile = open(LOG_FILE, 'w')
@@ -61,7 +65,7 @@ for index, (inhabitants, wkt_string) in enumerate(zip(df.aantal_inwoners.values,
     pgb.update_progress(index/len(df.geom.values), '{} geometries, {} errors in logfile'.format(index, errors))
     try:
         shape = wkt.loads(wkt_string)
-        geom_len = min(len(re.findall('\d \d', shape.wkt)), SANE_NUMBER_OF_POINTS)
+        geom_len = min(GeoVectorizer.num_points_from_wkt(shape.wkt), SANE_NUMBER_OF_POINTS)
         if geom_len == SANE_NUMBER_OF_POINTS:
             simplified_geometries += 1
         wkt_vector = GeoVectorizer.vectorize_wkt(wkt_string, geom_len, simplify=True)
@@ -73,14 +77,16 @@ for index, (inhabitants, wkt_string) in enumerate(zip(df.aantal_inwoners.values,
                 shape = geometries[-1]
             else:
                 shape = shape.geoms[0]
-            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
         elif shape.geom_type == 'Polygon':
-            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
+            pass
         else:
-            logfile.write('skipping record: no (multi)polygon entry in {0} on line {1}'.format(
+            logfile.write('skipping record: no (multi)polygon entry in {} on line {}'.format(
                 SOURCE_CSV, index + 2))
             errors += 1
             continue
+
+        efds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
+        # fds = fourierDescriptor(np.array(shape.boundary.coords))
 
         above_or_below_median = [1, 0] if inhabitants > median else [0, 1]
 
@@ -93,7 +99,8 @@ for index, (inhabitants, wkt_string) in enumerate(zip(df.aantal_inwoners.values,
     # Append the converted values if all went well
     selected_data.append({
         'geom': wkt_vector,
-        'fourier_descriptors': fds,
+        # 'fourier_descriptors': fds,
+        'elliptic_fourier_descriptors': efds,
         'above_or_below_median': above_or_below_median
     })
 
@@ -109,14 +116,14 @@ print('Saving test data...')
 np.savez_compressed(
     TEST_DATA_FILE,
     geoms=[record['geom'] for record in test],
-    fourier_descriptors=[record['fourier_descriptors'] for record in test],
+    fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in test],
     above_or_below_median=[record['above_or_below_median'] for record in test])
 
 print('Saving training data...')
 np.savez_compressed(
     TRAIN_DATA_FILE,
     geoms=[record['geom'] for record in train],
-    fourier_descriptors=[record['fourier_descriptors'] for record in train],
+    fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
     above_or_below_median=[record['above_or_below_median'] for record in train])
 
 runtime = time() - SCRIPT_START
