@@ -9,7 +9,9 @@ import os
 import socket
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from time import time
+from urllib.request import urlretrieve
 
 import numpy as np
 from keras import Input
@@ -29,37 +31,50 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.0'
+SCRIPT_VERSION = '2.0.1'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/neighborhoods/'
-FILENAME = 'neighborhoods_train_v4.npz'
+TRAIN_DATA_FILE = 'neighborhoods_train_v5.npz'
+TEST_DATA_FILE = 'neighborhoods_test_v5.npz'
+TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/zBdphNwqNc0sCnd/download'
+TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/z2NJWeYv1MhhNv9/download'
 SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
+    'MIN_SEQ_LEN': 32,
     'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 512)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-3)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 8e-4)),
     'DROPOUT': float(os.getenv('DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
 OPTIMIZER = Adam(lr=hp['LEARNING_RATE'])
 
 # Load training data
-train_loaded = np.load(DATA_FOLDER + FILENAME)
+path = Path(DATA_FOLDER + TRAIN_DATA_FILE)
+if not path.exists():
+    print("Retrieving training data from web...")
+    urlretrieve(TRAIN_DATA_URL, DATA_FOLDER + TRAIN_DATA_FILE)
+
+train_loaded = np.load(DATA_FOLDER + TRAIN_DATA_FILE)
 train_geoms = train_loaded['geoms']
 train_labels = train_loaded['above_or_below_median']
 
 # Determine final test mode or standard
 if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
     print('Training in final test mode')
-    TEST_DATA_FILE = '../files/neighborhoods/neighborhoods_order_30_test.npz'
-    test_loaded = np.load(TEST_DATA_FILE)
+    path = Path(DATA_FOLDER + TEST_DATA_FILE)
+    if not path.exists():
+        print("Retrieving test data from web...")
+        urlretrieve(TEST_DATA_URL, DATA_FOLDER + TEST_DATA_FILE)
+
+    test_loaded = np.load(DATA_FOLDER + TEST_DATA_FILE)
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['above_or_below_median']
 else:
@@ -73,21 +88,41 @@ train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
 
 # Sort data according to sequence length
+zipped = zip(train_geoms, train_labels)
 train_input_sorted = {}
 train_labels_sorted = {}
 train_labels__max = np.array(train_labels).max()
 
-for geom, label in zip(train_geoms, train_labels):
+for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
     # Map types to one-hot vectors
     # noinspection PyUnresolvedReferences
     one_hot_label = np.zeros((train_labels__max + 1))
     one_hot_label[label] = 1
-
     sequence_len = geom.shape[0]
 
-    if sequence_len in train_input_sorted:
+    # short sequences need to be padded to pass through the net bottleneck
+    if sequence_len < hp['MIN_SEQ_LEN']:
+        geom = pad_sequences([geom], maxlen=hp['MIN_SEQ_LEN'])[0]
+        sequence_len = geom.shape[0]
+
+    smallest_size_subset = sorted(train_input_sorted.keys())[0] if train_input_sorted else None
+
+    if not smallest_size_subset:  # This is the first data point
+        train_input_sorted[sequence_len] = [geom]
+        train_labels_sorted[sequence_len] = [one_hot_label]
+        continue
+
+    if sequence_len in train_input_sorted:  # the entry exists, append
         train_input_sorted[sequence_len].append(geom)
         train_labels_sorted[sequence_len].append(one_hot_label)
+        continue
+
+    # the size subset does not exist yet
+    # append the data to the smallest size subset if it isn't batch-sized yet
+    if len(train_input_sorted[smallest_size_subset]) < hp['BATCH_SIZE']:
+        geom = pad_sequences([geom], smallest_size_subset)[0]  # make it the same size as the rest in the subset
+        train_input_sorted[smallest_size_subset].append(geom)
+        train_labels_sorted[smallest_size_subset].append(one_hot_label)
     else:
         train_input_sorted[sequence_len] = [geom]
         train_labels_sorted[sequence_len] = [one_hot_label]
@@ -97,6 +132,10 @@ test_labels_sorted = {}
 
 for geom, label in zip(test_geoms, test_labels):
     sequence_len = geom.shape[0]
+    # short sequences need to be padded to pass through the net bottleneck
+    if sequence_len < hp['MIN_SEQ_LEN']:
+        geom = pad_sequences([geom], maxlen=hp['MIN_SEQ_LEN'])[0]
+        sequence_len = geom.shape[0]
 
     if sequence_len in test_input_sorted:
         test_input_sorted[sequence_len].append(geom)
@@ -104,25 +143,6 @@ for geom, label in zip(test_geoms, test_labels):
     else:
         test_input_sorted[sequence_len] = [geom]
         test_labels_sorted[sequence_len] = [label]
-
-
-# Map to numpy arrays
-for sequence_len in train_input_sorted.keys():
-    # short sequences need to be padded to pass through the net bottleneck
-    if sequence_len < 32:
-        train_input_sorted[sequence_len] = pad_sequences(
-            train_input_sorted[sequence_len], maxlen=32, padding='post', truncating='post')
-
-    train_input_sorted[sequence_len] = np.array([seq for seq in train_input_sorted[sequence_len]])
-    train_labels_sorted[sequence_len] = np.array([label for label in train_labels_sorted[sequence_len]])
-
-for sequence_len in test_input_sorted.keys():
-    if sequence_len < 32:
-        test_input_sorted[sequence_len] = pad_sequences(
-            test_input_sorted[sequence_len], maxlen=32, padding='post', truncating='post')
-
-    test_input_sorted[sequence_len] = np.array([seq for seq in test_input_sorted[sequence_len]])
-    test_labels_sorted[sequence_len] = np.array([label for label in test_labels_sorted[sequence_len]])
 
 # Shape determination
 geom_vector_len = train_geoms[0].shape[1]
@@ -155,8 +175,8 @@ for epoch in range(hp['EPOCHS']):
         message = 'Epoch {} of {}, sequence length {}'.format(epoch + 1, hp['EPOCHS'], sequence_len)
         pgb.update_progress(epoch/hp['EPOCHS'], message)
 
-        inputs = train_input_sorted[sequence_len]
-        labels = train_labels_sorted[sequence_len]
+        inputs = np.array(train_input_sorted[sequence_len])
+        labels = np.array(train_labels_sorted[sequence_len])
 
         model.fit(
             x=inputs,
@@ -173,7 +193,7 @@ print('\n\nRun on test data...')
 test_labels = []
 test_pred = []
 for sequence_len in test_input_sorted.keys():
-    test_geoms = test_input_sorted[sequence_len]
+    test_geoms = np.array(test_input_sorted[sequence_len])
 
     for label in test_labels_sorted[sequence_len]:
         test_labels.append(label)
