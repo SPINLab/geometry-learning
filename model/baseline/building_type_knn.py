@@ -11,7 +11,9 @@ import multiprocessing
 import os
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from time import time
+from urllib.request import urlretrieve
 
 import numpy as np
 from sklearn.metrics import accuracy_score
@@ -25,19 +27,27 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '1.0.4'
+SCRIPT_VERSION = '1.0.5'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/buildings/'
-FILENAME = 'buildings_train_v4.npz'
+TRAIN_DATA_FILE = 'buildings_train_v5.npz'
+TEST_DATA_FILE = 'buildings_test_v5.npz'
+TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/owGX0srHn10iG6K/download'
+TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/LcGhwd3elb7EfE0/download'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
 if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multithreaded grid search
     # Load training data
-    train_loaded = np.load(DATA_FOLDER + FILENAME)
-    train_fourier_descriptors = train_loaded['fourier_descriptors']
+    path = Path(DATA_FOLDER + TRAIN_DATA_FILE)
+    if not path.exists():
+        print("Retrieving training data from web...")
+        urlretrieve(TRAIN_DATA_URL, DATA_FOLDER + TRAIN_DATA_FILE)
+
+    train_loaded = np.load(DATA_FOLDER + TRAIN_DATA_FILE)
+    train_fourier_descriptors = train_loaded['elliptic_fourier_descriptors']
     train_labels = train_loaded['building_type']
 
     scaler = StandardScaler().fit(train_fourier_descriptors)
@@ -81,9 +91,13 @@ if __name__ == '__main__':  # this is to squelch warnings on scikit-learn multit
     clf.fit(train_fourier_descriptors[:, :stop_position], train_labels)
 
     # Run predictions on unseen test data to verify generalization
-    TEST_DATA_FILE = DATA_FOLDER + 'buildings_test_v4.npz'
-    test_loaded = np.load(TEST_DATA_FILE)
-    test_fourier_descriptors = test_loaded['fourier_descriptors']
+    path = Path(DATA_FOLDER + TEST_DATA_FILE)
+    if not path.exists():
+        print("Retrieving test data from web...")
+        urlretrieve(TEST_DATA_URL, DATA_FOLDER + TEST_DATA_FILE)
+
+    test_loaded = np.load(DATA_FOLDER + TEST_DATA_FILE)
+    test_fourier_descriptors = test_loaded['elliptic_fourier_descriptors']
     test_labels = np.asarray(test_loaded['building_type'], dtype=int)
     test_fourier_descriptors = scaler.transform(test_fourier_descriptors)
 
