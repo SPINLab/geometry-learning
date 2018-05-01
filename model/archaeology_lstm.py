@@ -49,7 +49,7 @@ hp = {
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 8e-3)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 8e-4)),
     'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
@@ -73,7 +73,7 @@ if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
         print("Retrieving test data from web...")
         urlretrieve(TEST_DATA_URL, DATA_FOLDER + TEST_DATA_FILE)
 
-    test_loaded = np.load(TEST_DATA_FILE)
+    test_loaded = np.load(DATA_FOLDER + TEST_DATA_FILE)
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['feature_type']
 else:
@@ -97,7 +97,6 @@ for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
     # noinspection PyUnresolvedReferences
     one_hot_label = np.zeros((train_labels__max + 1))
     one_hot_label[label] = 1
-
     sequence_len = geom.shape[0]
     smallest_size_subset = sorted(train_input_sorted.keys())[0] if train_input_sorted else None
 

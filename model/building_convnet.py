@@ -49,7 +49,7 @@ hp = {
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-4)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 2e-4)),
     'DROPOUT': float(os.getenv('DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
@@ -73,7 +73,7 @@ if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
         print("Retrieving test data from web...")
         urlretrieve(TEST_DATA_URL, DATA_FOLDER + TEST_DATA_FILE)
 
-    test_loaded = np.load(TEST_DATA_FILE)
+    test_loaded = np.load(DATA_FOLDER + TEST_DATA_FILE)
     test_geoms = test_loaded['geoms']
     test_labels = test_loaded['building_type']
 else:
