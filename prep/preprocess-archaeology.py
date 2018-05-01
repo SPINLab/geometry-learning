@@ -20,13 +20,13 @@ from model.topoml_util.GeoVectorizer import GeoVectorizer
 from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
-SCRIPT_VERSION = '4'
-SOURCE_ZIP = '../files/archaeology/archaeology.csv.zip'
+SCRIPT_VERSION = '5'
+DATA_FOLDER = '../files/archaeology/'
+SOURCE_ZIP = DATA_FOLDER + 'archaeology.csv.zip'
 SOURCE_CSV = 'archaeology.csv'
 LOG_FILE = 'archaeology_preprocessing.log'
-TRAIN_DATA_FILE = '../files/archaeology/archaeology_train_v{}'.format(SCRIPT_VERSION)
-NUMBER_OF_FILES = 5
-TEST_DATA_FILE = '../files/archaeology/archaeology_test_v{}'.format(SCRIPT_VERSION)
+TRAIN_DATA_FILE = DATA_FOLDER + 'archaeology_train_v' + SCRIPT_VERSION
+TEST_DATA_FILE = DATA_FOLDER + 'archaeology_test_v' + SCRIPT_VERSION
 SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
@@ -34,7 +34,7 @@ MINIMUM_CLASS_OCCURRENCE = 1000
 SCRIPT_START = time()
 
 if not os.path.isfile(SOURCE_ZIP):
-    raise FileNotFoundError('Unable to locate %s. Please run the prep/get-data.sh script first' % SOURCE_ZIP)
+    raise FileNotFoundError('Unable to locate {}. Please run the prep/get-data.sh script first'.format(SOURCE_ZIP))
 
 print('Preprocessing archaeological features...')
 zfile = ZipFile(SOURCE_ZIP)
@@ -63,9 +63,9 @@ number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
 
 plt.hist(number_of_vertices, bins=20, log=True)
 plt.savefig('archaeology_geom_vertices_distr.png')
-geoms_above_treshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
-print('{} of the {} geometries are over the max {} vertices treshold and will be simplified.\n'.format(
-    geoms_above_treshold, len(shapes), SANE_NUMBER_OF_POINTS))
+geoms_above_threshold = len([v for v in number_of_vertices if v > SANE_NUMBER_OF_POINTS])
+print('{} of the {} geometries are over the max {} vertices threshold and will be simplified.\n'.format(
+    geoms_above_threshold, len(shapes), SANE_NUMBER_OF_POINTS))
 
 pgb = ProgressBar()
 logfile = open(LOG_FILE, 'w')
@@ -90,14 +90,15 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
                     shape = geometries[-1]
                 else:
                     shape = shape.geoms[0]
-                fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
             elif shape.geom_type == 'Polygon':
-                fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
+                pass
             else:
                 print('skipping record: no (multi)polygon entry in {0} on line {1}'.format(
                     SOURCE_CSV, index + 2))
                 errors += 1
                 continue
+
+            efds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
 
         except Exception as e:
             logfile.write('Skipping record on account of geometry entry in {0} on line {1} with error: {2}\n'.format(
@@ -108,7 +109,7 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
         # Append the converted values if all went well
         selected_data.append({
                 'geom': wkt_vector,
-                'fourier_descriptors': fds,
+                'elliptic_fourier_descriptors': efds,
                 'feature_type': included_classes.index(feature),  # Convert types to numerical index
             })
 
@@ -124,7 +125,7 @@ print('Saving test data...')
 np.savez_compressed(
     TEST_DATA_FILE,
     geoms=[record['geom'] for record in test],
-    fourier_descriptors=[record['fourier_descriptors'] for record in test],
+    elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in test],
     feature_type=[record['feature_type'] for record in test],
     feature_type_index=included_classes)
 
@@ -132,7 +133,7 @@ print('Saving training data...')
 np.savez_compressed(
     TRAIN_DATA_FILE,
     geoms=[record['geom'] for record in train],
-    fourier_descriptors=[record['fourier_descriptors'] for record in train],
+    elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
     feature_type=[record['feature_type'] for record in train],
     feature_type_index=included_classes)
 
