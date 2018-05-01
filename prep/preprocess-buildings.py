@@ -9,7 +9,6 @@
 # 6916 buildings for sports facilities
 
 import os
-import re
 from datetime import timedelta
 from time import time
 from zipfile import ZipFile
@@ -62,7 +61,7 @@ for f_index, function_type in enumerate(building_types):
         df = concat([df, (read_csv(zip_file.open(file)))])
 
 shapes = [wkt.loads(wkt_string) for wkt_string in df.geometrie.values]
-number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
+number_of_vertices = [GeoVectorizer.num_points_from_wkt(shape.wkt) for shape in shapes]
 
 vertices_distr_png = 'buildings_geom_vertices_distr.png'
 print('Saving histogram of vertices per geometry {}'.format(vertices_distr_png))

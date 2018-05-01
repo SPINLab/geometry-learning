@@ -4,15 +4,14 @@ With a SANE_NUMBER_OF_POINTS set to 2048, it simplifies only 248
 """
 
 import os
-import re
 from datetime import timedelta
 from time import time
 from zipfile import ZipFile
 
+import matplotlib.pyplot as plt
 import numpy as np
 from pandas import read_csv
 from shapely import wkt
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
 from model.topoml_util.GeoVectorizer import GeoVectorizer
@@ -35,9 +34,6 @@ if not os.path.isfile(SOURCE_ZIP):
     raise FileNotFoundError('Unable to locate {}. Please run the prep/get-data.sh script first'.format(SOURCE_ZIP))
 
 print('Preprocessing archaeological features...')
-zfile = ZipFile(SOURCE_ZIP)
-df = read_csv(zfile.open(SOURCE_CSV))
-
 zip_file = ZipFile(SOURCE_ZIP)
 df = read_csv(zip_file.open(SOURCE_CSV))
 df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for unknowns
@@ -45,7 +41,7 @@ df = df[df.aantal_inwoners >= 0]  # Filter out negative placeholder values for u
 print('Creating geometry vectors and descriptors...')
 wkt_vectors = []
 shapes = [wkt.loads(wkt_string) for wkt_string in df.geom.values]
-number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
+number_of_vertices = [GeoVectorizer.num_points_from_wkt(shape.wkt) for shape in shapes]
 
 plt.hist(number_of_vertices, bins=20, log=True)
 plt.savefig('neighborhood_geom_vertices_distr.png')

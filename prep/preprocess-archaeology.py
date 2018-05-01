@@ -3,17 +3,16 @@ Preprocessing script to convert well-known-text geometries to matrix representat
 With a SANE_NUMBER_OF_POINTS set to 2048, it simplifies only 248
 """
 
+import collections
 import os
-import re
 from datetime import timedelta
 from time import time
 from zipfile import ZipFile
 
-import collections
+import matplotlib.pyplot as plt
 import numpy as np
 from pandas import read_csv
 from shapely import wkt
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
 from model.topoml_util.GeoVectorizer import GeoVectorizer
@@ -59,7 +58,7 @@ for wkt_string in df.WKT.values:
         shapes.append(wkt.loads(wkt_string))
     except Exception as e:
         print('Skipping unreadable wkt geom.')
-number_of_vertices = [len(re.findall('\d \d', shape.wkt)) for shape in shapes]
+number_of_vertices = [GeoVectorizer.num_points_from_wkt(shape.wkt) for shape in shapes]
 
 plt.hist(number_of_vertices, bins=20, log=True)
 plt.savefig('archaeology_geom_vertices_distr.png')
@@ -78,7 +77,7 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
     if feature in included_classes:
         try:
             shape = wkt.loads(geom)
-            geom_len = min(len(re.findall('\d \d', shape.wkt)), SANE_NUMBER_OF_POINTS)
+            geom_len = min(GeoVectorizer.num_points_from_wkt(shape.wkt), SANE_NUMBER_OF_POINTS)
             if geom_len == SANE_NUMBER_OF_POINTS:
                 simplified_geometries += 1
             wkt_vector = GeoVectorizer.vectorize_wkt(geom, geom_len, simplify=True)
