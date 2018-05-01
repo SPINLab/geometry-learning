@@ -93,7 +93,7 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
             elif shape.geom_type == 'Polygon':
                 pass
             else:
-                print('skipping record: no (multi)polygon entry in {0} on line {1}'.format(
+                print('skipping record: no (multi)polygon entry in {} on line {}'.format(
                     SOURCE_CSV, index + 2))
                 errors += 1
                 continue
