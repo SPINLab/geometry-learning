@@ -10,6 +10,8 @@
 
 import os
 import re
+from datetime import timedelta
+from time import time
 from zipfile import ZipFile
 
 import matplotlib.pyplot as plt
@@ -22,7 +24,7 @@ from model.topoml_util.GeoVectorizer import GeoVectorizer
 from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
-SCRIPT_VERSION = '4'
+SCRIPT_VERSION = '5'
 SANE_NUMBER_OF_POINTS = 2048
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
@@ -31,6 +33,7 @@ LOG_FILE = '{}_preprocessing.log'.format(DATA_TYPE)
 SOURCE_ZIP = '../files/{}/{}.csv.zip'.format(DATA_TYPE, DATA_TYPE)
 TRAIN_DATA_FILE = '../files/{}/{}_train_v{}'.format(DATA_TYPE, DATA_TYPE, SCRIPT_VERSION)
 TEST_DATA_FILE = '../files/{}/{}_test_v{}'.format(DATA_TYPE, DATA_TYPE, SCRIPT_VERSION)
+SCRIPT_START = time()
 
 building_types = [
     'bijeenkomstfunctie',  # gatherings
@@ -45,7 +48,7 @@ building_types = [
 ]
 
 if not os.path.isfile(SOURCE_ZIP):
-    raise FileNotFoundError('Unable to locate %s. Please run the get-data.sh script first' % SOURCE_ZIP)
+    raise FileNotFoundError('Unable to locate {}. Please run the get-data.sh script first'.format(SOURCE_ZIP))
 
 zip_file = ZipFile(SOURCE_ZIP)
 df = []
@@ -78,7 +81,7 @@ for index, (wkt_string, building_type) in enumerate(zip(df.geometrie.values, df.
     pgb.update_progress(index/len(df.geometrie.values))
     try:
         shape = wkt.loads(wkt_string)
-        geom_len = min(len(re.findall('\d \d', shape.wkt)), SANE_NUMBER_OF_POINTS)
+        geom_len = min(GeoVectorizer.num_points_from_wkt(shape.wkt), SANE_NUMBER_OF_POINTS)
         if geom_len == SANE_NUMBER_OF_POINTS:
             simplified_geometries += 1
         wkt_vector = GeoVectorizer.vectorize_wkt(wkt_string, geom_len, simplify=True)
@@ -90,13 +93,14 @@ for index, (wkt_string, building_type) in enumerate(zip(df.geometrie.values, df.
                 shape = geometries[-1]
             else:
                 shape = shape.geoms[0]
-            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
         elif shape.geom_type == 'Polygon':
-            fds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
+            pass
         else:
             logfile.write('Skipping record: no (multi)polygon on line {}'.format(index + 2))
             errors += 1
             continue
+
+        efds = create_geom_fourier_descriptor(shape, FOURIER_DESCRIPTOR_ORDER)
 
         # Label as numerical index
         type_int = building_types.index(building_type)
@@ -109,7 +113,7 @@ for index, (wkt_string, building_type) in enumerate(zip(df.geometrie.values, df.
     # Append the converted values if all went well
     selected_data.append({
         'geom': wkt_vector,
-        'fourier_descriptors': fds,
+        'elliptic_fourier_descriptors': efds,
         'building_type': type_int
     })
 
@@ -124,14 +128,15 @@ print('Saving training data...')
 np.savez_compressed(
     TRAIN_DATA_FILE,
     geoms=[record['geom'] for record in train],
-    fourier_descriptors=[record['fourier_descriptors'] for record in train],
+    elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
     building_type=[record['building_type'] for record in train])
 
 print('Saving test data...')
 np.savez_compressed(
     TEST_DATA_FILE,
     geoms=[record['geom'] for record in test],
-    fourier_descriptors=[record['fourier_descriptors'] for record in test],
+    elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in test],
     building_type=[record['building_type'] for record in test])
 
-print('Done!')
+runtime = time() - SCRIPT_START
+print('Done in {}'.format(timedelta(seconds=runtime)))
