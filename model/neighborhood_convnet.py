@@ -31,7 +31,7 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.2'
+SCRIPT_VERSION = '2.0.3'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -169,7 +169,7 @@ for epoch in range(hp['EPOCHS']):
 print('\n\nRun on test data...')
 test_preds = [model.predict(np.array([test])) for test in test_geoms]
 test_preds = [np.argmax(pred) for pred in test_preds]
-accuracy = accuracy_score(test_labels, test_preds)
+accuracy = accuracy_score(test_labels[:, 0], test_preds)
 
 runtime = time() - SCRIPT_START
 message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
