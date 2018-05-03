@@ -31,7 +31,7 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.1'
+SCRIPT_VERSION = '2.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -44,13 +44,12 @@ SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
-    'MIN_SEQ_LEN': 32,
     'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 512)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 8e-4)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-3)),
     'DROPOUT': float(os.getenv('DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
@@ -98,13 +97,8 @@ for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
     # noinspection PyUnresolvedReferences
     one_hot_label = np.zeros((train_labels__max + 1))
     one_hot_label[label] = 1
+
     sequence_len = geom.shape[0]
-
-    # short sequences need to be padded to pass through the net bottleneck
-    if sequence_len < hp['MIN_SEQ_LEN']:
-        geom = pad_sequences([geom], maxlen=hp['MIN_SEQ_LEN'])[0]
-        sequence_len = geom.shape[0]
-
     smallest_size_subset = sorted(train_input_sorted.keys())[0] if train_input_sorted else None
 
     if not smallest_size_subset:  # This is the first data point
@@ -127,33 +121,16 @@ for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
         train_input_sorted[sequence_len] = [geom]
         train_labels_sorted[sequence_len] = [one_hot_label]
 
-test_input_sorted = {}
-test_labels_sorted = {}
-
-for geom, label in zip(test_geoms, test_labels):
-    sequence_len = geom.shape[0]
-    # short sequences need to be padded to pass through the net bottleneck
-    if sequence_len < hp['MIN_SEQ_LEN']:
-        geom = pad_sequences([geom], maxlen=hp['MIN_SEQ_LEN'])[0]
-        sequence_len = geom.shape[0]
-
-    if sequence_len in test_input_sorted:
-        test_input_sorted[sequence_len].append(geom)
-        test_labels_sorted[sequence_len].append(label)
-    else:
-        test_input_sorted[sequence_len] = [geom]
-        test_labels_sorted[sequence_len] = [label]
-
 # Shape determination
 geom_vector_len = train_geoms[0].shape[1]
 output_size = train_labels__max + 1
 
 # Build model
 inputs = Input(shape=(None, geom_vector_len))
-model = Conv1D(32, (5,), activation='relu')(inputs)
-# model = Conv1D(32, (5,), activation='relu')(model)
+model = Conv1D(32, (5,), activation='relu', padding='SAME')(inputs)
+# model = Conv1D(32, (5,), activation='relu', padding='SAME')(model)
 model = MaxPooling1D(3)(model)
-model = Conv1D(64, (5,), activation='relu')(model)
+model = Conv1D(64, (5,), activation='relu', padding='SAME')(model)
 model = GlobalAveragePooling1D()(model)
 model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
 model = Dropout(hp['DROPOUT'])(model)
@@ -190,17 +167,9 @@ for epoch in range(hp['EPOCHS']):
 
 # Run on unseen test data
 print('\n\nRun on test data...')
-test_labels = []
-test_pred = []
-for sequence_len in test_input_sorted.keys():
-    test_geoms = np.array(test_input_sorted[sequence_len])
-
-    for label in test_labels_sorted[sequence_len]:
-        test_labels.append(label)
-    for pred in model.predict(test_geoms):
-        test_pred.append(np.argmax(pred))
-
-accuracy = accuracy_score(test_labels, test_pred)
+test_preds = [model.predict(np.array([test])) for test in test_geoms]
+test_preds = [np.argmax(pred) for pred in test_preds]
+accuracy = accuracy_score(test_labels, test_preds)
 
 runtime = time() - SCRIPT_START
 message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
