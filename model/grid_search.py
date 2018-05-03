@@ -19,10 +19,10 @@ else:  # resort to default, for
     script_name = 'neighborhood_convnet.py'
     # script_name = 'neighborhood_lstm.py'
     # script_name = 'building_dense.py'
-    script_name = 'building_convnet.py'
+    # script_name = 'building_convnet.py'
     # script_name = 'building_lstm.py'
     # script_name = 'archaeology_dense.py'
-    script_name = 'archaeology_convnet.py'
+    # script_name = 'archaeology_convnet.py'
     # script_name = 'archaeology_lstm.py'
 
 HYPERPARAMS = {
