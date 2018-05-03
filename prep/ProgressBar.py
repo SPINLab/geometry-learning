@@ -50,7 +50,7 @@ class ProgressBar:
             projected_time = 0
 
         block = round(self.bar_length * min(progress, 1))
-        progress_line = "=" * (max(0, block - 1)) + ">"
+        progress_line = "\U000025B0" * (max(0, block - 1)) + "\U000025BA"
         progress_line += "-" * (self.bar_length - block)
 
         hours, remainder = divmod(projected_time, 3600)
