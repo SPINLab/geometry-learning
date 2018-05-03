@@ -49,7 +49,7 @@ hp = {
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 8e-4)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-4)),
     'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
@@ -90,12 +90,10 @@ test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance fr
 zipped = zip(train_geoms, train_labels)
 train_input_sorted = {}
 train_labels_sorted = {}
-train_labels__max = np.array(train_labels).max()
-
 for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
     # Map types to one-hot vectors
     # noinspection PyUnresolvedReferences
-    one_hot_label = np.zeros((train_labels__max + 1))
+    one_hot_label = np.zeros((np.array(train_labels).max() + 1))
     one_hot_label[label] = 1
 
     sequence_len = geom.shape[0]
@@ -121,22 +119,9 @@ for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
         train_input_sorted[sequence_len] = [geom]
         train_labels_sorted[sequence_len] = [one_hot_label]
 
-test_input_sorted = {}
-test_labels_sorted = {}
-
-for geom, label in zip(test_geoms, test_labels):
-    sequence_len = geom.shape[0]
-
-    if sequence_len in test_input_sorted:
-        test_input_sorted[sequence_len].append(geom)
-        test_labels_sorted[sequence_len].append(label)
-    else:
-        test_input_sorted[sequence_len] = [geom]
-        test_labels_sorted[sequence_len] = [label]
-
 # Shape determination
 geom_vector_len = train_geoms[0].shape[1]
-output_size = train_labels__max + 1
+output_size = np.array(train_labels).max() + 1
 
 # Build model
 inputs = Input(shape=(None, geom_vector_len))
@@ -183,17 +168,9 @@ for epoch in range(hp['EPOCHS']):
 
 # Run on unseen test data
 print('\n\nRun on test data...')
-test_labels = []
-test_pred = []
-for sequence_len in test_input_sorted.keys():
-    test_geoms = np.array(test_input_sorted[sequence_len])
-
-    for label in test_labels_sorted[sequence_len]:
-        test_labels.append(label)
-    for pred in model.predict(test_geoms):
-        test_pred.append(np.argmax(pred))
-
-accuracy = accuracy_score(test_labels, test_pred)
+test_preds = [model.predict(np.array([test])) for test in test_geoms]
+test_preds = [np.argmax(pred) for pred in test_preds]
+accuracy = accuracy_score(test_labels, test_preds)
 
 runtime = time() - SCRIPT_START
 message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
