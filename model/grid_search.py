@@ -8,7 +8,7 @@ from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
 SCRIPT_NAME = os.path.basename(__file__)
-SCRIPT_VERSION = '1.0.1'
+SCRIPT_VERSION = '1.0.2'
 SIGNATURE = '{} {} on {}'.format(SCRIPT_NAME, SCRIPT_VERSION, socket.gethostname())
 N_TIMES = 1
 
