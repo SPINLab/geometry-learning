@@ -31,15 +31,15 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.3'
+SCRIPT_VERSION = '2.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/neighborhoods/'
-TRAIN_DATA_FILE = 'neighborhoods_train_v5.npz'
-TEST_DATA_FILE = 'neighborhoods_test_v5.npz'
-TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/zBdphNwqNc0sCnd/download'
-TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/z2NJWeYv1MhhNv9/download'
+TRAIN_DATA_FILE = 'neighborhoods_train_v6.npz'
+TEST_DATA_FILE = 'neighborhoods_test_v6.npz'
+TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/A8FkiOm2gFWtJAz/download'
+TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/d4qqgrWiJ3oKeI4/download'
 SCRIPT_START = time()
 
 # Hyperparameters
@@ -95,7 +95,7 @@ train_labels__max = np.array(train_labels).max()
 for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
     # Map types to one-hot vectors
     # noinspection PyUnresolvedReferences
-    one_hot_label = np.zeros((train_labels__max + 1))
+    one_hot_label = np.zeros((np.array(train_labels).max() + 1))
     one_hot_label[label] = 1
 
     sequence_len = geom.shape[0]
@@ -129,7 +129,7 @@ output_size = train_labels__max + 1
 inputs = Input(shape=(None, geom_vector_len))
 model = Conv1D(32, (5,), activation='relu', padding='SAME')(inputs)
 # model = Conv1D(32, (5,), activation='relu', padding='SAME')(model)
-model = MaxPooling1D(3)(model)
+model = MaxPooling1D(3, padding='SAME')(model)
 model = Conv1D(64, (5,), activation='relu', padding='SAME')(model)
 model = GlobalAveragePooling1D()(model)
 model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
@@ -169,7 +169,7 @@ for epoch in range(hp['EPOCHS']):
 print('\n\nRun on test data...')
 test_preds = [model.predict(np.array([test])) for test in test_geoms]
 test_preds = [np.argmax(pred) for pred in test_preds]
-accuracy = accuracy_score(test_labels[:, 0], test_preds)
+accuracy = accuracy_score(test_labels, test_preds)
 
 runtime = time() - SCRIPT_START
 message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
