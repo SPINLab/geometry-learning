@@ -49,7 +49,7 @@ hp = {
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-4)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 4e-3)),
     'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
@@ -145,8 +145,6 @@ model.compile(
 model.summary()
 
 # Callbacks
-callbacks = [TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False)]
-
 pgb = ProgressBar()
 for epoch in range(hp['EPOCHS']):
     for sequence_len in sorted(train_input_sorted.keys()):
@@ -164,7 +162,7 @@ for epoch in range(hp['EPOCHS']):
             initial_epoch=epoch,
             batch_size=hp['BATCH_SIZE'],
             validation_split=hp['TRAIN_VALIDATE_SPLIT'],
-            callbacks=callbacks)
+            callbacks=[TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False)])
 
 # Run on unseen test data
 print('\n\nRun on test data...')
