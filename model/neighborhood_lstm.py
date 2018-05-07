@@ -44,7 +44,7 @@ SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
-    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 16)),
+    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 256)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
