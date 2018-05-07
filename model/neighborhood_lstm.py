@@ -31,7 +31,7 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.1'
+SCRIPT_VERSION = '2.0.2'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
@@ -44,13 +44,13 @@ SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
-    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 512)),
+    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 16)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 8e-4)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-4)),
     'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
