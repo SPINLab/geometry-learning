@@ -15,23 +15,23 @@ N_TIMES = 1
 if len(sys.argv) > 1:
     script_name = sys.argv[1]
 else:  # resort to default, for
-    script_name = 'neighborhood_convnet.py'
+    # script_name = 'neighborhood_convnet.py'
     # script_name = 'neighborhood_lstm.py'
-    # script_name = 'building_convnet.py'
+    script_name = 'building_convnet.py'
     # script_name = 'building_lstm.py'
     # script_name = 'archaeology_convnet.py'
     # script_name = 'archaeology_lstm.py'
 
 HYPERPARAMS = {
-    'BATCH_SIZE': [16, 32, 64, 128],
+    'BATCH_SIZE': [16, 32],
     # 'REPEAT_DEEP_ARCH': [1, 2],
     # 'KERNEL_SIZE': np.linspace(1, 8, 8, dtype=int),
     # 'LSTM_SIZE': np.linspace(64, 128, 3, dtype=int),
     # 'DENSE_SIZE': [64],
     # 'EPOCHS': [200],
     # 'LEARNING_RATE': [8e-4, 6e-4, 4e-4, 2e-4, 1e-4],
-    # 'LEARNING_RATE': [1e-2, 6e-3, 3e-3, 1e-3, 6e-4, 3e-4, 1e-4],
-    'LEARNING_RATE': [8e-5, 6e-5],
+    'LEARNING_RATE': [1e-3, 6e-4, 3e-4, 1e-4, 8e-5],
+    # 'LEARNING_RATE': [8e-5, 6e-5],
     # 'GEOM_SCALE': [1e0, 1e-1, 1e-2, 1e-3],
     # 'RECURRENT_DROPOUT': [0.0],
     # 'PATIENCE': [0, 1, 4, 8, 16, 32],
