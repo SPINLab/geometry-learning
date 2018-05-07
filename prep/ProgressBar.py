@@ -51,12 +51,12 @@ class ProgressBar:
 
         block = round(self.bar_length * min(progress, 1))
         progress_line = "\U000025B0" * (max(0, block - 1)) + "\U000025BA"
-        progress_line += "-" * (self.bar_length - block)
+        progress_line += "\U000025B1" * (self.bar_length - block)
 
         hours, remainder = divmod(projected_time, 3600)
         minutes, seconds = divmod(remainder, 60)
         eta = '{}h{}m{}s'.format(int(hours), int(minutes), int(seconds))
 
-        text = "\r[{}] {}% {} {}".format(progress_line, progress_rounded, eta, status)
+        text = "\r\U0001F680{}\U0001F3C1 {}% {} {}".format(progress_line, progress_rounded, eta, status)
         sys.stdout.write(text)
         sys.stdout.flush()
