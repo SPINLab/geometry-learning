@@ -75,9 +75,9 @@ class GeoVectorizer:
     @staticmethod
     def vectorize_wkt(wkt, max_points, simplify=False, fixed_size=False):
         """
-        Convert wkt geometry to a zero-padded numpy array of real values. The size of the vector is equal to:
-            if fixed_size=False: pow(ceil(2log(len(p)), 2) where p is the set of points in the wkt;
-            is fixed_size=True: max_points.
+        Convert wkt geometry to a numpy array of real values. The size of the vector is equal to:
+            if fixed_size=False: p where p is the size of the set of points in the geometry;
+            is fixed_size=True: max_points, padded with zeros.
         :param wkt: the geometry as wkt string
         :param max_points: the maximum size of the first output dimension: the maximum number of points
         :param simplify: optional, selecting reduction of points if wkt points exceeds max_points
@@ -85,7 +85,7 @@ class GeoVectorizer:
         :return vectors: a 2d numpy array as vectorized representation of the input geometry
         """
         shape = loads(wkt)
-        total_points = GeoVectorizer.num_points_from_wkt(shape.wkt)  # use the shapely canonical wkt form for consistency
+        total_points = GeoVectorizer.num_points_from_wkt(shape.wkt)  # use the shapely wkt form for consistency
 
         if total_points > max_points:
             if not simplify:
@@ -97,11 +97,11 @@ class GeoVectorizer:
                 total_points = GeoVectorizer.num_points_from_wkt(shape.wkt)
 
         if shape.geom_type == 'Polygon':
-            geom_matrix = GeoVectorizer._vectorize_polygon(shape, simplify)
+            geom_matrix = GeoVectorizer._vectorize_polygon(shape)
         elif shape.geom_type == 'MultiPolygon':
             # noinspection PyUnresolvedReferences
             geom_matrix = np.concatenate(
-                [GeoVectorizer._vectorize_polygon(geom, geom.geom_type) for geom in shape.geoms], axis=0)
+                [GeoVectorizer._vectorize_polygon(geom) for geom in shape.geoms], axis=0)
             geom_matrix[total_points - 1, STOP_INDEX] = 0
             # noinspection PyUnresolvedReferences
             geom_matrix = np.append(geom_matrix, np.zeros((max_points - total_points, GEO_VECTOR_LEN)), axis=0)
@@ -117,14 +117,13 @@ class GeoVectorizer:
         else:
             raise ValueError("Don't know how to get the number of points from geometry type {}".format(shape.geom_type))
 
-        pre_padded_len = len(geom_matrix)
         if fixed_size:
             pad_shape = ((0, max_points - len(geom_matrix)), (0, 0))
             geom_matrix = np.pad(geom_matrix, pad_shape, mode='constant')
         return geom_matrix
 
     @staticmethod
-    def _vectorize_polygon(shape, simplify):
+    def _vectorize_polygon(shape):
         return GeoVectorizer._vectorize_points(shape.exterior.coords, shape.geom_type, is_last=True)
 
     @staticmethod
