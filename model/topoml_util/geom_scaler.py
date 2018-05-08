@@ -52,7 +52,7 @@ def localized_mean(vectors):
             continue
 
         # Take the mean of all non-null points for localized origin
-        geom_mean = np.mean(data_point[0:full_stop_point_index + 1, 0:2], axis=0, keepdims=True)
+        geom_mean = np.mean(data_point[0:full_stop_point_index, 0:2], axis=0, keepdims=True)
         geom_means.append(geom_mean)
 
     return np.array(geom_means)
@@ -60,7 +60,7 @@ def localized_mean(vectors):
 
 def localized_normal(vectors, means, scale=1e4):
     localized = np.copy(vectors)
-    (data_points, max_points, GEO_VECTOR_LEN) = localized.shape
+    data_points, max_points, GEO_VECTOR_LEN = localized.shape
 
     for index, data_point in enumerate(localized):
         full_stop_point = data_point[:, FULL_STOP_INDEX].tolist()
