@@ -23,8 +23,9 @@ from model.topoml_util.GeoVectorizer import GeoVectorizer
 from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
-SCRIPT_VERSION = '5'
+SCRIPT_VERSION = '6'
 SANE_NUMBER_OF_POINTS = 2048
+REDUCED_POINTS = 64
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
 DATA_TYPE = 'buildings'
@@ -77,9 +78,11 @@ print('Processing data...')
 pgb = ProgressBar()
 
 for index, (wkt_string, building_type) in enumerate(zip(df.geometrie.values, df.gebruiksdoel.values)):
-    pgb.update_progress(index/len(df.geometrie.values))
+    pgb.update_progress(index/len(df.geometrie.values), '{} geometries, {} errors in logfile'.format(index, errors))
     try:
         shape = wkt.loads(wkt_string)
+        fixed_size_wkt_vector = GeoVectorizer.vectorize_wkt(wkt_string, REDUCED_POINTS, simplify=True, fixed_size=True)
+
         geom_len = min(GeoVectorizer.num_points_from_wkt(shape.wkt), SANE_NUMBER_OF_POINTS)
         if geom_len == SANE_NUMBER_OF_POINTS:
             simplified_geometries += 1
@@ -112,6 +115,7 @@ for index, (wkt_string, building_type) in enumerate(zip(df.geometrie.values, df.
     # Append the converted values if all went well
     selected_data.append({
         'geom': wkt_vector,
+        'fixed_size_geom': fixed_size_wkt_vector,
         'elliptic_fourier_descriptors': efds,
         'building_type': type_int
     })
@@ -127,6 +131,7 @@ print('Saving training data...')
 np.savez_compressed(
     TRAIN_DATA_FILE,
     geoms=[record['geom'] for record in train],
+    fixed_size_geoms=[record['fixed_size_geom'] for record in train],
     elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
     building_type=[record['building_type'] for record in train])
 
@@ -134,6 +139,7 @@ print('Saving test data...')
 np.savez_compressed(
     TEST_DATA_FILE,
     geoms=[record['geom'] for record in test],
+    fixed_size_geoms=[record['fixed_size_geom'] for record in test],
     elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in test],
     building_type=[record['building_type'] for record in test])
 
