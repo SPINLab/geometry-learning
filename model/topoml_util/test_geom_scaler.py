@@ -1,9 +1,10 @@
 import unittest
+
 import numpy as np
 
-from topoml_util.GeoVectorizer import FULL_STOP_INDEX
 from topoml_util import geom_scaler as gs
 
+# noinspection PyUnresolvedReferences
 dummy_geom = np.zeros((1, 1, 13))
 
 square = np.array([[
@@ -11,6 +12,26 @@ square = np.array([[
     [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
     [1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
     [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
+]])
+
+square_duplicate_nodes = np.array([[
+    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
+]])
+
+rectangle = np.array([[
+    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [1., 2., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+    [0., 2., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
     [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
 ]])
 
@@ -26,21 +47,30 @@ normalized_square = np.array([[
 class TestGeomScaler(unittest.TestCase):
     def test_localized_mean(self):
         means = gs.localized_mean(square)
-        for mean in means[0, 0]:
-            self.assertEqual(mean, 0.5)
+        for mean in means[0]:
+            self.assertTrue((mean == 0.5).all())
 
-    def test_scaling(self):
+    def test_localized_mean_rectangle(self):
+        means = gs.localized_mean(rectangle)
+        self.assertEqual(means[0, 0, 0], 0.5)
+        self.assertEqual(means[0, 0, 1], 1)
+
+    def test_localized_mean_dup_nodes(self):
+        means = gs.localized_mean(square_duplicate_nodes)
+        self.assertTrue((means == 0.75).all())
+
+    def test_scaling_square(self):
         scale = gs.scale(square)
         self.assertEqual(scale, 0.5)
 
+    def test_scaling_square_dup_nodes(self):
+        scale = gs.scale(square_duplicate_nodes)
+        self.assertEqual(scale, 0.5)
+
     def test_transform(self):
+        # scaled_square = square[0] * 2
+        # scaled_square[4, 12] = 1.
         means = gs.localized_mean(square)
         scale = gs.scale(square)
         n_square = gs.transform(square, scale=scale)
         self.assertTrue((n_square == normalized_square).all())
-
-    def test_dummy_geom(self):
-        dummy_means = gs.localized_mean(dummy_geom)
-        dummy_localized = gs.localized_normal(dummy_geom, dummy_means)
-        self.assertEqual(dummy_localized[0, 0, FULL_STOP_INDEX], 1)
-

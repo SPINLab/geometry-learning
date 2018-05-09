@@ -56,24 +56,3 @@ def localized_mean(vectors):
         geom_means.append(geom_mean)
 
     return np.array(geom_means)
-
-
-def localized_normal(vectors, means, scale=1e4):
-    localized = np.copy(vectors)
-    data_points, max_points, GEO_VECTOR_LEN = localized.shape
-
-    for index, data_point in enumerate(localized):
-        full_stop_point = data_point[:, FULL_STOP_INDEX].tolist()
-        try:
-            full_stop_point_index = full_stop_point.index(1)
-        except Exception as e:  # 1 is not in list, it is an empty geometry
-            data_point[0, FULL_STOP_INDEX] = 1
-            continue
-
-        # repeat for each non-null node in the geometry
-        geom_mean = np.repeat(means[index], full_stop_point_index + 1, axis=0)
-        zeros = np.zeros((max_points - 1 - full_stop_point_index, 2))
-        correction = np.append(geom_mean, zeros, axis=0)
-        data_point[:, 0:2] = (data_point[:, 0:2] - correction) * scale
-
-    return localized
