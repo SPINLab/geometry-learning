@@ -35,10 +35,10 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/archaeology/'
-TRAIN_DATA_FILE = 'archaeology_train_v6.npz'
-TEST_DATA_FILE = 'archaeology_test_v6.npz'
-TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11363'
-TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11361'
+TRAIN_DATA_FILE = 'archaeology_train_v5.npz'
+TEST_DATA_FILE = 'archaeology_test_v5.npz'
+TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/MHvQoyl3ibZPnfz/download'
+TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/DUYT4kpLJN0Mxv4/download'
 SCRIPT_START = time()
 
 # Hyperparameters
