@@ -34,8 +34,8 @@ NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/neighborhoods/'
 TRAIN_DATA_FILE = 'neighborhoods_train_v6.npz'
 TEST_DATA_FILE = 'neighborhoods_test_v6.npz'
-TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/A8FkiOm2gFWtJAz/download'
-TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/d4qqgrWiJ3oKeI4/download'
+TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11364'
+TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11361'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 
