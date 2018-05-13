@@ -37,19 +37,19 @@ SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/archaeology/'
 TRAIN_DATA_FILE = 'archaeology_train_v5.npz'
 TEST_DATA_FILE = 'archaeology_test_v5.npz'
-TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/MHvQoyl3ibZPnfz/download'
-TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/DUYT4kpLJN0Mxv4/download'
+TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11372'
+TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11373'
 SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
-    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 256)),
+    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 32)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 5e-3)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-3)),
     'RECURRENT_DROPOUT': float(os.getenv('RECURRENT_DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
