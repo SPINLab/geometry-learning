@@ -19,7 +19,7 @@ from model.topoml_util.GeoVectorizer import GeoVectorizer
 from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
-SCRIPT_VERSION = '5'
+SCRIPT_VERSION = '7'
 DATA_FOLDER = '../files/archaeology/'
 SOURCE_ZIP = DATA_FOLDER + 'archaeology.csv.zip'
 SOURCE_CSV = 'archaeology.csv'
@@ -27,6 +27,7 @@ LOG_FILE = 'archaeology_preprocessing.log'
 TRAIN_DATA_FILE = DATA_FOLDER + 'archaeology_train_v' + SCRIPT_VERSION
 TEST_DATA_FILE = DATA_FOLDER + 'archaeology_test_v' + SCRIPT_VERSION
 SANE_NUMBER_OF_POINTS = 2048
+REDUCED_POINTS = 256
 TRAIN_TEST_SPLIT = 0.1
 FOURIER_DESCRIPTOR_ORDER = 32  # The axis 0 size
 MINIMUM_CLASS_OCCURRENCE = 1000
@@ -77,6 +78,8 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
     if feature in included_classes:
         try:
             shape = wkt.loads(geom)
+            fixed_size_wkt_vector = GeoVectorizer.vectorize_wkt(geom, REDUCED_POINTS, simplify=True,
+                                                                fixed_size=True)
             geom_len = min(GeoVectorizer.num_points_from_wkt(shape.wkt), SANE_NUMBER_OF_POINTS)
             if geom_len == SANE_NUMBER_OF_POINTS:
                 simplified_geometries += 1
@@ -107,10 +110,11 @@ for index, (feature, geom) in enumerate(zip(aardspoor__as_matrix, wkt__as_matrix
 
         # Append the converted values if all went well
         selected_data.append({
-                'geom': wkt_vector,
-                'elliptic_fourier_descriptors': efds,
-                'feature_type': included_classes.index(feature),  # Convert types to numerical index
-            })
+            'geom': wkt_vector,
+            'fixed_size_geom': fixed_size_wkt_vector,
+            'elliptic_fourier_descriptors': efds,
+            'feature_type': included_classes.index(feature),  # Convert types to numerical index
+        })
 
 logfile.close()
 print('\ncreated {} data points with {} simplified geometries and {} errors'.format(
@@ -124,6 +128,7 @@ print('Saving test data...')
 np.savez_compressed(
     TEST_DATA_FILE,
     geoms=[record['geom'] for record in test],
+    fixed_size_geoms=[record['fixed_size_geom'] for record in test],
     elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in test],
     feature_type=[record['feature_type'] for record in test],
     feature_type_index=included_classes)
@@ -132,6 +137,7 @@ print('Saving training data...')
 np.savez_compressed(
     TRAIN_DATA_FILE,
     geoms=[record['geom'] for record in train],
+    fixed_size_geoms=[record['fixed_size_geom'] for record in train],
     elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
     feature_type=[record['feature_type'] for record in train],
     feature_type_index=included_classes)

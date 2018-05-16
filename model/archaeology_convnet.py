@@ -35,20 +35,20 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/archaeology/'
-TRAIN_DATA_FILE = 'archaeology_train_v5.npz'
-TEST_DATA_FILE = 'archaeology_test_v5.npz'
-TRAIN_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/MHvQoyl3ibZPnfz/download'
-TEST_DATA_URL = 'https://surfdrive.surf.nl/files/index.php/s/DUYT4kpLJN0Mxv4/download'
+TRAIN_DATA_FILE = 'archaeology_train_v7.npz'
+TEST_DATA_FILE = 'archaeology_test_v7.npz'
+TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11377'
+TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11376'
 SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
-    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 512)),
+    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 32)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 4e-4)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 5e-3)),
     'DROPOUT': float(os.getenv('DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
@@ -89,12 +89,10 @@ test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance fr
 zipped = zip(train_geoms, train_labels)
 train_input_sorted = {}
 train_labels_sorted = {}
-train_labels__max = np.array(train_labels).max()
-
 for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
     # Map types to one-hot vectors
     # noinspection PyUnresolvedReferences
-    one_hot_label = np.zeros((train_labels__max + 1))
+    one_hot_label = np.zeros((np.array(train_labels).max() + 1))
     one_hot_label[label] = 1
 
     sequence_len = geom.shape[0]
@@ -122,7 +120,7 @@ for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
 
 # Shape determination
 geom_vector_len = train_geoms[0].shape[1]
-output_size = train_labels__max + 1
+output_size = np.array(train_labels).max() + 1
 
 # Build model
 inputs = Input(shape=(None, geom_vector_len))

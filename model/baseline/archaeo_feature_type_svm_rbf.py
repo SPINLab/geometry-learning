@@ -32,10 +32,10 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 NUM_CPUS = multiprocessing.cpu_count() - 1 or 1
 DATA_FOLDER = SCRIPT_DIR + '/../../files/archaeology/'
-TRAIN_DATA_FILE = 'archaeology_train_v6.npz'
-TEST_DATA_FILE = 'archaeology_test_v6.npz'
-TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11363'
-TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11362'
+TRAIN_DATA_FILE = 'archaeology_train_v7.npz'
+TEST_DATA_FILE = 'archaeology_test_v7.npz'
+TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11377'
+TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11376'
 EFD_ORDERS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 24]
 SCRIPT_START = time()
 

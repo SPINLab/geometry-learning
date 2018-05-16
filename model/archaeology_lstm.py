@@ -35,15 +35,15 @@ SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/archaeology/'
-TRAIN_DATA_FILE = 'archaeology_train_v5.npz'
-TEST_DATA_FILE = 'archaeology_test_v5.npz'
-TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11372'
-TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11373'
+TRAIN_DATA_FILE = 'archaeology_train_v7.npz'
+TEST_DATA_FILE = 'archaeology_test_v7.npz'
+TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11377'
+TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11376'
 SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
-    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 32)),
+    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 512)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
