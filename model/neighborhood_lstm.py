@@ -31,23 +31,23 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.2'
+SCRIPT_VERSION = '2.0.5'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
 DATA_FOLDER = '../files/neighborhoods/'
-TRAIN_DATA_FILE = 'neighborhoods_train_v6.npz'
-TEST_DATA_FILE = 'neighborhoods_test_v6.npz'
-TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11364'
-TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11361'
+TRAIN_DATA_FILE = 'neighborhoods_train_v7.npz'
+TEST_DATA_FILE = 'neighborhoods_test_v7.npz'
+TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11378'
+TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11379'
 SCRIPT_START = time()
 
 # Hyperparameters
 hp = {
-    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 128)),
+    'BATCH_SIZE': int(os.getenv('BATCH_SIZE', 512)),
     'TRAIN_VALIDATE_SPLIT': float(os.getenv('TRAIN_VALIDATE_SPLIT', 0.1)),
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
-    'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 32)),
+    'LSTM_SIZE': int(os.getenv('LSTM_SIZE', 128)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
     'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 5e-4)),

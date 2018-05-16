@@ -23,7 +23,7 @@ from model.topoml_util.GeoVectorizer import GeoVectorizer
 from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
-SCRIPT_VERSION = '6'
+SCRIPT_VERSION = '7'
 SANE_NUMBER_OF_POINTS = 2048
 REDUCED_POINTS = 64
 TRAIN_TEST_SPLIT = 0.1
@@ -64,10 +64,10 @@ for f_index, function_type in enumerate(building_types):
 shapes = [wkt.loads(wkt_string) for wkt_string in df.geometrie.values]
 number_of_vertices = [GeoVectorizer.num_points_from_wkt(shape.wkt) for shape in shapes]
 
-vertices_distr_png = 'buildings_geom_vertices_distr.png'
-print('Saving histogram of vertices per geometry {}'.format(vertices_distr_png))
-plt.hist(number_of_vertices, bins=20, log=True)
-plt.savefig(vertices_distr_png)
+# vertices_distr_png = 'buildings_geom_vertices_distr.png'
+# print('Saving histogram of vertices per geometry {}'.format(vertices_distr_png))
+# plt.hist(number_of_vertices, bins=20, log=True)
+# plt.savefig(vertices_distr_png)
 
 logfile = open(LOG_FILE, 'w')
 selected_data = []
@@ -127,14 +127,6 @@ print('\ncreated {} data points with {} simplified geometries and {} errors'.for
 # Split and save data
 train, test = train_test_split(selected_data, test_size=0.1, random_state=42)
 
-print('Saving training data...')
-np.savez_compressed(
-    TRAIN_DATA_FILE,
-    geoms=[record['geom'] for record in train],
-    fixed_size_geoms=[record['fixed_size_geom'] for record in train],
-    elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
-    building_type=[record['building_type'] for record in train])
-
 print('Saving test data...')
 np.savez_compressed(
     TEST_DATA_FILE,
@@ -142,6 +134,14 @@ np.savez_compressed(
     fixed_size_geoms=[record['fixed_size_geom'] for record in test],
     elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in test],
     building_type=[record['building_type'] for record in test])
+
+print('Saving training data...')
+np.savez_compressed(
+    TRAIN_DATA_FILE,
+    geoms=[record['geom'] for record in train],
+    fixed_size_geoms=[record['fixed_size_geom'] for record in train],
+    elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
+    building_type=[record['building_type'] for record in train])
 
 runtime = time() - SCRIPT_START
 print('Done in {}'.format(timedelta(seconds=runtime)))

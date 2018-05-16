@@ -18,7 +18,7 @@ from model.topoml_util.GeoVectorizer import GeoVectorizer
 from model.topoml_util.geom_fourier_descriptors import create_geom_fourier_descriptor
 from prep.ProgressBar import ProgressBar
 
-SCRIPT_VERSION = '6'
+SCRIPT_VERSION = '7'
 SOURCE_DIR = '../files/neighborhoods/'
 SOURCE_ZIP = SOURCE_DIR + 'neighborhoods.csv.zip'
 SOURCE_CSV = 'neighborhoods.csv'
@@ -116,7 +116,9 @@ np.savez_compressed(
     fixed_size_geoms=[record['fixed_size_geom'] for record in test],
     elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in test],
     inhabitants=[record['inhabitants'] for record in test],
-    above_or_below_median=[int(record['inhabitants'] > median) for record in test])
+    above_or_below_median=[int(record['inhabitants'] > median) for record in test],
+    type_index={0: 'less than median', 1: 'greater than or equal to median'},
+)
 
 print('Saving training data...')
 np.savez_compressed(
@@ -125,7 +127,9 @@ np.savez_compressed(
     fixed_size_geoms=[record['fixed_size_geom'] for record in train],
     elliptic_fourier_descriptors=[record['elliptic_fourier_descriptors'] for record in train],
     inhabitants=[record['inhabitants'] for record in test],
-    above_or_below_median=[int(record['inhabitants'] > median) for record in train])
+    above_or_below_median=[int(record['inhabitants'] > median) for record in train],
+    type_index={0: 'less than median', 1: 'greater than or equal to median'},
+)
 
 runtime = time() - SCRIPT_START
 print('Done in {}'.format(timedelta(seconds=runtime)))
