@@ -9,11 +9,9 @@ GEOMETRY_TYPES = ["GeometryCollection", "Point", "LineString", "Polygon", "Multi
                   "MultiPolygon", "Geometry"]
 X_INDEX = 0  # the X coordinate position
 Y_INDEX = 1  # the Y coordinate position
-GEOM_TYPE_INDEX = Y_INDEX + 1  # Start index of the geometry type
-GEOM_TYPE_LEN = 8  # 8 positions in the one-hot encoding for the geometry type
-RENDER_INDEX = GEOM_TYPE_INDEX + GEOM_TYPE_LEN  # Render index start
+RENDER_INDEX = Y_INDEX + 1  # Render index start
 RENDER_LEN = 3  # Render one-hot vector length
-ONE_HOT_LEN = GEOM_TYPE_LEN + RENDER_LEN  # Length of the one-hot encoded part
+ONE_HOT_LEN = 2 + RENDER_LEN  # Length of the one-hot encoded part
 STOP_INDEX = RENDER_INDEX + 1  # Stop index for the first geometry. A second one follows
 FULL_STOP_INDEX = STOP_INDEX + 1  # Full stop index. No more points to follow
 GEO_VECTOR_LEN = FULL_STOP_INDEX + 1  # The length needed to describe the features of a geometry point
@@ -27,7 +25,6 @@ wkt_start = {
     "LineString": "(",
     "MultiPoint": "((",
     "MultiLineString": "((",
-    "Geometry": "("
 }
 wkt_end = {
     "GeometryCollection": "",
@@ -37,7 +34,6 @@ wkt_end = {
     "LineString": ")",
     "MultiPoint": "))",
     "MultiLineString": "))",
-    "Geometry": ")"
 }
 
 
@@ -113,7 +109,7 @@ class GeoVectorizer:
             geom_matrix = np.zeros((1, GEO_VECTOR_LEN))
             geom_matrix[:, FULL_STOP_INDEX] = 1  # Manually set full stop bits
         elif shape.geom_type == 'Point':
-            geom_matrix = GeoVectorizer._vectorize_points(shape.coords, shape.geom_type, is_last=True)
+            geom_matrix = GeoVectorizer._vectorize_points(shape.coords, is_last=True)
         else:
             raise ValueError("Don't know how to get the number of points from geometry type {}".format(shape.geom_type))
 
@@ -124,14 +120,13 @@ class GeoVectorizer:
 
     @staticmethod
     def _vectorize_polygon(shape):
-        return GeoVectorizer._vectorize_points(shape.exterior.coords, shape.geom_type, is_last=True)
+        return GeoVectorizer._vectorize_points(shape.exterior.coords, is_last=True)
 
     @staticmethod
-    def _vectorize_points(points, geom_type, is_last=False):
+    def _vectorize_points(points, is_last=False):
         """
         Fill an array of vectors out of an array of points from a geometry
         :param points: the array of input points
-        :param geom_type: a geometry type string, one of GEOMETRY_TYPES
         :param is_last: extra offset for the last point in a geometry, to indicate a full stop.
         :return matrix: a matrix representation of the points.
         """
@@ -139,12 +134,8 @@ class GeoVectorizer:
         matrix = np.zeros((len(points), GEO_VECTOR_LEN))
 
         for point_index, point in enumerate(points):
-            geom_type_one_hot = GEOMETRY_TYPES.index(geom_type) + GEOM_TYPE_INDEX  # offset from coordinate entries
-            # [11:14] boolean: [render, end of first geometry, end of second geometry]
-
             matrix[point_index, X_INDEX] = point[0]
             matrix[point_index, Y_INDEX] = point[1]
-            matrix[point_index, geom_type_one_hot] = True
 
             if point_index == len(points) - 1:
                 if is_last:

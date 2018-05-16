@@ -11,13 +11,14 @@ def scale(vectors):
 
         try:
             full_stop_point_index = full_stop_point.index(1)
-            min_maxs.append([
-                    np.min(data_point[..., :full_stop_point_index, :2] - means[index]),
-                    np.max(data_point[..., :full_stop_point_index, :2] - means[index])
-                    ])
         except Exception as e:  # if a dummy point is encountered
             min_maxs.append([0, 0])
             continue
+
+        min_maxs.append([
+            np.min(data_point[..., :full_stop_point_index, :2] - means[index]),
+            np.max(data_point[..., :full_stop_point_index, :2] - means[index])
+        ])
 
     return np.std(min_maxs)
 
