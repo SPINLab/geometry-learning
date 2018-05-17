@@ -15,17 +15,11 @@ import numpy as np
 from keras import Input
 from keras.callbacks import TensorBoard
 from keras.engine import Model
-from keras.layers import Dense, Conv1D, MaxPooling1D, GlobalAveragePooling1D, Dropout
+from keras.layers import Dense, Conv1D, GlobalAveragePooling1D, Dropout
 from keras.optimizers import Adam
-from keras.preprocessing.sequence import pad_sequences
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-PACKAGE_PARENT = '..'
-SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
-
-from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
@@ -60,7 +54,7 @@ if not path.exists():
     urlretrieve(TRAIN_DATA_URL, DATA_FOLDER + TRAIN_DATA_FILE)
 
 train_loaded = np.load(DATA_FOLDER + TRAIN_DATA_FILE)
-train_geoms = train_loaded['geoms']
+train_geoms = train_loaded['fixed_size_geoms']
 train_labels = train_loaded['building_type']
 
 # Determine final test mode or standard
@@ -72,7 +66,7 @@ if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
         urlretrieve(TEST_DATA_URL, DATA_FOLDER + TEST_DATA_FILE)
 
     test_loaded = np.load(DATA_FOLDER + TEST_DATA_FILE)
-    test_geoms = test_loaded['geoms']
+    test_geoms = test_loaded['fixed_size_geoms']
     test_labels = test_loaded['building_type']
 else:
     print('Training in standard training mode')
@@ -84,51 +78,21 @@ geom_scale = hp['GEOM_SCALE'] or geom_scaler.scale(train_geoms)
 train_geoms = geom_scaler.transform(train_geoms, geom_scale)
 test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance from training
 
-# Sort data according to sequence length
-zipped = zip(train_geoms, train_labels)
-train_input_sorted = {}
-train_labels_sorted = {}
-train_labels__max = np.array(train_labels).max()
-
-for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
-    # Map types to one-hot vectors
-    # noinspection PyUnresolvedReferences
-    one_hot_label = np.zeros((train_labels__max + 1))
-    one_hot_label[label] = 1
-
-    sequence_len = geom.shape[0]
-    smallest_size_subset = sorted(train_input_sorted.keys())[0] if train_input_sorted else None
-
-    if not smallest_size_subset:  # This is the first data point
-        train_input_sorted[sequence_len] = [geom]
-        train_labels_sorted[sequence_len] = [one_hot_label]
-        continue
-
-    if sequence_len in train_input_sorted:  # the entry exists, append
-        train_input_sorted[sequence_len].append(geom)
-        train_labels_sorted[sequence_len].append(one_hot_label)
-        continue
-
-    # the size subset does not exist yet
-    # append the data to the smallest size subset if it isn't batch-sized yet
-    if len(train_input_sorted[smallest_size_subset]) < hp['BATCH_SIZE']:
-        geom = pad_sequences([geom], smallest_size_subset)[0]  # make it the same size as the rest in the subset
-        train_input_sorted[smallest_size_subset].append(geom)
-        train_labels_sorted[smallest_size_subset].append(one_hot_label)
-    else:
-        train_input_sorted[sequence_len] = [geom]
-        train_labels_sorted[sequence_len] = [one_hot_label]
+# Map types to one-hot vectors
+# noinspection PyUnresolvedReferences
+train_targets = np.zeros((len(train_labels), train_labels.max() + 1))
+for index, building_type in enumerate(train_labels):
+    train_targets[index, building_type] = 1
 
 # Shape determination
-geom_vector_len = train_geoms[0].shape[1]
-output_size = train_labels__max + 1
+geom_max_points, geom_vector_len = train_geoms.shape[1:]
+output_size = train_targets.shape[-1]
 
 # Build model
-inputs = Input(shape=(None, geom_vector_len))
-model = Conv1D(32, (5,), activation='relu', padding='SAME')(inputs)
-# model = Conv1D(32, (5,), activation='relu', padding='SAME')(model)
-model = MaxPooling1D(3)(model)
-model = Conv1D(64, (5,), activation='relu', padding='SAME')(model)
+inputs = Input(shape=(geom_max_points, geom_vector_len))
+model = Conv1D(filters=32, kernel_size=(5,), activation='relu')(inputs)
+model = Conv1D(filters=48, kernel_size=(5,), activation='relu', strides=2)(model)
+model = Conv1D(filters=64, kernel_size=(5,), activation='relu', strides=2)(model)
 model = GlobalAveragePooling1D()(model)
 model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
 model = Dropout(hp['DROPOUT'])(model)
@@ -144,34 +108,21 @@ model.summary()
 # Callbacks
 callbacks = [TensorBoard(log_dir='./tensorboard_log/' + SIGNATURE, write_graph=False)]
 
-pgb = ProgressBar()
-for epoch in range(hp['EPOCHS']):
-    for sequence_len in sorted(train_input_sorted.keys()):
-        message = 'Epoch {} of {}, sequence length {}'.format(epoch + 1, hp['EPOCHS'], sequence_len)
-        pgb.update_progress(epoch/hp['EPOCHS'], message)
-
-        inputs = np.array(train_input_sorted[sequence_len])
-        labels = np.array(train_labels_sorted[sequence_len])
-
-        model.fit(
-            x=inputs,
-            y=labels,
-            verbose=0,
-            epochs=epoch + 1,
-            initial_epoch=epoch,
-            batch_size=hp['BATCH_SIZE'],
-            validation_split=hp['TRAIN_VALIDATE_SPLIT'],
-            callbacks=callbacks)
+history = model.fit(
+    x=train_geoms,
+    y=train_targets,
+    epochs=hp['EPOCHS'],
+    batch_size=hp['BATCH_SIZE'],
+    validation_split=hp['TRAIN_VALIDATE_SPLIT'],
+    callbacks=callbacks).history
 
 # Run on unseen test data
-print('\n\nRun on test data...')
-test_preds = [model.predict(np.array([test])) for test in test_geoms]
-test_preds = [np.argmax(pred) for pred in test_preds]
-accuracy = accuracy_score(test_labels, test_preds)
+test_pred = [np.argmax(prediction) for prediction in model.predict(test_geoms)]
+accuracy = accuracy_score(test_labels, test_pred)
 
 runtime = time() - SCRIPT_START
 message = 'on {} completed with accuracy of \n{:f} \nin {} in {} epochs\n'.format(
-    socket.gethostname(), accuracy, timedelta(seconds=runtime), hp['EPOCHS'])
+    socket.gethostname(), accuracy, timedelta(seconds=runtime), len(history['val_loss']))
 
 for key, value in sorted(hp.items()):
     message += '{}: {}\t'.format(key, value)

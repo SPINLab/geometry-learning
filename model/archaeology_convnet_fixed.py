@@ -1,7 +1,6 @@
 """
-This script executes the task of estimating the number of inhabitants of a neighborhood to be under or over the
-median of all neighborhoods in the Netherlands, based solely on the geometry for that neighborhood.
-The data for this script can be found at http://hdl.handle.net/10411/GYPPBR.
+This script executes the task of estimating the type of an archaeological feature, based solely on the geometry for
+that feature. The data for this script can be found at http://hdl.handle.net/10411/GYPPBR.
 """
 
 import os
@@ -30,15 +29,15 @@ from prep.ProgressBar import ProgressBar
 from topoml_util import geom_scaler
 from topoml_util.slack_send import notify
 
-SCRIPT_VERSION = '2.0.5'
+SCRIPT_VERSION = '2.0.4'
 SCRIPT_NAME = os.path.basename(__file__)
 TIMESTAMP = str(datetime.now()).replace(':', '.')
 SIGNATURE = SCRIPT_NAME + ' ' + SCRIPT_VERSION + ' ' + TIMESTAMP
-DATA_FOLDER = '../files/neighborhoods/'
-TRAIN_DATA_FILE = 'neighborhoods_train_v7.npz'
-TEST_DATA_FILE = 'neighborhoods_test_v7.npz'
-TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11378'
-TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11379'
+DATA_FOLDER = '../files/archaeology/'
+TRAIN_DATA_FILE = 'archaeology_train_v7.npz'
+TEST_DATA_FILE = 'archaeology_test_v7.npz'
+TRAIN_DATA_URL = 'https://dataverse.nl/api/access/datafile/11377'
+TEST_DATA_URL = 'https://dataverse.nl/api/access/datafile/11376'
 SCRIPT_START = time()
 
 # Hyperparameters
@@ -48,7 +47,7 @@ hp = {
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 5e-3)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 4e-3)),
     'DROPOUT': float(os.getenv('DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
@@ -61,8 +60,8 @@ if not path.exists():
     urlretrieve(TRAIN_DATA_URL, DATA_FOLDER + TRAIN_DATA_FILE)
 
 train_loaded = np.load(DATA_FOLDER + TRAIN_DATA_FILE)
-train_geoms = train_loaded['geoms']
-train_labels = train_loaded['above_or_below_median']
+train_geoms = train_loaded['fixed_size_geoms']
+train_labels = train_loaded['feature_type']
 
 # Determine final test mode or standard
 if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
@@ -73,8 +72,8 @@ if len(sys.argv) > 1 and sys.argv[1] in ['-t', '--test']:
         urlretrieve(TEST_DATA_URL, DATA_FOLDER + TEST_DATA_FILE)
 
     test_loaded = np.load(DATA_FOLDER + TEST_DATA_FILE)
-    test_geoms = test_loaded['geoms']
-    test_labels = test_loaded['above_or_below_median']
+    test_geoms = test_loaded['fixed_size_geoms']
+    test_labels = test_loaded['feature_type']
 else:
     print('Training in standard training mode')
     # Split the training data in random seen/unseen sets
@@ -89,8 +88,6 @@ test_geoms = geom_scaler.transform(test_geoms, geom_scale)  # re-use variance fr
 zipped = zip(train_geoms, train_labels)
 train_input_sorted = {}
 train_labels_sorted = {}
-train_labels__max = np.array(train_labels).max()
-
 for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
     # Map types to one-hot vectors
     # noinspection PyUnresolvedReferences
@@ -122,13 +119,13 @@ for geom, label in sorted(zipped, key=lambda x: len(x[0]), reverse=True):
 
 # Shape determination
 geom_vector_len = train_geoms[0].shape[1]
-output_size = train_labels__max + 1
+output_size = np.array(train_labels).max() + 1
 
 # Build model
 inputs = Input(shape=(None, geom_vector_len))
 model = Conv1D(32, (5,), activation='relu', padding='SAME')(inputs)
 # model = Conv1D(32, (5,), activation='relu', padding='SAME')(model)
-model = MaxPooling1D(3, padding='SAME')(model)
+model = MaxPooling1D(3)(model)
 model = Conv1D(64, (5,), activation='relu', padding='SAME')(model)
 model = GlobalAveragePooling1D()(model)
 model = Dense(hp['DENSE_SIZE'], activation='relu')(model)
