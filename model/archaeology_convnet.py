@@ -48,7 +48,7 @@ hp = {
     'REPEAT_DEEP_ARCH': int(os.getenv('REPEAT_DEEP_ARCH', 0)),
     'DENSE_SIZE': int(os.getenv('DENSE_SIZE', 32)),
     'EPOCHS': int(os.getenv('EPOCHS', 200)),
-    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 5e-4)),
+    'LEARNING_RATE': float(os.getenv('LEARNING_RATE', 1e-4)),
     'DROPOUT': float(os.getenv('DROPOUT', 0.0)),
     'GEOM_SCALE': float(os.getenv("GEOM_SCALE", 0)),  # If no default or 0: overridden when data is known
 }
