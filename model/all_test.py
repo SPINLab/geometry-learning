@@ -8,7 +8,7 @@ import sys
 from sklearn.model_selection import ParameterGrid
 from topoml_util.slack_send import notify
 
-notify('ALL TEST SCRIPT RUNNING FINAL TESTS', 'no errors')
+notify('ALL TEST SCRIPT RUNNING FINAL TESTS', 'STARTING')
 
 SCRIPT_VERSION = '1.0.0'
 N_TIMES = 1
@@ -27,11 +27,11 @@ HYPERPARAMS = {  # All using standard hyperparameters
 grid = list(ParameterGrid(HYPERPARAMS))
 
 scripts = [
-    'neighborhood_convnet.py',
-    'neighborhood_lstm.py',
-    'building_convnet.py',
-    'building_lstm.py',
-    'archaeology_convnet.py'
+    # 'neighborhood_convnet.py',
+    # 'neighborhood_lstm.py',
+    # 'building_convnet.py',
+    # 'building_lstm.py',
+    'archaeology_convnet.py',
     'archaeology_lstm.py'
 ]
 
